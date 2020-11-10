@@ -4,8 +4,6 @@ open ATD
 let parens = between (exactly '(') (exactly ')')
 
 
-(* let braces = between (exactly '{') (exactly '}') *)
-
 
 let not_space c = match c with
   | ' ' -> true
@@ -17,27 +15,12 @@ let digit_c =
     Char.code '0' <= c && c <= Char.code '9'
   in
   satisfy is_digit
-
-
-
-
-
-
-
+  
 let rec fix_comb f eta = f (fix_comb f) eta
 
 
  let fix_poly : (('a -> 'b) list -> 'a -> 'b) list -> ('a -> 'b) list
 = fun l -> fix_comb (fun self l -> List.map (fun li x -> li (self l) x) l) l
-(*
-let fix_poly fl: ('a t list -> 'a t) list -> 'a t = 
-    fix (fun self -> List.map self fl)
-
-let [even;odd] = 
-  let open_even [even;odd] = fun n -> n = 0  || odd (n-1)
-  and open_odd  [even;odd] = fun n -> n <> 0 && even (n-1)
- in fix_poly [open_even;open_odd] *)
-
 
 
 let digit = digit_c >>= fun c -> return (Char.code c - Char.code '0')
@@ -46,7 +29,6 @@ module Expr = struct
   open ATD
   let null = token "null" >> return (Null) 
   let super = token "super" >> return (Super)
-
   let this = token "this" >> return (This)
 
   
@@ -69,6 +51,9 @@ module Expr = struct
         >> return (ArrayAccess (arr_name, el_index)));
       (expression >>= fun name -> lexeme (exactly '.') >> lexeme expression 
         >>= fun field_or_method -> return (Access (name, field_or_method)));
+      (expression >>= fun first -> lexeme (exactly ',') 
+        >> lexeme expression >>= fun second -> return (Many (first, second)));
+      
       
     ] s
   and numeric a = 
@@ -79,6 +64,9 @@ module Expr = struct
 
           (term >>= fun left -> lexeme (exactly ('/')) 
             >> lexeme factor >>= fun right -> return (NumericExpr (Div (left, right))));
+
+          (term >>= fun left -> lexeme (exactly ('%')) 
+            >> lexeme factor >>= fun right -> return (NumericExpr (Mod (left, right))));
           factor;
       ] s
     and factor s = 
@@ -94,6 +82,11 @@ module Expr = struct
       (expression >>= fun left -> lexeme (exactly ('-')) 
         >> lexeme term >>= fun right -> return (NumericExpr (Sub (left, right))));
         term;
+      (token "++" >> lexeme expression >>= fun arg -> return (NumericExpr (PrefAdd (arg))));
+      (token "--" >> lexeme expression >>= fun arg -> return (NumericExpr (PrefSub (arg))));
+      (expression >>= fun arg -> token "++" >>= fun _ -> return (NumericExpr (PostAdd (arg))));
+      (expression >>= fun arg -> token "--" >>= fun _ -> return (NumericExpr (PostSub (arg))));
+      
     ] a
   and logical a =
     let rec term s = 
@@ -134,6 +127,5 @@ module Expr = struct
       (expression >>= fun left -> token "!=" >> lexeme expression >>=
         fun right -> return (TestingExpr (MoreOrEqual (left, right))));  
     ] a
-    
 
 end 

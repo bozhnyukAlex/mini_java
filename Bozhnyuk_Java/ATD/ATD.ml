@@ -72,9 +72,9 @@ module ATD = struct
     | This
     | Super
     | Null
-    | Lambda of {var : jExpr; body : jStat list}
     | Access of jExpr * jExpr
     | ArrayAccess of jExpr * jExpr
+    | Many of jExpr * jExpr
 
 
   and jStat =
