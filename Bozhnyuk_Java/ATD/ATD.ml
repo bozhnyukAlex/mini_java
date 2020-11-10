@@ -4,7 +4,7 @@ module ATD = struct
     | Public
     | Static
     | Final
-    | Abstract
+    | Abstract [@@deriving show]
 
   type jType =
     | JInt
@@ -14,7 +14,7 @@ module ATD = struct
     | JChar
     | JString
     | JArray of jType
-    | JObject
+    | JObject [@@deriving show]
 
 
   type jValue = 
@@ -26,11 +26,11 @@ module ATD = struct
     | JVVoid
     | JString
     | JVRef
-    | JVObject
+    | JVObject [@@deriving show]
 
-  type jException = {jName: jType ; message : string}
+  type jException = {jName: jType ; message : string} [@@deriving show]
 
-  type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option}
+  type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option} [@@deriving show]
 
   type jNumericExpr = 
     | Add of jExpr * jExpr
@@ -41,12 +41,12 @@ module ATD = struct
     | PrefAdd of jExpr
     | PrefSub of jExpr
     | PostAdd of jExpr
-    | PostSub of jExpr
+    | PostSub of jExpr [@@deriving show]
 
   and jLogicalExpr = 
     | And of jExpr * jExpr
     | Or of jExpr * jExpr
-    | Not of jExpr
+    | Not of jExpr [@@deriving show]
 
   and jTestExpr = 
     | Equal of jExpr * jExpr
@@ -54,11 +54,11 @@ module ATD = struct
     | Less of jExpr * jExpr
     | More of jExpr * jExpr
     | LessOrEqual of jExpr * jExpr
-    | MoreOrEqual of jExpr * jExpr
+    | MoreOrEqual of jExpr * jExpr [@@deriving show]
 
   and jCreatingExpr = 
     | ClassDec of {clName : string; argList : jExpr list} (*new clName(argList)*)
-    | ArrayDec of {arrType : jType; cntExpr : jExpr}    (*new arrType[cntExpr]*)
+    | ArrayDec of {arrType : jType; cntExpr : jExpr}    (*new arrType[cntExpr]*) [@@deriving show]
 
 
   and jExpr =
@@ -74,7 +74,7 @@ module ATD = struct
     | Null
     | Access of jExpr * jExpr
     | ArrayAccess of jExpr * jExpr
-    | Many of jExpr * jExpr
+    | Many of jExpr * jExpr [@@deriving show]
 
 
   and jStat =
@@ -86,13 +86,13 @@ module ATD = struct
     | Return of {result : jExpr}
     | VarDec of {name : string; vType : jType; value : jValue option}  
     | Expression of jExpr 
-    | Throw of {exc : jException}
+    | Throw of {exc : jException} [@@deriving show]
 
 
 
-  type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;} 
+  type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  [@@deriving show]
 
-  type jClass = {cModifiers: jModifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option}
+  type jClass = {cModifiers: jModifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option} [@@deriving show]
 
 end
 
