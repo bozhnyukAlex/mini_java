@@ -4,7 +4,7 @@ module ATD = struct
     | Public
     | Static
     | Final
-    | Abstract [@@deriving show]
+    | Abstract
 
   type jType =
     | JInt
@@ -14,7 +14,7 @@ module ATD = struct
     | JChar
     | JString
     | JArray of jType
-    | JObject [@@deriving show]
+    | JObject 
 
 
   type jValue = 
@@ -26,11 +26,11 @@ module ATD = struct
     | JVVoid
     | JString
     | JVRef
-    | JVObject [@@deriving show]
+    | JVObject
 
-  type jException = {jName: jType ; message : string} [@@deriving show]
+  type jException = {jName: jType ; message : string} 
 
-  type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option} [@@deriving show]
+  type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option} 
 
   type jNumericExpr = 
     | Add of jExpr * jExpr
@@ -41,12 +41,12 @@ module ATD = struct
     | PrefAdd of jExpr
     | PrefSub of jExpr
     | PostAdd of jExpr
-    | PostSub of jExpr [@@deriving show]
+    | PostSub of jExpr 
 
   and jLogicalExpr = 
     | And of jExpr * jExpr
     | Or of jExpr * jExpr
-    | Not of jExpr [@@deriving show]
+    | Not of jExpr 
 
   and jTestExpr = 
     | Equal of jExpr * jExpr
@@ -54,11 +54,11 @@ module ATD = struct
     | Less of jExpr * jExpr
     | More of jExpr * jExpr
     | LessOrEqual of jExpr * jExpr
-    | MoreOrEqual of jExpr * jExpr [@@deriving show]
+    | MoreOrEqual of jExpr * jExpr 
 
   and jCreatingExpr = 
     | ClassDec of {clName : string; argList : jExpr list} (*new clName(argList)*)
-    | ArrayDec of {arrType : jType; cntExpr : jExpr}    (*new arrType[cntExpr]*) [@@deriving show]
+    | ArrayDec of {arrType : jType; cntExpr : jExpr}    (*new arrType[cntExpr]*) 
 
 
   and jExpr =
@@ -66,17 +66,19 @@ module ATD = struct
     | LogicalExpr of jLogicalExpr
     | TestingExpr of jTestExpr
     | CreatingExpr of jCreatingExpr
-    | CallMethod of {name : string; args : jExpr list}
+    | CallMethod of jExpr * jExpr list  
     | Identifier of string 
     | Const of jValue
     | This
     | Super
     | Null
-    | Access of jExpr * jExpr
-    | ArrayAccess of jExpr * jExpr
-    | Many of jExpr * jExpr [@@deriving show]
+    | FieldAccess of jExpr * jExpr
+    | ArrayAccess of jExpr * jExpr list
 
 
+  
+
+    
   and jStat =
     | If of {cond : jExpr; thenStat : jStat list; elseStat : jStat list}
     | While of {cond : jExpr; body : jStat list}
@@ -86,13 +88,12 @@ module ATD = struct
     | Return of {result : jExpr}
     | VarDec of {name : string; vType : jType; value : jValue option}  
     | Expression of jExpr 
-    | Throw of {exc : jException} [@@deriving show]
+    | Throw of {exc : jException} 
 
 
+  type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  
 
-  type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  [@@deriving show]
-
-  type jClass = {cModifiers: jModifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option} [@@deriving show]
+  type jClass = {cModifiers: jModifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option}  
 
 end
 
