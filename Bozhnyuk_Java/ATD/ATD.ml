@@ -8,10 +8,8 @@ module ATD = struct
 
   type jType =
     | JInt
-    | JBoolean
     | JVoid
     | JRef of string
-    | JChar
     | JString
     | JArray of jType
     | JObject 
@@ -24,7 +22,7 @@ module ATD = struct
     | JVChar of char
     | JVArray of jValue list
     | JVVoid
-    | JString
+    | JVString of string
     | JVRef
     | JVObject
 
@@ -57,8 +55,8 @@ module ATD = struct
     | MoreOrEqual of jExpr * jExpr 
 
   and jCreatingExpr = 
-    | ClassDec of {clName : string; argList : jExpr list} (*new clName(argList)*)
-    | ArrayDec of {arrType : jType; cntExpr : jExpr}    (*new arrType[cntExpr]*) 
+    | ClassCreate of string * jExpr list (*new clName(argList)*)
+    | ArrayCreate of jType * jExpr list (*new arrType[cntExpr]*) 
 
 
   and jExpr =
