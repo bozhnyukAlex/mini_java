@@ -67,13 +67,15 @@ module Expr = struct
   let type_spec_array = choice [
     (token "int" >> choice [many1 (token "[]") >> return (JArray JInt); return (JInt)]);
     (token "String" >> choice [many1 (token "[]") >> return (JArray JString); return (JString)]);
-    (token "void" >> return (JVoid))
+    (token "void" >> return (JVoid));
+    (ident >>= fun class_name -> choice [many1 (token "[]") >> return (JArray (JRef class_name)); return (JRef class_name)]);
   ]
 
   let type_spec = choice [
     (token "int" >> return (JInt));
     (token "String" >> return (JString));
-    (token "void" >> return (JVoid))
+    (token "void" >> return (JVoid));
+    (ident >>= fun class_name -> return (JRef class_name)); 
   ]
 
 
@@ -90,16 +92,20 @@ module Expr = struct
     and unary_expr input = choice [
       (token "!" >> lexeme primary >>= fun s -> return (LogicalExpr (Not s)));
       (token "-" >> lexeme primary >>= fun x -> return (NumericExpr (Sub (Const (JVInt 0), x))));
+      (token "++" >> lexeme primary >>= fun x -> return (NumericExpr (PrefAdd x)));
+      (token "--" >> lexeme primary >>= fun x -> return (NumericExpr (PrefSub x)));
+      (lexeme primary >>= fun x -> token "++" >> return (NumericExpr (PostAdd x)));
+      (lexeme primary >>= fun x -> token "--" >> return (NumericExpr (PostSub x)));
       primary;
     ] input
-    and primary input = (create_obj <|> create_arr <|> this <|> super <|> field_access <|> arr_access <|> method_call <|> (parens expression) <|> atomaric) input
+    and primary input = (create_obj <|> create_arr <|> field_access <|> arr_access <|> this <|> super  <|> method_call <|> (parens expression) <|> atomaric) input
     and arr_access input = ((this <|> create_arr <|> super <|> method_call <|> identifier)
                               >>= fun arr_name -> many1 (brackets expression)
                               >>= fun index_list -> return (ArrayAccess (arr_name, index_list))) input
 
     and field_access input = (((this <|> super <|> (parens create_obj) <|> arr_access <|> method_call <|> identifier)
                               >>= fun name -> token "."
-                              >> lexeme expression
+                              >> choice [method_call; identifier]
                               >>= fun f_or_m -> return (FieldAccess (name, f_or_m))) input)
 
     and expr_sep_by_comma input = sep_by expression (token ",") input
