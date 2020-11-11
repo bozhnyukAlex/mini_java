@@ -102,12 +102,12 @@ module Expr = struct
       (token "-" >> lexeme primary >>= fun x -> return (NumericExpr (Sub (Const (JVInt 0), x))));
       primary;
     ] input
-    and primary input = (parens expression <|> field_access <|> arr_access <|> method_call  <|> atomaric) input
-    and arr_access input = ((method_call <|> identifier)
+    and primary input = (parens expression <|> this <|> super <|> field_access <|> arr_access <|> method_call  <|> atomaric) input
+    and arr_access input = ((this <|> super <|> method_call <|> identifier)
                               >>= fun arr_name -> many1 (brackets expression)
                               >>= fun index_list -> return (ArrayAccess (arr_name, index_list))) input
 
-    and field_access input = (((arr_access <|> method_call <|> identifier)
+    and field_access input = (((this <|> super <|> arr_access <|> method_call <|> identifier)
                               >>= fun name -> token "."
                               >> lexeme expression
                               >>= fun f_or_m -> return (FieldAccess (name, f_or_m))) input)
@@ -118,6 +118,7 @@ module Expr = struct
                               >> expr_sep_by_comma
                               >>= fun expr_list -> token ")"
                               >> return (CallMethod (m_name, expr_list))) input
+    
 
 
 end
