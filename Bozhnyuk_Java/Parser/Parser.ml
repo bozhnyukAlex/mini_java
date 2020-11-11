@@ -2,6 +2,7 @@ open Opal
 open ATD
 
 let parens = between (token "(") (token ")")
+let brackets = between (token "[") (token "]")
 let not_space c = match c with
   | ' ' -> true
   | _ -> false
@@ -45,10 +46,12 @@ module Expr = struct
     "int";
     "boolean";
     "for";
+    "null";
+
   ]
   let ident = (spaces >> letter <~> many alpha_num) => implode >>= function
-  | s when List.mem s reserved -> mzero
-  | s -> return s
+    | s when List.mem s reserved -> mzero
+    | s -> return s
 
   let addOp = token "+" >> return (fun x y -> NumericExpr(Add (x, y)))
   let subOp = token "-" >> return (fun x y -> NumericExpr(Sub (x, y)))
@@ -70,33 +73,39 @@ module Expr = struct
               <|> (integer => fun n -> Const (JVInt n))
               <|> (token "false" >> return (Const (JVBool true)))
               <|> (token "true" >> return (Const (JVBool true)))
-              <|> (token "false" >> return (Const (JVBool false)))  
+              <|> (token "false" >> return (Const (JVBool false)))
+              <|> null 
 
   
   
 
   let rec expression s = 
     choice [
-      null;
-      super;
-      this;
       numeric;
-      
     ] s
     and numeric input = (chainl1 and_expr orOP) input
     and and_expr input = (chainl1 test_expr andOP) input
     and test_expr input = (chainl1 add_expr (ltOp <|> mtOp <|> loetOp <|> moetOp <|> eqOp <|> neqOp)) input
     and add_expr input = (chainl1 mult_expr (addOp <|> subOp)) input
     and mult_expr input = (chainl1 unary_expr (mulOp <|> divOp <|> modOp)) input
-     and unary_expr input = choice [
+    and unary_expr input = choice [
       (token "!" >> lexeme primary >>= fun s -> return (LogicalExpr (Not s)));
       (token "-" >> lexeme primary >>= fun x -> return (NumericExpr (Sub (Const (JVInt 0), x))));
       primary;
     ] input 
-    and primary input = (parens expression <|> atomaric) input
+    and primary input = (parens expression <|> arr_access <|> field_access <|> atomaric) input
+    and arr_access input = ((ident => fun s -> Identifier s) >>= fun arr_name -> brackets expression
+                              >>= fun index -> return (ArrayAccess (arr_name, index))) input
+    and field_access input = ((ident => fun s -> Identifier s) 
+                              >>= fun name -> token "."
+                              >> lexeme expression
+                              >>= fun f_or_m -> return (Access (name, f_or_m))) input
+    
+                               
     
 
   
   
+
 
 end
