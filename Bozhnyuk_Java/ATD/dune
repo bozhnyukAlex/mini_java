@@ -1,3 +1,5 @@
 (library
  (name ATD)
- (inline_tests))
+ (inline_tests)
+ (preprocess
+  (pps ppx_expect)))
