@@ -72,10 +72,6 @@ module ATD = struct
     | Null
     | FieldAccess of jExpr * jExpr
     | ArrayAccess of jExpr * jExpr list
-
-
-  
-
     
   and jStat =
     | If of {cond : jExpr; thenStat : jStat list; elseStat : jStat list}

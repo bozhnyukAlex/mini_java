@@ -57,8 +57,8 @@ module Expr = struct
   let%test _ = parse constInt (LazyStream.of_string "100500") = Some (Const (JVInt 100500))
 
   let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500))
-
-  let constString = token "\"" >> (many (satisfy (fun ch -> ch <> '"'))) >>= fun 
+(* 
+  let constString = token "\"" >> (many (satisfy (fun ch -> ch <> '"'))) >>= fun  *)
 
   let ident =
     spaces >> letter <~> many alpha_num => implode >>= function
@@ -192,7 +192,7 @@ module Expr = struct
       input
 
   and arr_access input =
-    ( this <|> create_arr <|> super <|> method_call <|> identifier
+    ( this <|> parens (create_arr) <|> super <|> method_call <|> identifier
     >>= fun arr_name ->
       many1 (brackets expression) >>= fun index_list ->
       return (ArrayAccess (arr_name, index_list)) )
@@ -257,10 +257,13 @@ module Expr = struct
                                                                                                                   TestingExpr
                                                                                                                     (Equal (NumericExpr (Mod (Identifier "a", Const (JVInt 2))),
                                                                                                                       Const (JVInt 0))))),
-                                                                                                              TestingExpr
-                                                                                                                (More (NumericExpr (Div (Identifier "c", Const (JVInt 2))),
-                                                                                                                  Const (JVInt 3))))))
-                                                                                        
+                                                                                                              LogicalExpr
+                                                                                                                (Not
+                                                                                                                  (TestingExpr
+                                                                                                                    (More (NumericExpr (Div (Identifier "c", Const (JVInt 2))),
+                                                                                                                      Const (JVInt 3))))))))
+
+                                                                  
 
   let%test _ = parse expression (LazyStream.of_string "2 + 3 * (5 - 3)") = Some
                                                                               (NumericExpr
@@ -293,6 +296,10 @@ module Expr = struct
 
   let%test _ = parse expression (LazyStream.of_string "new int[4][5]") = Some (CreatingExpr (ArrayCreate (JInt, [Const (JVInt 4); Const (JVInt 5)])))
 
+  let%test _ = parse expression (LazyStream.of_string "new arr[2][3][i]") = Some (CreatingExpr 
+                                                                                    (ArrayCreate (JRef "arr", 
+                                                                                    [Const (JVInt 2); Const (JVInt 3); Identifier "i"])))  
+
   let%test _ = parse expression (LazyStream.of_string "new Car(2,4)") = Some (CreatingExpr (ClassCreate ("Car", [Const (JVInt 2); Const (JVInt 4)])))
 
   let%test _ = parse expression (LazyStream.of_string "get(new Sth(), new String[10])") = Some
@@ -313,11 +320,5 @@ module Expr = struct
                                                                                           (Add (FieldAccess (Identifier "obj", Identifier "f"),
                                                                                             NumericExpr
                                                                                               (PostAdd (NumericExpr (Add (Identifier "x", Identifier "y")))))))))
-
-
-                                                              
-
-  
-
-  (*либо [][][]...[] либо [expr][expr][expr]...[expr]*)
+                                                           
 end
