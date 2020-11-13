@@ -74,15 +74,16 @@ module ATD = struct
     | ArrayAccess of jExpr * jExpr list
     
   and jStat =
-    | If of {cond : jExpr; thenStat : jStat list; elseStat : jStat list}
-    | While of {cond : jExpr; body : jStat list}
-    | For of {varDec : jStat; cond : jExpr; afterBody : jStat list ; body : jStat list}
+    | If of jExpr * jStat * jStat (*cond * thenStat * elseStat*)
+    | While of jExpr * jStat list (* cond * body *)
+    | For of jStat * jExpr * jStat list * jStat list (* varDec * jExpr * afterBody * body *)
     | Break
     | Continue
-    | Return of {result : jExpr}
+    | Return of jExpr (* result *)
+    | StatBlock of jStat list
     | VarDec of {name : string; vType : jType; value : jValue option}  
     | Expression of jExpr 
-    | Throw of {exc : jException} 
+    | Throw of jException
 
 
   type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  

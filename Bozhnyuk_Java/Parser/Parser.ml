@@ -12,6 +12,8 @@ let reserved =
     "final";
     "static";
     "int";
+    "String";
+    "void";
     "boolean";
     "for";
     "null";
@@ -19,6 +21,10 @@ let reserved =
     "this";
     "super";
     "class";
+    "break";
+    "continue";
+    "extends";
+    "return";
   ]
 
 let parens = between (token "(") (token ")")
@@ -320,5 +326,106 @@ module Expr = struct
                                                                                           (Add (FieldAccess (Identifier "obj", Identifier "f"),
                                                                                             NumericExpr
                                                                                               (PostAdd (NumericExpr (Add (Identifier "x", Identifier "y")))))))))
-                                                           
+
+                                                   
+end
+
+
+module Stat = struct
+  open ATD
+  open Expr
+
+  let break_stat = token "break" >> token ";" >> return Break
+
+  let%test _ = parse break_stat (LazyStream.of_string "break;") = Some Break
+
+  let continue_stat = token "continue" >> token ";" >> return Continue
+
+  let%test _ = parse continue_stat (LazyStream.of_string "continue;") = Some Continue
+
+  let return_stat = token "return " >> expression >>= fun ret -> token ";" >> return (Return ret)
+
+  let%test _ = parse return_stat (LazyStream.of_string "return 0;") = Some (Return (Const (JVInt 0)))
+
+  let%test _ = parse return_stat (LazyStream.of_string "return a < b;") = Some (Return 
+                                                                                (TestingExpr 
+                                                                                  (Less (Identifier "a", Identifier "b"))))
+
+  let expr_stat = expression >>= fun expr -> token ";" >> return (Expression expr)
+
+  let%test _  = parse expr_stat (LazyStream.of_string "fork();") = Some (Expression (CallMethod (Identifier "fork", [])))
+
+  let%test _ = parse expr_stat (LazyStream.of_string "i++;") = Some (Expression (NumericExpr (PostAdd (Identifier "i"))))
+
+  let rec statement input = 
+    choice 
+      [
+        break_stat;
+        continue_stat;
+        return_stat;
+        if_stat;
+        expr_stat;
+        stat_block;
+      ] 
+      input
+  and if_stat input = 
+    (
+      token "if" >> 
+      token "("  >> 
+      expression >>= fun cond_expr -> 
+      token ")" >>
+      statement >>= fun then_stats ->
+      choice [
+        token "else" >> 
+        statement >>= fun else_stats ->
+        return (If (cond_expr, then_stats, else_stats))
+      ]
+    ) 
+    input
+
+    and stat_block input = (token "{" >> 
+                          sep_by statement spaces >>= fun block_stats ->
+                          token "}" >>
+                          return (StatBlock (block_stats))) 
+                          input
+
+    
+    
+    let%test _ = parse statement (LazyStream.of_string "if (a < b) {\n return b - a; \n } else { \n return a - b; \n }") = 
+                                                        Some
+                                                          (If (TestingExpr (Less (Identifier "a", Identifier "b")),
+                                                            StatBlock [Return (NumericExpr (Sub (Identifier "b", Identifier "a")))],
+                                                            StatBlock [Return (NumericExpr (Sub (Identifier "a", Identifier "b")))]))
+
+    let%test _ = parse statement (LazyStream.of_string "if (a % 2 == 0 && b < 2) {\n a++;\n b--;\n return a * b; \n } else if (!(b / 2 != 5)) { \n --b; \n  return (a + b)*3; \n } else continue;") = 
+                                                        Some
+                                                          (If
+                                                            (LogicalExpr
+                                                              (And
+                                                                (TestingExpr
+                                                                  (Equal (NumericExpr (Mod (Identifier "a", Const (JVInt 2))),
+                                                                    Const (JVInt 0))),
+                                                                TestingExpr (Less (Identifier "b", Const (JVInt 2))))),
+                                                            StatBlock
+                                                              [Expression (NumericExpr (PostAdd (Identifier "a")));
+                                                              Expression (NumericExpr (PostSub (Identifier "b")));
+                                                              Return (NumericExpr (Mult (Identifier "a", Identifier "b")))],
+                                                            If
+                                                              (LogicalExpr
+                                                                (Not
+                                                                  (TestingExpr
+                                                                    (NotEqual (NumericExpr (Div (Identifier "b", Const (JVInt 2))),
+                                                                      Const (JVInt 5))))),
+                                                              StatBlock
+                                                              [Expression (NumericExpr (PrefSub (Identifier "b")));
+                                                                Return
+                                                                (NumericExpr
+                                                                  (Mult (NumericExpr (Add (Identifier "a", Identifier "b")),
+                                                                    Const (JVInt 3))))],
+                                                              Continue)))
+  
+
+
+
+
 end
