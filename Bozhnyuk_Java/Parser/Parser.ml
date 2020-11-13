@@ -58,7 +58,7 @@ module Expr = struct
 
   let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500))
 
-
+  let constString = token "\"" >> (many (satisfy (fun ch -> ch <> '"'))) >>= fun 
 
   let ident =
     spaces >> letter <~> many alpha_num => implode >>= function
@@ -116,7 +116,7 @@ module Expr = struct
     choice
       [
         token "int"
-        >> choice [ many1 (token "[]") >> return (JArray JInt); return JInt ];
+        >> choice [ many1 (token "[]") >> return (JArray JInt); return JInt ]; (*для того, чтобы посчитать размерность массива, можно посчитать количество []*)
         token "String"
         >> choice
              [ many1 (token "[]") >> return (JArray JString); return JString ];
@@ -160,7 +160,7 @@ module Expr = struct
 
   and test_expr input =
     (chainl1 add_expr
-       (lt_op <|> mt_op <|> loet_op <|> moet_op <|> eq_op <|> neq_op))
+       (loet_op <|> moet_op <|> lt_op <|> mt_op <|>  eq_op <|> neq_op))
       input
 
   and add_expr input = (chainl1 mult_expr (add_op <|> sub_op)) input
@@ -245,6 +245,22 @@ module Expr = struct
                                                                                                       Const (JVInt 4))),
                                                                                                   Const (JVInt 5))))),
                                                                                           Const (JVInt 6))))
+
+  let%test _ = parse expression (LazyStream.of_string "(x + y <= 10) && (a % 2 == 0) || !(c / 2 > 3)") = Some
+                                                                                                          (LogicalExpr
+                                                                                                            (Or
+                                                                                                              (LogicalExpr
+                                                                                                                (And
+                                                                                                                  (TestingExpr
+                                                                                                                    (LessOrEqual (NumericExpr (Add (Identifier "x", Identifier "y")),
+                                                                                                                      Const (JVInt 10))),
+                                                                                                                  TestingExpr
+                                                                                                                    (Equal (NumericExpr (Mod (Identifier "a", Const (JVInt 2))),
+                                                                                                                      Const (JVInt 0))))),
+                                                                                                              TestingExpr
+                                                                                                                (More (NumericExpr (Div (Identifier "c", Const (JVInt 2))),
+                                                                                                                  Const (JVInt 3))))))
+                                                                                        
 
   let%test _ = parse expression (LazyStream.of_string "2 + 3 * (5 - 3)") = Some
                                                                               (NumericExpr
