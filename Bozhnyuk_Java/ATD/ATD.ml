@@ -30,7 +30,10 @@ module ATD = struct
 
   type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option} 
 
-  type jNumericExpr = 
+    
+
+
+  type jExpr =
     | Add of jExpr * jExpr
     | Sub of jExpr * jExpr
     | Mult of jExpr * jExpr
@@ -40,30 +43,17 @@ module ATD = struct
     | PrefSub of jExpr
     | PostAdd of jExpr
     | PostSub of jExpr 
-
-  and jLogicalExpr = 
     | And of jExpr * jExpr
     | Or of jExpr * jExpr
     | Not of jExpr 
-
-  and jTestExpr = 
     | Equal of jExpr * jExpr
     | NotEqual of jExpr * jExpr
     | Less of jExpr * jExpr
     | More of jExpr * jExpr
     | LessOrEqual of jExpr * jExpr
     | MoreOrEqual of jExpr * jExpr 
-
-  and jCreatingExpr = 
     | ClassCreate of string * jExpr list (*new clName(argList)*)
     | ArrayCreate of jType * jExpr list (*new arrType[cntExpr]*) 
-
-
-  and jExpr =
-    | NumericExpr of jNumericExpr
-    | LogicalExpr of jLogicalExpr
-    | TestingExpr of jTestExpr
-    | CreatingExpr of jCreatingExpr
     | CallMethod of jExpr * jExpr list  
     | Identifier of string 
     | Const of jValue
