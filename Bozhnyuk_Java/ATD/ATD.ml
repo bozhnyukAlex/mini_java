@@ -74,7 +74,7 @@ module ATD = struct
     | ArrayAccess of jExpr * jExpr list
     
   and jStat =
-    | If of jExpr * jStat * jStat (*cond * thenStat * elseStat*)
+    | If of jExpr * jStat * jStat option (*cond * thenStat * elseStat*)
     | While of jExpr * jStat (* cond * body *)
     | For of jStat * jExpr * jStat list * jStat list (* varDec * jExpr * afterBody * body *)
     | Break
