@@ -204,13 +204,20 @@ module Expr = struct
       return (ArrayAccess (arr_name, index_list)) )
       input
 
-  and field_access input =
+  (* and field_access input =
     ( this <|> super <|> parens create_obj <|> arr_access <|> method_call
       <|> identifier
     >>= fun name ->
-      token "." >> choice [ field_access; method_call; identifier ] >>= fun f_or_m ->
-      return (FieldAccess (name, f_or_m)) )
-      input
+      token "." >> choice [ field_access; method_call; identifier ] >>= fun field_or_method ->  (* NEED TO CHANGE *)
+      return (FieldAccess (name, field_or_method)) )
+      input *)
+
+  and field_access input = 
+      let memb_access_op = token "." >> return (fun x y -> FieldAccess (x, y))
+    in
+    chainl1 (this <|> super <|> parens create_obj <|> arr_access <|> method_call <|> identifier) memb_access_op input
+      
+      
 
   and expr_sep_by_comma input = sep_by expression (token ",") input
 
@@ -277,7 +284,7 @@ module Expr = struct
 
  
   let%test _ = parse expression (LazyStream.of_string "a.b.c") = Some 
-                                                      (FieldAccess (Identifier "a", FieldAccess (Identifier "b", Identifier "c")))
+                                                      (FieldAccess (FieldAccess (Identifier "a", Identifier "b"), Identifier "c"))
                                                           
   let%test _ = parse expression (LazyStream.of_string "call(1 + 2, 40)") = Some
                                                                   (CallMethod (Identifier "call",
