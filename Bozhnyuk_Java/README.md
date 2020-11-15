@@ -1,17 +1,17 @@
-### An implementaion of Lambda mini-language
+### An implementaion of Java-OOP mini-language
 
 This is a homework for functional programming course.
 
 License: LGPL
 
-Author: Vasy Pupkin, vasya@pupkin.com
+Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
 
 Features done:
 
-- 1
+- 1 
 - 2
 
 Features in progress:
 
-- 1
-- 2
+- 1 AST
+- 2 Parser
