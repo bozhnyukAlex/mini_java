@@ -62,18 +62,19 @@ module ATD = struct
     | Null
     | FieldAccess of jExpr * jExpr
     | ArrayAccess of jExpr * jExpr list
+    | Assign of jExpr * jExpr
     
   and jStat =
     | If of jExpr * jStat * jStat option (*cond * thenStat * elseStat*)
     | While of jExpr * jStat (* cond * body *)
-    | For of jStat * jExpr * jStat list * jStat list (* varDec * jExpr * afterBody * body *)
+    | For of jStat option * jExpr option * jExpr list * jStat(* varDec * jExpr * afterBody * body *)
     | Break
     | Continue
-    | Return of jExpr (* result *)
+    | Return of jExpr option (* result *)
     | StatBlock of jStat list
-    | VarDec of {name : string; vType : jType; value : jValue option}  
+    | VarDec of jModifier list * jType * ((jExpr * (jExpr option)) list)
     | Expression of jExpr 
-    | Throw of jException
+    | Throw of jExpr
 
 
   type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  
