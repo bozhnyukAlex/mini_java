@@ -50,27 +50,27 @@ module Expr = struct
 
   let null = token "null" >> return Null
 
-  (* let%test _ = parse null (LazyStream.of_string "null") = Some Null
+  let%test _ = parse null (LazyStream.of_string "null") = Some Null
 
-  let%test _ = parse null (LazyStream.of_string "   null") = Some Null *)
+  let%test _ = parse null (LazyStream.of_string "   null") = Some Null
 
   let super = token "super" >> return Super
 
-  (* let%test _ = parse super (LazyStream.of_string "super") = Some Super
+  let%test _ = parse super (LazyStream.of_string "super") = Some Super
 
-  let%test _ = parse super (LazyStream.of_string "   super") = Some Super *)
+  let%test _ = parse super (LazyStream.of_string "   super") = Some Super
 
   let this = token "this" >> return This
 
-  (* let%test _ = parse this (LazyStream.of_string "this") = Some This
+  let%test _ = parse this (LazyStream.of_string "this") = Some This
 
-  let%test _ = parse this (LazyStream.of_string "   this") = Some This *)
+  let%test _ = parse this (LazyStream.of_string "   this") = Some This
 
   let constInt = integer >>= fun n -> return (Const (JVInt n))
-(* 
+
   let%test _ = parse constInt (LazyStream.of_string "100500") = Some (Const (JVInt 100500))
 
-  let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500)) *)
+  let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500))
 
   let ident =
     spaces >> letter <~> many alpha_num => implode >>= function
@@ -79,11 +79,11 @@ module Expr = struct
 
   let identifier = ident => fun s -> Identifier s
 
-  (* let%test _ = parse identifier (LazyStream.of_string "IdentSample") = Some (Identifier "IdentSample")
+  let%test _ = parse identifier (LazyStream.of_string "IdentSample") = Some (Identifier "IdentSample")
 
   let%test _ = parse identifier (LazyStream.of_string "super") = None 
 
-  let%test _ = parse identifier (LazyStream.of_string "123bob") = None  *)
+  let%test _ = parse identifier (LazyStream.of_string "123bob") = None 
 
 
   let add_op = token "+" >> return (fun x y -> (Add (x, y)))
@@ -120,7 +120,7 @@ module Expr = struct
     <|> (token "false" >> return (Const (JVBool false)))
     <|> null
   
-  (* let%test _ = parse atomaric (LazyStream.of_string "true") = Some (Const (JVBool true)) *)
+  let%test _ = parse atomaric (LazyStream.of_string "true") = Some (Const (JVBool true))
   
   
 
@@ -140,12 +140,12 @@ module Expr = struct
               return (JRef class_name);
             ] );
       ]
-(* 
+
   let%test _ = parse type_spec_array (LazyStream.of_string "int") = Some (JInt)  
 
   let%test _ = parse type_spec_array (LazyStream.of_string "int[][][]") = Some (JArray JInt)
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "Car[][][]") = Some (JArray (JRef "Car")) *)
+  let%test _ = parse type_spec_array (LazyStream.of_string "Car[][][]") = Some (JArray (JRef "Car"))
 
   let type_spec =
     choice
@@ -155,12 +155,12 @@ module Expr = struct
         token "void" >> return JVoid;
         (ident >>= fun class_name -> return (JRef class_name));
       ]
-(* 
+
   let%test _ = parse type_spec (LazyStream.of_string "int") = Some JInt
 
   let%test _ = parse type_spec (LazyStream.of_string "   void") = Some JVoid
   
-   *)
+  
   
   
 
@@ -199,8 +199,8 @@ module Expr = struct
       input
 
   and primary input =
-    ( create_obj <|> create_arr <|> assign <|> field_access <|> arr_access <|> this
-    <|> super <|> method_call <|> parens expression <|> atomaric )
+    ( create_obj <|> create_arr <|> assign <|> field_access <|> arr_access <|> method_call <|> this
+    <|> super <|> parens expression <|> atomaric )
       input
 
   
@@ -227,7 +227,7 @@ module Expr = struct
   and expr_sep_by_comma input = sep_by expression (token ",") input
 
   and method_call input =
-    ( identifier >>= fun m_name ->
+    ( (identifier <|> this <|> super) >>= fun m_name ->
       token "(" >> expr_sep_by_comma >>= fun expr_list ->
       token ")" >> return (CallMethod (m_name, expr_list)) )
       input
@@ -257,7 +257,7 @@ module Expr = struct
           expression >>= fun right -> 
           return (Assign (left, right))
           ) input
-(* 
+
 
   let%test _ = parse expression (LazyStream.of_string "a = 2") = Some (Assign (Identifier "a", Const (JVInt 2)))
 
@@ -361,7 +361,7 @@ module Expr = struct
   let%test _ = parse expression (LazyStream.of_string "--(obj.f + (x + y)++)") = Some
                                                                       (PrefSub
                                                                         (Add (FieldAccess (Identifier "obj", Identifier "f"),
-                                                                          PostAdd (Add (Identifier "x", Identifier "y"))))) *)
+                                                                          PostAdd (Add (Identifier "x", Identifier "y")))))
 
                                                    
 end
@@ -373,11 +373,11 @@ module Stat = struct
 
   let break_stat = token "break" >> token ";" >> return Break
 
-  (* let%test _ = parse break_stat (LazyStream.of_string "break;") = Some Break *)
+  let%test _ = parse break_stat (LazyStream.of_string "break;") = Some Break
 
   let continue_stat = token "continue" >> token ";" >> return Continue
 
-  (* let%test _ = parse continue_stat (LazyStream.of_string "continue;") = Some Continue *)
+  let%test _ = parse continue_stat (LazyStream.of_string "continue;") = Some Continue
 
   let return_stat = token "return " >> choice 
     [
@@ -385,18 +385,18 @@ module Stat = struct
       (token ";" >> return (Return None))
     ] 
                    
-(* 
+
 
   let%test _ = parse return_stat (LazyStream.of_string "return 0;") = Some (Return (Some (Const (JVInt 0))))
 
   let%test _ = parse return_stat (LazyStream.of_string "return a < b;") = Some (Return (Some
-                                                                                  (Less (Identifier "a", Identifier "b")))) *)
+                                                                                  (Less (Identifier "a", Identifier "b"))))
 
   let expr_stat = expression >>= fun expr -> token ";" >> return (Expression expr)
 
-  (* let%test _  = parse expr_stat (LazyStream.of_string "fork();") = Some (Expression (CallMethod (Identifier "fork", [])))
+  let%test _  = parse expr_stat (LazyStream.of_string "fork();") = Some (Expression (CallMethod (Identifier "fork", [])))
 
-  let%test _ = parse expr_stat (LazyStream.of_string "i++;") = Some (Expression (PostAdd (Identifier "i"))) *)
+  let%test _ = parse expr_stat (LazyStream.of_string "i++;") = Some (Expression (PostAdd (Identifier "i")))
 
   let rec statement input = 
     choice 
@@ -485,7 +485,7 @@ module Stat = struct
       input
     
     
-    (* let%test _ = parse statement (LazyStream.of_string "public int a = 0, b, c, d = 5;") = Some
+    let%test _ = parse statement (LazyStream.of_string "public int a = 0, b, c, d = 5;") = Some
                                                               (VarDec ([Public], JInt,
                                                                 [(Identifier "a", Some (Const (JVInt 0))); (Identifier "b", None);
                                                                   (Identifier "c", None); (Identifier "d", Some (Const (JVInt 5)))]))
@@ -560,7 +560,7 @@ module Stat = struct
     
     let%test _ = parse statement (LazyStream.of_string "if (somethingWrong()) throw new Exception();") = Some
                                                                             (If (CallMethod (Identifier "somethingWrong", []),
-                                                                              Throw (ClassCreate ("Exception", [])), None))                                                *)
+                                                                              Throw (ClassCreate ("Exception", [])), None))                                               
 end
 
 
@@ -572,16 +572,16 @@ let method_declaration input =
     in
       many modifier >>= fun modifiers ->
       Expr.type_spec_array >>= fun m_type ->
-      Expr.identifier >>= fun class_name -> 
+      Expr.identifier >>= fun m_name -> 
       token "(" >>
       sep_by param (token ",") >>= fun param_list ->
       token ")" >>
       choice 
         [
           (Stat.stat_block >>= fun st_block ->
-          return (ATD.Method (modifiers, m_type, class_name, param_list, Some st_block)));
+          return (ATD.Method (modifiers, m_type, m_name, param_list, Some st_block)));
           (token ";" >> 
-          return (ATD.Method (modifiers, m_type, class_name, param_list, None)));
+          return (ATD.Method (modifiers, m_type, m_name, param_list, None)));
         ] 
   ) 
   input
@@ -605,4 +605,228 @@ let%test _ = parse method_declaration (LazyStream.of_string "public int arraySum
                                                                                       ArrayAccess (Identifier "a", [Identifier "i"]))))]);
                                                                               Return (Some (Identifier "sum"))])))
 
+let constructor_declaration input = 
+  (
+    let param = Expr.type_spec_array >>= fun type_par -> 
+      Expr.identifier >>= fun id_par ->
+      return (type_par, id_par)
+    in
+      many modifier >>= fun modifiers ->
+      Expr.identifier >>= fun c_name -> 
+      token "(" >>
+      sep_by param (token ",") >>= fun param_list ->
+      token ")" >>
+      Stat.stat_block >>= fun c_block ->
+      return (ATD.Constructor (modifiers, c_name, param_list, c_block))
+  )
+  input
 
+  let%test _ = parse constructor_declaration (LazyStream.of_string "public Car(int speed, int[] wheels) {this.speed = speed; this.wheels = wheels;}") = Some
+                                                                  (Constructor ([Public], Identifier "Car",
+                                                                    [(JInt, Identifier "speed"); (JArray JInt, Identifier "wheels")],
+                                                                    StatBlock
+                                                                      [Expression
+                                                                        (Assign (FieldAccess (This, Identifier "speed"), Identifier "speed"));
+                                                                      Expression
+                                                                        (Assign (FieldAccess (This, Identifier "wheels"), Identifier "wheels"))]))
+
+let field_declaration input = 
+  (
+    Stat.var_declaration >>= fun var_dec ->
+    return (ATD.VarField (var_dec))
+  )
+  input
+
+let%test _ = parse field_declaration (LazyStream.of_string "public int wheel;") = Some (VarField (VarDec ([Public], JInt, [(Identifier "wheel", None)])))
+
+let class_elem = field_declaration <|> constructor_declaration <|> method_declaration
+
+let class_declaration input = 
+  (
+    many modifier >>= fun modifiers -> 
+    token "class" >>
+    Expr.identifier >>= fun class_name ->
+    choice 
+      [
+        (token "extends" >>
+        Expr.identifier >>= fun parent_name ->
+        return (Some parent_name));
+        (return (None));
+      ] >>= fun extension -> 
+    token "{" >>
+    sep_by class_elem spaces >>= fun class_elements ->
+    token "}" >>
+    return (ATD.Class (modifiers, class_name, extension, class_elements))
+  )
+  input
+
+let parser = many class_declaration
+
+(*
+BIG TEST
+
+public class Main
+{
+	public static void main(String[] args) {
+		Person p = new Person(80, 45);
+		System.out.println(p.getWeight());
+		
+		Child ch = new Child(66, 20);
+		ch.setCash(50);
+		ch.giveEvenNumbers100();
+	    
+	}
+}
+
+class Person {
+    public int weight;
+    public int age;
+    
+    public Person(int w, int a) {
+        this.weight = w;
+        this.age = a;
+    }
+    
+    
+    
+    public int getWeight() {
+        return weight;
+    }
+    
+    public int getAge() {
+        return age;
+    }
+    
+    public void setWeight(int w) {
+        this.weight = w;
+    }
+    public void setAge(int a) {
+        this.age = a;
+    }
+    
+}
+
+class Child extends Person{
+    public int cash;
+    
+    public Child(int w, int a) {
+        super(w,a);
+        cash = 0;
+    }
+    
+    public int getCash() {
+        return cash;
+    }
+    
+    public void setCash(int c) {
+        this.cash = c;
+    }
+    
+    public Child (int w, int a, int c) {
+        super(w, a);
+        cash = c;
+    }
+    
+    public void giveEvenNumbers100() {
+        for (int i = 0; i < 100; i++) {
+            if (i % 2 == 0 && !(i % 2 == 1)) {
+                System.out.println(i);
+            }
+            else {
+                continue;
+            }
+        }
+    }
+    
+}
+
+*)
+
+let%test _ = parse parser (LazyStream.of_string "public class Main{public static void main(String[] args) {Person p = new Person(80, 45);System.out.println(p.getWeight());Child ch = new Child(66, 20);ch.setCash(50);ch.giveEvenNumbers100();    }}class Person {    public int weight;    public int age;        public Person(int w, int a) {        this.weight = w;        this.age = a;    }            public int getWeight() {        return weight;    }        public int getAge() {        return age;    }        public void setWeight(int w) {        this.weight = w;    }    public void setAge(int a) {        this.age = a;    }    }class Child extends Person{    public int cash;        public Child(int w, int a) {        super(w,a);        cash = 0;    }        public int getCash() {        return cash;    }        public void setCash(int c) {        this.cash = c;    }        public Child (int w, int a, int c) {        super(w, a);        cash = c;    }        public void giveEvenNumbers100() {for (int i = 0; i < 100; i++) {    if (i % 2 == 0 && !(i % 2 == 1)) {System.out.println(i);    }    else {continue;    }}    }            }") = 
+      Some
+ [Class ([Public], Identifier "Main", None,
+   [Method ([Public; Static], JVoid, Identifier "main",
+     [(JArray JString, Identifier "args")],
+     Some
+      (StatBlock
+        [VarDec ([], JRef "Person",
+          [(Identifier "p",
+            Some (ClassCreate ("Person", [Const (JVInt 80); Const (JVInt 45)])))]);
+         Expression
+          (FieldAccess (FieldAccess (Identifier "System", Identifier "out"),
+            CallMethod (Identifier "println",
+             [FieldAccess (Identifier "p",
+               CallMethod (Identifier "getWeight", []))])));
+         VarDec ([], JRef "Child",
+          [(Identifier "ch",
+            Some (ClassCreate ("Child", [Const (JVInt 66); Const (JVInt 20)])))]);
+         Expression
+          (FieldAccess (Identifier "ch",
+            CallMethod (Identifier "setCash", [Const (JVInt 50)])));
+         Expression
+          (FieldAccess (Identifier "ch",
+            CallMethod (Identifier "giveEvenNumbers100", [])))]))]);
+            
+  Class ([], Identifier "Person", None,
+   [VarField (VarDec ([Public], JInt, [(Identifier "weight", None)]));
+    VarField (VarDec ([Public], JInt, [(Identifier "age", None)]));
+    Constructor ([Public], Identifier "Person",
+     [(JInt, Identifier "w"); (JInt, Identifier "a")],
+     StatBlock
+      [Expression
+        (Assign (FieldAccess (This, Identifier "weight"), Identifier "w"));
+       Expression
+        (Assign (FieldAccess (This, Identifier "age"), Identifier "a"))]);
+    Method ([Public], JInt, Identifier "getWeight", [],
+     Some (StatBlock [Return (Some (Identifier "weight"))]));
+    Method ([Public], JInt, Identifier "getAge", [],
+     Some (StatBlock [Return (Some (Identifier "age"))]));
+    Method ([Public], JVoid, Identifier "setWeight", [(JInt, Identifier "w")],
+     Some
+      (StatBlock
+        [Expression
+          (Assign (FieldAccess (This, Identifier "weight"), Identifier "w"))]));
+    Method ([Public], JVoid, Identifier "setAge", [(JInt, Identifier "a")],
+     Some
+      (StatBlock
+        [Expression
+          (Assign (FieldAccess (This, Identifier "age"), Identifier "a"))]))]);
+
+  Class ([], Identifier "Child", Some (Identifier "Person"),
+   [VarField (VarDec ([Public], JInt, [(Identifier "cash", None)]));
+    Constructor ([Public], Identifier "Child",
+     [(JInt, Identifier "w"); (JInt, Identifier "a")],
+     StatBlock
+      [Expression (CallMethod (Super, [Identifier "w"; Identifier "a"]));
+       Expression (Assign (Identifier "cash", Const (JVInt 0)))]);
+    Method ([Public], JInt, Identifier "getCash", [],
+     Some (StatBlock [Return (Some (Identifier "cash"))]));
+    Method ([Public], JVoid, Identifier "setCash", [(JInt, Identifier "c")],
+     Some
+      (StatBlock
+        [Expression
+          (Assign (FieldAccess (This, Identifier "cash"), Identifier "c"))]));
+    Constructor ([Public], Identifier "Child",
+     [(JInt, Identifier "w"); (JInt, Identifier "a"); (JInt, Identifier "c")],
+     StatBlock
+      [Expression (CallMethod (Super, [Identifier "w"; Identifier "a"]));
+       Expression (Assign (Identifier "cash", Identifier "c"))]);
+    Method ([Public], JVoid, Identifier "giveEvenNumbers100", [],
+     Some
+      (StatBlock
+        [For
+          (Some (VarDec ([], JInt, [(Identifier "i", Some (Const (JVInt 0)))])),
+          Some (Less (Identifier "i", Const (JVInt 100))),
+          [PostAdd (Identifier "i")],
+          StatBlock
+           [If
+             (And
+               (Equal (Mod (Identifier "i", Const (JVInt 2)), Const (JVInt 0)),
+               Not
+                (Equal (Mod (Identifier "i", Const (JVInt 2)), Const (JVInt 1)))),
+             StatBlock
+              [Expression
+                (FieldAccess
+                  (FieldAccess (Identifier "System", Identifier "out"),
+                  CallMethod (Identifier "println", [Identifier "i"])))],
+             Some (StatBlock [Continue]))])]))])]        

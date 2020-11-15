@@ -26,13 +26,11 @@ module ATD = struct
     | JVRef
     | JVObject
 
-  type jException = {jName: jType ; message : string} 
+  (* type jException = {jName: jType ; message : string} 
 
-  type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option} 
+  type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option}  *)
 
     
-
-
   type jExpr =
     | Add of jExpr * jExpr
     | Sub of jExpr * jExpr
@@ -79,13 +77,13 @@ module ATD = struct
   and jField = 
     | Method of jModifier list * jType * jExpr * ((jType * jExpr) list) (*List of pairs (type, identificator)*) * jStat option(*Statement block*)
     | VarField of jStat
-    | Constructor
+    | Constructor of jModifier list * jExpr * ((jType * jExpr) list) * jStat
   
-  and jClassDec = Class of jModifier list * jExpr (*Identifier*) * jExpr option (*Parent class_name*) * jField list (* class body *)
+  and jClassDec = Class of jModifier list * jExpr (*Identifier class name*) * jExpr option (*Parent class_name*) * jField list (* class body *)
 
-  type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  
+  (* type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  
 
-  type jClass = {cModifiers: jModifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option}  
+  type jClass = {cModifiers: jModifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option}   *)
 
 end
 
