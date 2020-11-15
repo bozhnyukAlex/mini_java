@@ -63,8 +63,6 @@ module Expr = struct
   let%test _ = parse constInt (LazyStream.of_string "100500") = Some (Const (JVInt 100500))
 
   let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500))
-(* 
-  let constString = token "\"" >> (many (satisfy (fun ch -> ch <> '"'))) >>= fun  *)
 
   let ident =
     spaces >> letter <~> many alpha_num => implode >>= function
@@ -75,7 +73,7 @@ module Expr = struct
 
   let%test _ = parse identifier (LazyStream.of_string "IdentSample") = Some (Identifier "IdentSample")
 
-  let%test _ = parse identifier (LazyStream.of_string "super") = None (*ключевые слова пропускать не должен*)
+  let%test _ = parse identifier (LazyStream.of_string "super") = None 
 
   let%test _ = parse identifier (LazyStream.of_string "123bob") = None 
 
@@ -203,21 +201,18 @@ module Expr = struct
       many1 (brackets expression) >>= fun index_list ->
       return (ArrayAccess (arr_name, index_list)) )
       input
-
-  (* and field_access input =
-    ( this <|> super <|> parens create_obj <|> arr_access <|> method_call
-      <|> identifier
-    >>= fun name ->
-      token "." >> choice [ field_access; method_call; identifier ] >>= fun field_or_method ->  (* NEED TO CHANGE *)
-      return (FieldAccess (name, field_or_method)) )
-      input *)
-
+  
   and field_access input = 
-      let memb_access_op = token "." >> return (fun x y -> FieldAccess (x, y))
+    let fold_arr_field acc el = match el with
+      | ArrayAccess (ident, i) -> ArrayAccess (FieldAccess (acc, ident), i)
+      | other -> FieldAccess (acc, other) 
     in
-    chainl1 (this <|> super <|> parens create_obj <|> arr_access <|> method_call <|> identifier) memb_access_op input
-      
-      
+      let f_parse = ( this <|> super <|> parens create_obj <|> arr_access <|> method_call <|> identifier)
+      in
+        (f_parse >>= fun head ->
+          many1 (token "." >> f_parse) => fun tl ->
+            List.fold_left fold_arr_field head tl) input
+          
 
   and expr_sep_by_comma input = sep_by expression (token ",") input
 
@@ -243,6 +238,10 @@ module Expr = struct
             return  (ArrayCreate (ts, expr_list)) );
         ] )
       input
+
+
+
+
 
       
   let%test _ = parse expression (LazyStream.of_string "1 + 2") = Some (Add (Const (JVInt 1), Const (JVInt 2)))
@@ -282,7 +281,32 @@ module Expr = struct
                                                                           (FieldAccess (ArrayAccess (Identifier "arr", [Identifier "i"]),
                                                                             CallMethod (Identifier "get", [])))
 
- 
+  let%test _ = parse expression (LazyStream.of_string "a[i].b[j]") = Some
+                                                    (ArrayAccess
+                                                      (FieldAccess (ArrayAccess (Identifier "a", [Identifier "i"]),
+                                                        Identifier "b"),
+                                                      [Identifier "j"]))
+  let%test _ = parse expression (LazyStream.of_string "this.getArray()[i]") = Some
+                                              (ArrayAccess (FieldAccess (This, CallMethod (Identifier "getArray", [])),
+                                                [Identifier "i"]))
+
+  let%test _ =  parse expression (LazyStream.of_string "this.getCar().wheels[2].rad") = Some
+                                                (FieldAccess
+                                                  (ArrayAccess
+                                                    (FieldAccess (FieldAccess (This, CallMethod (Identifier "getCar", [])),
+                                                      Identifier "wheels"),
+                                                    [Const (JVInt 2)]),
+                                                  Identifier "rad"))
+  
+  let%test _ = parse expression (LazyStream.of_string "a.b[i].c[j]") = Some
+                                                  (ArrayAccess
+                                                    (FieldAccess
+                                                      (ArrayAccess (FieldAccess (Identifier "a", Identifier "b"),
+                                                        [Identifier "i"]),
+                                                      Identifier "c"),
+                                                    [Identifier "j"]))
+
+
   let%test _ = parse expression (LazyStream.of_string "a.b.c") = Some 
                                                       (FieldAccess (FieldAccess (Identifier "a", Identifier "b"), Identifier "c"))
                                                           
