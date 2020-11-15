@@ -50,27 +50,27 @@ module Expr = struct
 
   let null = token "null" >> return Null
 
-  let%test _ = parse null (LazyStream.of_string "null") = Some Null
+  (* let%test _ = parse null (LazyStream.of_string "null") = Some Null
 
-  let%test _ = parse null (LazyStream.of_string "   null") = Some Null
+  let%test _ = parse null (LazyStream.of_string "   null") = Some Null *)
 
   let super = token "super" >> return Super
 
-  let%test _ = parse super (LazyStream.of_string "super") = Some Super
+  (* let%test _ = parse super (LazyStream.of_string "super") = Some Super
 
-  let%test _ = parse super (LazyStream.of_string "   super") = Some Super
+  let%test _ = parse super (LazyStream.of_string "   super") = Some Super *)
 
   let this = token "this" >> return This
 
-  let%test _ = parse this (LazyStream.of_string "this") = Some This
+  (* let%test _ = parse this (LazyStream.of_string "this") = Some This
 
-  let%test _ = parse this (LazyStream.of_string "   this") = Some This
+  let%test _ = parse this (LazyStream.of_string "   this") = Some This *)
 
   let constInt = integer >>= fun n -> return (Const (JVInt n))
-
+(* 
   let%test _ = parse constInt (LazyStream.of_string "100500") = Some (Const (JVInt 100500))
 
-  let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500))
+  let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500)) *)
 
   let ident =
     spaces >> letter <~> many alpha_num => implode >>= function
@@ -79,11 +79,11 @@ module Expr = struct
 
   let identifier = ident => fun s -> Identifier s
 
-  let%test _ = parse identifier (LazyStream.of_string "IdentSample") = Some (Identifier "IdentSample")
+  (* let%test _ = parse identifier (LazyStream.of_string "IdentSample") = Some (Identifier "IdentSample")
 
   let%test _ = parse identifier (LazyStream.of_string "super") = None 
 
-  let%test _ = parse identifier (LazyStream.of_string "123bob") = None 
+  let%test _ = parse identifier (LazyStream.of_string "123bob") = None  *)
 
 
   let add_op = token "+" >> return (fun x y -> (Add (x, y)))
@@ -120,7 +120,7 @@ module Expr = struct
     <|> (token "false" >> return (Const (JVBool false)))
     <|> null
   
-  let%test _ = parse atomaric (LazyStream.of_string "true") = Some (Const (JVBool true))
+  (* let%test _ = parse atomaric (LazyStream.of_string "true") = Some (Const (JVBool true)) *)
   
   
 
@@ -140,12 +140,12 @@ module Expr = struct
               return (JRef class_name);
             ] );
       ]
-
+(* 
   let%test _ = parse type_spec_array (LazyStream.of_string "int") = Some (JInt)  
 
   let%test _ = parse type_spec_array (LazyStream.of_string "int[][][]") = Some (JArray JInt)
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "Car[][][]") = Some (JArray (JRef "Car"))
+  let%test _ = parse type_spec_array (LazyStream.of_string "Car[][][]") = Some (JArray (JRef "Car")) *)
 
   let type_spec =
     choice
@@ -155,12 +155,12 @@ module Expr = struct
         token "void" >> return JVoid;
         (ident >>= fun class_name -> return (JRef class_name));
       ]
-
+(* 
   let%test _ = parse type_spec (LazyStream.of_string "int") = Some JInt
 
   let%test _ = parse type_spec (LazyStream.of_string "   void") = Some JVoid
   
-  
+   *)
   
   
 
@@ -257,7 +257,7 @@ module Expr = struct
           expression >>= fun right -> 
           return (Assign (left, right))
           ) input
-
+(* 
 
   let%test _ = parse expression (LazyStream.of_string "a = 2") = Some (Assign (Identifier "a", Const (JVInt 2)))
 
@@ -361,7 +361,7 @@ module Expr = struct
   let%test _ = parse expression (LazyStream.of_string "--(obj.f + (x + y)++)") = Some
                                                                       (PrefSub
                                                                         (Add (FieldAccess (Identifier "obj", Identifier "f"),
-                                                                          PostAdd (Add (Identifier "x", Identifier "y")))))
+                                                                          PostAdd (Add (Identifier "x", Identifier "y"))))) *)
 
                                                    
 end
@@ -373,11 +373,11 @@ module Stat = struct
 
   let break_stat = token "break" >> token ";" >> return Break
 
-  let%test _ = parse break_stat (LazyStream.of_string "break;") = Some Break
+  (* let%test _ = parse break_stat (LazyStream.of_string "break;") = Some Break *)
 
   let continue_stat = token "continue" >> token ";" >> return Continue
 
-  let%test _ = parse continue_stat (LazyStream.of_string "continue;") = Some Continue
+  (* let%test _ = parse continue_stat (LazyStream.of_string "continue;") = Some Continue *)
 
   let return_stat = token "return " >> choice 
     [
@@ -385,18 +385,18 @@ module Stat = struct
       (token ";" >> return (Return None))
     ] 
                    
-
+(* 
 
   let%test _ = parse return_stat (LazyStream.of_string "return 0;") = Some (Return (Some (Const (JVInt 0))))
 
   let%test _ = parse return_stat (LazyStream.of_string "return a < b;") = Some (Return (Some
-                                                                                  (Less (Identifier "a", Identifier "b"))))
+                                                                                  (Less (Identifier "a", Identifier "b")))) *)
 
   let expr_stat = expression >>= fun expr -> token ";" >> return (Expression expr)
 
-  let%test _  = parse expr_stat (LazyStream.of_string "fork();") = Some (Expression (CallMethod (Identifier "fork", [])))
+  (* let%test _  = parse expr_stat (LazyStream.of_string "fork();") = Some (Expression (CallMethod (Identifier "fork", [])))
 
-  let%test _ = parse expr_stat (LazyStream.of_string "i++;") = Some (Expression (PostAdd (Identifier "i")))
+  let%test _ = parse expr_stat (LazyStream.of_string "i++;") = Some (Expression (PostAdd (Identifier "i"))) *)
 
   let rec statement input = 
     choice 
@@ -485,7 +485,7 @@ module Stat = struct
       input
     
     
-    let%test _ = parse statement (LazyStream.of_string "public int a = 0, b, c, d = 5;") = Some
+    (* let%test _ = parse statement (LazyStream.of_string "public int a = 0, b, c, d = 5;") = Some
                                                               (VarDec ([Public], JInt,
                                                                 [(Identifier "a", Some (Const (JVInt 0))); (Identifier "b", None);
                                                                   (Identifier "c", None); (Identifier "d", Some (Const (JVInt 5)))]))
@@ -560,7 +560,49 @@ module Stat = struct
     
     let%test _ = parse statement (LazyStream.of_string "if (somethingWrong()) throw new Exception();") = Some
                                                                             (If (CallMethod (Identifier "somethingWrong", []),
-                                                                              Throw (ClassCreate ("Exception", [])), None))
-
-                                                  
+                                                                              Throw (ClassCreate ("Exception", [])), None))                                                *)
 end
+
+
+let method_declaration input = 
+  (
+    let param = Expr.type_spec_array >>= fun type_par -> 
+      Expr.identifier >>= fun id_par ->
+      return (type_par, id_par)
+    in
+      many modifier >>= fun modifiers ->
+      Expr.type_spec_array >>= fun m_type ->
+      Expr.identifier >>= fun class_name -> 
+      token "(" >>
+      sep_by param (token ",") >>= fun param_list ->
+      token ")" >>
+      choice 
+        [
+          (Stat.stat_block >>= fun st_block ->
+          return (ATD.Method (modifiers, m_type, class_name, param_list, Some st_block)));
+          (token ";" >> 
+          return (ATD.Method (modifiers, m_type, class_name, param_list, None)));
+        ] 
+  ) 
+  input
+
+let%test _ = parse method_declaration (LazyStream.of_string "public int arraySum (int[] a) { int sum = 0; for (int i = 0; i < a.length(); i++) {sum = sum + a[i];} return sum; }") = Some
+                                                                        (Method ([Public], JInt, Identifier "arraySum",
+                                                                          [(JArray JInt, Identifier "a")],
+                                                                          Some
+                                                                            (StatBlock
+                                                                              [VarDec ([], JInt, [(Identifier "sum", Some (Const (JVInt 0)))]);
+                                                                              For
+                                                                                (Some (VarDec ([], JInt, [(Identifier "i", Some (Const (JVInt 0)))])),
+                                                                                Some
+                                                                                (Less (Identifier "i",
+                                                                                  FieldAccess (Identifier "a", CallMethod (Identifier "length", [])))),
+                                                                                [PostAdd (Identifier "i")],
+                                                                                StatBlock
+                                                                                [Expression
+                                                                                  (Assign (Identifier "sum",
+                                                                                    Add (Identifier "sum",
+                                                                                      ArrayAccess (Identifier "a", [Identifier "i"]))))]);
+                                                                              Return (Some (Identifier "sum"))])))
+
+

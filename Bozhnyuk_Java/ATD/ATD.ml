@@ -76,6 +76,12 @@ module ATD = struct
     | Expression of jExpr 
     | Throw of jExpr
 
+  and jField = 
+    | Method of jModifier list * jType * jExpr * ((jType * jExpr) list) (*List of pairs (type, identificator)*) * jStat option(*Statement block*)
+    | VarField of jStat
+    | Constructor
+  
+  and jClassDec = Class of jModifier list * jExpr (*Identifier*) * jExpr option (*Parent class_name*) * jField list (* class body *)
 
   type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  
 
