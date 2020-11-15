@@ -11,7 +11,7 @@ module ATD = struct
     | JVoid
     | JRef of string
     | JString
-    | JArray of jType
+    | JArray of jType * int
     | JObject 
 
 

@@ -128,24 +128,34 @@ module Expr = struct
     choice
       [
         token "int"
-        >> choice [ many1 (token "[]") >> return (JArray JInt); return JInt ]; (*для того, чтобы посчитать размерность массива, можно посчитать количество []*)
+        >> choice 
+          [ 
+            (many1 (token "[]") >>= fun br_l -> 
+              return (JArray (JInt, List.length br_l)));
+            return JInt; 
+          ]; (*для того, чтобы посчитать размерность массива, можно посчитать количество []*)
         token "String"
         >> choice
-             [ many1 (token "[]") >> return (JArray JString); return JString ];
+            [ 
+              (many1 (token "[]") >>= fun br_l -> 
+                return (JArray (JString, List.length br_l))); 
+              return JString 
+            ];
         token "void" >> return JVoid;
         ( ident >>= fun class_name ->
           choice
             [
-              many1 (token "[]") >> return (JArray (JRef class_name));
+              (many1 (token "[]") >>= fun br_l -> 
+                return (JArray (JRef class_name, List.length br_l)));
               return (JRef class_name);
             ] );
       ]
 
   let%test _ = parse type_spec_array (LazyStream.of_string "int") = Some (JInt)  
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "int[][][]") = Some (JArray JInt)
+  let%test _ = parse type_spec_array (LazyStream.of_string "int[][][]") = Some (JArray (JInt, 3))
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "Car[][][]") = Some (JArray (JRef "Car"))
+  let%test _ = parse type_spec_array (LazyStream.of_string "Car[][][]") = Some (JArray (JRef "Car", 3))
 
   let type_spec =
     choice
@@ -491,7 +501,7 @@ module Stat = struct
                                                                   (Identifier "c", None); (Identifier "d", Some (Const (JVInt 5)))]))
     
     let%test _ = parse statement (LazyStream.of_string "public int[] a = new int[6];") = Some
-                                                              (VarDec ([Public], JArray JInt,
+                                                              (VarDec ([Public], JArray (JInt, 1),
                                                                 [(Identifier "a", Some (ArrayCreate (JInt, [Const (JVInt 6)])))])) 
 
     let%test _ = parse statement (LazyStream.of_string "public static int a = 0, b = 1, c = 2;") = Some
@@ -588,7 +598,7 @@ let method_declaration input =
 
 let%test _ = parse method_declaration (LazyStream.of_string "public int arraySum (int[] a) { int sum = 0; for (int i = 0; i < a.length(); i++) {sum = sum + a[i];} return sum; }") = Some
                                                                         (Method ([Public], JInt, Identifier "arraySum",
-                                                                          [(JArray JInt, Identifier "a")],
+                                                                          [(JArray (JInt, 1), Identifier "a")],
                                                                           Some
                                                                             (StatBlock
                                                                               [VarDec ([], JInt, [(Identifier "sum", Some (Const (JVInt 0)))]);
@@ -623,7 +633,7 @@ let constructor_declaration input =
 
   let%test _ = parse constructor_declaration (LazyStream.of_string "public Car(int speed, int[] wheels) {this.speed = speed; this.wheels = wheels;}") = Some
                                                                   (Constructor ([Public], Identifier "Car",
-                                                                    [(JInt, Identifier "speed"); (JArray JInt, Identifier "wheels")],
+                                                                    [(JInt, Identifier "speed"); (JArray (JInt, 1), Identifier "wheels")],
                                                                     StatBlock
                                                                       [Expression
                                                                         (Assign (FieldAccess (This, Identifier "speed"), Identifier "speed"));
@@ -746,7 +756,7 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
       Some
  [Class ([Public], Identifier "Main", None,
    [Method ([Public; Static], JVoid, Identifier "main",
-     [(JArray JString, Identifier "args")],
+     [(JArray (JString, 1), Identifier "args")],
      Some
       (StatBlock
         [VarDec ([], JRef "Person",
