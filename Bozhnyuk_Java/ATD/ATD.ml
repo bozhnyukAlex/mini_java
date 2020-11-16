@@ -9,9 +9,9 @@ module ATD = struct
   type type_t =
     | JInt
     | JVoid
-    | JRef of string
+    | JClassName of string
     | JString
-    | JArray of type_t * int
+    | JArray of type_t
     | JObject 
 
 
@@ -23,7 +23,7 @@ module ATD = struct
     | JVArray of value list
     | JVVoid
     | JVString of string
-    | JVRef
+    | JVClassName
     | JVObject
 
   (* type jException = {jName: type_t ; message : string} 
@@ -37,10 +37,10 @@ module ATD = struct
     | Mult of expr * expr
     | Div of expr * expr
     | Mod of expr * expr
-    | PrefAdd of expr
-    | PrefSub of expr
-    | PostAdd of expr
-    | PostSub of expr 
+    | PrefInc of expr
+    | PrefDec of expr
+    | PostInc of expr
+    | PostDec of expr 
     | And of expr * expr
     | Or of expr * expr
     | Not of expr 
@@ -51,7 +51,7 @@ module ATD = struct
     | LessOrEqual of expr * expr
     | MoreOrEqual of expr * expr 
     | ClassCreate of string * expr list (*new clName(argList)*)
-    | ArrayCreate of type_t * expr list (*new arrType[cntExpr]*) 
+    | ArrayCreate of type_t * expr option (*new arrType[cntExpr]*) 
     | CallMethod of expr * expr list  
     | Identifier of string 
     | Const of value
@@ -59,7 +59,7 @@ module ATD = struct
     | Super
     | Null
     | FieldAccess of expr * expr
-    | ArrayAccess of expr * expr list
+    | ArrayAccess of expr * expr (*arr_name * index*)
     | Assign of expr * expr
     
   and stmt =

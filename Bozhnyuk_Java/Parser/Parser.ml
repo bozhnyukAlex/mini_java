@@ -144,32 +144,32 @@ module Expr = struct
         token "int"
         >> choice 
           [ 
-            (many1 (token "[]") >>= fun br_l -> 
-              return (JArray (JInt, List.length br_l)));
+            (many1 (token "[]") >>
+              return (JArray JInt));
             return JInt; 
           ];
         token "String"
         >> choice
             [ 
-              (many1 (token "[]") >>= fun br_l -> 
-                return (JArray (JString, List.length br_l))); 
+              (many1 (token "[]") >>
+                return (JArray JString)); 
               return JString 
             ];
         token "void" >> return JVoid;
         ( ident >>= fun class_name ->
           choice
             [
-              (many1 (token "[]") >>= fun br_l -> 
-                return (JArray (JRef class_name, List.length br_l)));
-              return (JRef class_name);
+              (many1 (token "[]") >>
+                return (JArray (JClassName class_name)));
+              return (JClassName class_name);
             ] );
       ]
 
   let%test _ = parse type_spec_array (LazyStream.of_string "int") = Some (JInt)  
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "int[][][]") = Some (JArray (JInt, 3))
+  let%test _ = parse type_spec_array (LazyStream.of_string "int[]") = Some (JArray JInt)
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "Car[][][]") = Some (JArray (JRef "Car", 3))
+  let%test _ = parse type_spec_array (LazyStream.of_string "Car[]") = Some (JArray (JClassName "Car"))
 
   let type_spec =
     choice
@@ -177,7 +177,7 @@ module Expr = struct
         token "int" >> return JInt;
         token "String" >> return JString;
         token "void" >> return JVoid;
-        (ident >>= fun class_name -> return (JRef class_name));
+        (ident >>= fun class_name -> return (JClassName class_name));
       ]
 
   let%test _ = parse type_spec (LazyStream.of_string "int") = Some JInt
@@ -211,13 +211,13 @@ module Expr = struct
         ( token "-" >> lexeme primary >>= fun x ->
           return (Sub (Const (JVInt 0), x)) );
         ( token "++" >> lexeme primary >>= fun x ->
-          return  (PrefAdd x) );
+          return  (PrefInc x) );
         ( token "--" >> lexeme primary >>= fun x ->
-          return (PrefSub x) );
+          return (PrefDec x) );
         ( lexeme primary >>= fun x ->
-          token "++" >> return (PostAdd x) );
+          token "++" >> return (PostInc x) );
         ( lexeme primary >>= fun x ->
-          token "--" >> return (PostSub x) );
+          token "--" >> return (PostDec x) );
         primary;
       ]
       input
@@ -232,8 +232,8 @@ module Expr = struct
   and arr_access input =
     ( this <|> parens (create_arr) <|> super <|> method_call <|> identifier
     >>= fun arr_name ->
-      many1 (brackets expression) >>= fun index_list ->
-      return (ArrayAccess (arr_name, index_list)) )
+      (brackets expression) >>= fun index ->
+      return (ArrayAccess (arr_name, index)) )
       input
   
   and field_access input = 
@@ -267,9 +267,9 @@ module Expr = struct
     ( token "new" >> type_spec >>= fun ts ->
       choice
         [
-          many1 (token "[]") >> return (ArrayCreate (ts, []));
-          ( many1 (brackets expression) >>= fun expr_list ->
-            return  (ArrayCreate (ts, expr_list)) );
+          (token "[]") >> return (ArrayCreate (ts, None));
+          ( (brackets expression) >>= fun size ->
+            return  (ArrayCreate (ts, Some size)) );
         ] )
       input
 
@@ -286,7 +286,7 @@ module Expr = struct
   let%test _ = parse expression (LazyStream.of_string "a = 2") = Some (Assign (Identifier "a", Const (JVInt 2)))
 
   let%test _  = parse expression (LazyStream.of_string "a[i] = 2") = Some
-                                                          (Assign (ArrayAccess (Identifier "a", [Identifier "i"]), Const (JVInt 2)))
+                                                          (Assign (ArrayAccess (Identifier "a", Identifier "i"), Const (JVInt 2)))
 
   let%test _  = parse expression (LazyStream.of_string "a = b = 3") = Some (Assign (Identifier "a", Assign (Identifier "b", Const (JVInt 3))))                                                       
       
@@ -315,7 +315,7 @@ module Expr = struct
                                                                   Mult (Const (JVInt 3), Sub (Const (JVInt 5), Const (JVInt 3)))))
                                                                                        
 
-  let%test _ = parse expression (LazyStream.of_string "a[i]") = Some (ArrayAccess (Identifier "a", [Identifier "i"]))
+  let%test _ = parse expression (LazyStream.of_string "a[i]") = Some (ArrayAccess (Identifier "a", Identifier "i"))
 
   let%test _ = parse expression (LazyStream.of_string "someObj.method(arg1, arg2, arg3)") = Some
                                                                                             (FieldAccess (Identifier "someObj",
@@ -324,33 +324,33 @@ module Expr = struct
   
 
   let%test _ = parse expression (LazyStream.of_string "arr[i].get()") = Some
-                                                                          (FieldAccess (ArrayAccess (Identifier "arr", [Identifier "i"]),
+                                                                          (FieldAccess (ArrayAccess (Identifier "arr", Identifier "i"),
                                                                             CallMethod (Identifier "get", [])))
 
   let%test _ = parse expression (LazyStream.of_string "a[i].b[j]") = Some
                                                     (ArrayAccess
-                                                      (FieldAccess (ArrayAccess (Identifier "a", [Identifier "i"]),
+                                                      (FieldAccess (ArrayAccess (Identifier "a", Identifier "i"),
                                                         Identifier "b"),
-                                                      [Identifier "j"]))
+                                                      Identifier "j"))
   let%test _ = parse expression (LazyStream.of_string "this.getArray()[i]") = Some
                                               (ArrayAccess (FieldAccess (This, CallMethod (Identifier "getArray", [])),
-                                                [Identifier "i"]))
+                                                Identifier "i"))
 
   let%test _ =  parse expression (LazyStream.of_string "this.getCar().wheels[2].rad") = Some
                                                 (FieldAccess
                                                   (ArrayAccess
                                                     (FieldAccess (FieldAccess (This, CallMethod (Identifier "getCar", [])),
                                                       Identifier "wheels"),
-                                                    [Const (JVInt 2)]),
+                                                    Const (JVInt 2)),
                                                   Identifier "rad"))
   
   let%test _ = parse expression (LazyStream.of_string "a.b[i].c[j]") = Some
                                                   (ArrayAccess
                                                     (FieldAccess
                                                       (ArrayAccess (FieldAccess (Identifier "a", Identifier "b"),
-                                                        [Identifier "i"]),
+                                                        Identifier "i"),
                                                       Identifier "c"),
-                                                    [Identifier "j"]))
+                                                    Identifier "j"))
 
 
   let%test _ = parse expression (LazyStream.of_string "a.b.c") = Some 
@@ -361,19 +361,19 @@ module Expr = struct
                                                                     [Add (Const (JVInt 1), Const (JVInt 2)); Const (JVInt 40)]))
 
 
-  let%test _  = parse expression (LazyStream.of_string "new int[][][]") = Some (ArrayCreate (JInt, []))
+  let%test _  = parse expression (LazyStream.of_string "new int[]") = Some (ArrayCreate (JInt, None))
 
-  let%test _ = parse expression (LazyStream.of_string "new int[4][5]") = Some (ArrayCreate (JInt, [Const (JVInt 4); Const (JVInt 5)]))
+  let%test _ = parse expression (LazyStream.of_string "new int[4]") = Some (ArrayCreate (JInt, Some (Const (JVInt 4))))
 
-  let%test _ = parse expression (LazyStream.of_string "new arr[2][3][i]") = Some
-                                                        (ArrayCreate (JRef "arr", [Const (JVInt 2); Const (JVInt 3); Identifier "i"]))
+  let%test _ = parse expression (LazyStream.of_string "new arr[i]") = Some
+                                                        (ArrayCreate (JClassName "arr", Some (Identifier "i")))
  
 
   let%test _ = parse expression (LazyStream.of_string "new Car(2,\"Ford\")") = Some (ClassCreate ("Car", [Const (JVInt 2); Const (JVString "Ford")]))
 
   let%test _ = parse expression (LazyStream.of_string "get(new Sth(), new String[10])") = Some
                                                             (CallMethod (Identifier "get",
-                                                              [ClassCreate ("Sth", []); ArrayCreate (JString, [Const (JVInt 10)])]))
+                                                              [ClassCreate ("Sth", []); ArrayCreate (JString, Some (Const (JVInt 10)))]))
 
   
   let%test _ = parse expression (LazyStream.of_string "(new Man(3,\"John\")).scream())")  = Some
@@ -383,9 +383,9 @@ module Expr = struct
 
 
   let%test _ = parse expression (LazyStream.of_string "--(obj.f + (x + y)++)") = Some
-                                                                      (PrefSub
+                                                                      (PrefDec
                                                                         (Add (FieldAccess (Identifier "obj", Identifier "f"),
-                                                                          PostAdd (Add (Identifier "x", Identifier "y")))))
+                                                                          PostInc (Add (Identifier "x", Identifier "y")))))
 
                                                    
 end
@@ -420,7 +420,7 @@ module Stat = struct
 
   let%test _  = parse expr_stat (LazyStream.of_string "fork();") = Some (Expression (CallMethod (Identifier "fork", [])))
 
-  let%test _ = parse expr_stat (LazyStream.of_string "i++;") = Some (Expression (PostAdd (Identifier "i")))
+  let%test _ = parse expr_stat (LazyStream.of_string "i++;") = Some (Expression (PostInc (Identifier "i")))
 
   let rec statement input = 
     choice 
@@ -516,8 +516,8 @@ module Stat = struct
                                                                   (Identifier "c", None); (Identifier "d", Some (Const (JVInt 5)))]))
     
     let%test _ = parse statement (LazyStream.of_string "public int[] a = new int[6];") = Some
-                                                              (VarDec ([Public], JArray (JInt, 1),
-                                                                [(Identifier "a", Some (ArrayCreate (JInt, [Const (JVInt 6)])))])) 
+                                                              (VarDec ([Public], JArray JInt,
+                                                                [(Identifier "a", Some (ArrayCreate (JInt, Some (Const (JVInt 6)))))])) 
 
     let%test _ = parse statement (LazyStream.of_string "public static int a = 0, b = 1, c = 2;") = Some
                                                             (VarDec ([Public; Static], JInt,
@@ -527,7 +527,7 @@ module Stat = struct
     
     let%test _ =  parse statement (LazyStream.of_string "if (x < 10) x++;") = Some
                                                             (If (Less (Identifier "x", Const (JVInt 10)),
-                                                              Expression (PostAdd (Identifier "x")), None))
+                                                              Expression (PostInc (Identifier "x")), None))
 
     
     
@@ -538,10 +538,10 @@ module Stat = struct
                                                             Some
                                                               (StatBlock [Return (Some (Sub (Identifier "a", Identifier "b")))])))
     
-    let%test _  = parse statement (LazyStream.of_string "array = new int[3][4];") = Some
+    let%test _  = parse statement (LazyStream.of_string "array = new int[3];") = Some
                                                         (Expression
                                                           (Assign (Identifier "array",
-                                                            ArrayCreate (JInt, [Const (JVInt 3); Const (JVInt 4)]))))
+                                                            ArrayCreate (JInt, Some (Const (JVInt 3))))))
 
 
     let%test _ = parse statement (LazyStream.of_string "if (a % 2 == 0 && b < 2) {\n a++;\n b--;\n return a * b; \n } else if (!(b / 2 != 5)) { \n --b; \n  return (a + b)*3; \n } else continue;") = 
@@ -550,14 +550,14 @@ module Stat = struct
                                                             (And (Equal (Mod (Identifier "a", Const (JVInt 2)), Const (JVInt 0)),
                                                               Less (Identifier "b", Const (JVInt 2))),
                                                             StatBlock
-                                                              [Expression (PostAdd (Identifier "a"));
-                                                              Expression (PostSub (Identifier "b"));
+                                                              [Expression (PostInc (Identifier "a"));
+                                                              Expression (PostDec (Identifier "b"));
                                                               Return (Some (Mult (Identifier "a", Identifier "b")))],
                                                             Some
                                                               (If
                                                                 (Not (NotEqual (Div (Identifier "b", Const (JVInt 2)), Const (JVInt 5))),
                                                                 StatBlock
-                                                                [Expression (PrefSub (Identifier "b"));
+                                                                [Expression (PrefDec (Identifier "b"));
                                                                   Return (Some (Mult (Add (Identifier "a", Identifier "b"), Const (JVInt 3))))],
                                                                 Some Continue))))
 
@@ -568,7 +568,7 @@ module Stat = struct
                                                             StatBlock
                                                               [If (Equal (Mod (Identifier "n", Identifier "d"), Const (JVInt 0)),
                                                                 StatBlock [Return (Some (Const (JVBool true)))], None);
-                                                              Expression (PostAdd (Identifier "d"))]))
+                                                              Expression (PostInc (Identifier "d"))]))
 
     let%test _ = parse statement (LazyStream.of_string "for (int i = 0, j = n - 1; i < j; i++, j--) { System.out.println(\"test\"); }") = Some
                                                                             (For
@@ -577,7 +577,7 @@ module Stat = struct
                                                                                   [(Identifier "i", Some (Const (JVInt 0)));
                                                                                     (Identifier "j", Some (Sub (Identifier "n", Const (JVInt 1))))])),
                                                                               Some (Less (Identifier "i", Identifier "j")),
-                                                                              [PostAdd (Identifier "i"); PostSub (Identifier "j")],
+                                                                              [PostInc (Identifier "i"); PostDec (Identifier "j")],
                                                                               StatBlock
                                                                                 [Expression
                                                                                   (FieldAccess (FieldAccess (Identifier "System", Identifier "out"),
@@ -613,7 +613,7 @@ let method_declaration input =
 
 let%test _ = parse method_declaration (LazyStream.of_string "public int arraySum (int[] a) { int sum = 0; for (int i = 0; i < a.length(); i++) {sum = sum + a[i];} return sum; }") = Some
                                                                         (Method ([Public], JInt, Identifier "arraySum",
-                                                                          [(JArray (JInt, 1), Identifier "a")],
+                                                                          [(JArray JInt, Identifier "a")],
                                                                           Some
                                                                             (StatBlock
                                                                               [VarDec ([], JInt, [(Identifier "sum", Some (Const (JVInt 0)))]);
@@ -622,12 +622,12 @@ let%test _ = parse method_declaration (LazyStream.of_string "public int arraySum
                                                                                 Some
                                                                                 (Less (Identifier "i",
                                                                                   FieldAccess (Identifier "a", CallMethod (Identifier "length", [])))),
-                                                                                [PostAdd (Identifier "i")],
+                                                                                [PostInc (Identifier "i")],
                                                                                 StatBlock
                                                                                 [Expression
                                                                                   (Assign (Identifier "sum",
                                                                                     Add (Identifier "sum",
-                                                                                      ArrayAccess (Identifier "a", [Identifier "i"]))))]);
+                                                                                      ArrayAccess (Identifier "a", Identifier "i"))))]);
                                                                               Return (Some (Identifier "sum"))])))
 
 let constructor_declaration input = 
@@ -648,7 +648,7 @@ let constructor_declaration input =
 
   let%test _ = parse constructor_declaration (LazyStream.of_string "public Car(int speed, int[] wheels) {this.speed = speed; this.wheels = wheels;}") = Some
                                                                   (Constructor ([Public], Identifier "Car",
-                                                                    [(JInt, Identifier "speed"); (JArray (JInt, 1), Identifier "wheels")],
+                                                                    [(JInt, Identifier "speed"); (JArray JInt, Identifier "wheels")],
                                                                     StatBlock
                                                                       [Expression
                                                                         (Assign (FieldAccess (This, Identifier "speed"), Identifier "speed"));
@@ -767,14 +767,15 @@ class Child extends Person{
 
 *)
 
+
 let%test _ = parse parser (LazyStream.of_string "public class Main{public static void main(String[] args) {Person p = new Person(80, 45);System.out.println(p.getWeight());Child ch = new Child(66, 20);ch.setCash(50);ch.giveEvenNumbers100();    }}class Person {    public int weight;    public int age;        public Person(int w, int a) {        this.weight = w;        this.age = a;    }            public int getWeight() {        return weight;    }        public int getAge() {        return age;    }        public void setWeight(int w) {        this.weight = w;    }    public void setAge(int a) {        this.age = a;    }    }class Child extends Person{    public int cash;        public Child(int w, int a) {        super(w,a);        cash = 0;    }        public int getCash() {        return cash;    }        public void setCash(int c) {        this.cash = c;    }        public Child (int w, int a, int c) {        super(w, a);        cash = c;    }        public void giveEvenNumbers100() {for (int i = 0; i < 100; i++) {    if (i % 2 == 0 && !(i % 2 == 1)) {System.out.println(i);    }    else {continue;    }}    }            }") = 
       Some
  [Class ([Public], Identifier "Main", None,
    [Method ([Public; Static], JVoid, Identifier "main",
-     [(JArray (JString, 1), Identifier "args")],
+     [(JArray JString, Identifier "args")],
      Some
       (StatBlock
-        [VarDec ([], JRef "Person",
+        [VarDec ([], JClassName "Person",
           [(Identifier "p",
             Some (ClassCreate ("Person", [Const (JVInt 80); Const (JVInt 45)])))]);
          Expression
@@ -782,7 +783,7 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
             CallMethod (Identifier "println",
              [FieldAccess (Identifier "p",
                CallMethod (Identifier "getWeight", []))])));
-         VarDec ([], JRef "Child",
+         VarDec ([], JClassName "Child",
           [(Identifier "ch",
             Some (ClassCreate ("Child", [Const (JVInt 66); Const (JVInt 20)])))]);
          Expression
@@ -842,7 +843,7 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
         [For
           (Some (VarDec ([], JInt, [(Identifier "i", Some (Const (JVInt 0)))])),
           Some (Less (Identifier "i", Const (JVInt 100))),
-          [PostAdd (Identifier "i")],
+          [PostInc (Identifier "i")],
           StatBlock
            [If
              (And
