@@ -72,6 +72,20 @@ module Expr = struct
 
   let%test _ = parse constInt (LazyStream.of_string "    100500") = Some (Const (JVInt 100500))
 
+  let constString = 
+    let string_of_chars chars = 
+      let buf = Buffer.create 16 in
+      List.iter (Buffer.add_char buf) chars;
+      Buffer.contents buf
+    in
+      token "\"" >> 
+      many (satisfy (fun c -> c <> '\"')) >>= fun list ->
+      token "\"" >>
+      return (Const(JVString (string_of_chars list)))
+      
+      
+  let%test _ = parse constString (LazyStream.of_string "\"hello world!\"") = Some (Const (JVString "hello world!"))        
+
   let ident =
     spaces >> letter <~> many alpha_num => implode >>= function
     | s when List.mem s reserved -> mzero
@@ -115,7 +129,7 @@ module Expr = struct
   let neq_op = token "!=" >> return (fun x y -> (NotEqual (x, y)))
 
   let atomaric =
-    identifier <|> constInt
+    identifier <|> constInt <|> constString
     <|> (token "true" >> return (Const (JVBool true)))
     <|> (token "false" >> return (Const (JVBool false)))
     <|> null
@@ -133,7 +147,7 @@ module Expr = struct
             (many1 (token "[]") >>= fun br_l -> 
               return (JArray (JInt, List.length br_l)));
             return JInt; 
-          ]; (*для того, чтобы посчитать размерность массива, можно посчитать количество []*)
+          ];
         token "String"
         >> choice
             [ 
@@ -355,15 +369,15 @@ module Expr = struct
                                                         (ArrayCreate (JRef "arr", [Const (JVInt 2); Const (JVInt 3); Identifier "i"]))
  
 
-  let%test _ = parse expression (LazyStream.of_string "new Car(2,4)") = Some (ClassCreate ("Car", [Const (JVInt 2); Const (JVInt 4)]))
+  let%test _ = parse expression (LazyStream.of_string "new Car(2,\"Ford\")") = Some (ClassCreate ("Car", [Const (JVInt 2); Const (JVString "Ford")]))
 
   let%test _ = parse expression (LazyStream.of_string "get(new Sth(), new String[10])") = Some
                                                             (CallMethod (Identifier "get",
                                                               [ClassCreate ("Sth", []); ArrayCreate (JString, [Const (JVInt 10)])]))
 
   
-  let%test _ = parse expression (LazyStream.of_string "(new Man(3,4)).scream())")  = Some
-                                                            (FieldAccess (ClassCreate ("Man", [Const (JVInt 3); Const (JVInt 4)]),
+  let%test _ = parse expression (LazyStream.of_string "(new Man(3,\"John\")).scream())")  = Some
+                                                            (FieldAccess (ClassCreate ("Man", [Const (JVInt 3); Const (JVString "John")]),
                                                               CallMethod (Identifier "scream", [])))
 
 
@@ -555,7 +569,7 @@ module Stat = struct
                                                                 StatBlock [Return (Some (Const (JVBool true)))], None);
                                                               Expression (PostAdd (Identifier "d"))]))
 
-    let%test _ = parse statement (LazyStream.of_string "for (int i = 0, j = n - 1; i < j; i++, j--) { System.out.println(a); }") = Some
+    let%test _ = parse statement (LazyStream.of_string "for (int i = 0, j = n - 1; i < j; i++, j--) { System.out.println(\"test\"); }") = Some
                                                                             (For
                                                                               (Some
                                                                                 (VarDec ([], JInt,
@@ -566,7 +580,7 @@ module Stat = struct
                                                                               StatBlock
                                                                                 [Expression
                                                                                   (FieldAccess (FieldAccess (Identifier "System", Identifier "out"),
-                                                                                    CallMethod (Identifier "println", [Identifier "a"])))]))
+                                                                                    CallMethod (Identifier "println", [Const (JVString "test")])))]))
     
     let%test _ = parse statement (LazyStream.of_string "if (somethingWrong()) throw new Exception();") = Some
                                                                             (If (CallMethod (Identifier "somethingWrong", []),
