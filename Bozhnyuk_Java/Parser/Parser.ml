@@ -39,14 +39,13 @@ let get_list_option opt = match opt with Some x -> x | None -> []
 
 let modifier input = choice 
   [
-    (token "public" >> return ATD.Public);
-    (token "static" >> return ATD.Static);
-    (token "final" >> return ATD.Final);
-    (token "abstract" >> return ATD.Abstract);
+    (token "public" >> return Public);
+    (token "static" >> return Static);
+    (token "final" >> return Final);
+    (token "abstract" >> return Abstract);
   ] input
 
 module Expr = struct
-  open ATD
 
   let null = token "null" >> return Null
 
@@ -604,9 +603,9 @@ let method_declaration input =
       choice 
         [
           (Stat.stat_block >>= fun st_block ->
-          return (ATD.Method (modifiers, m_type, m_name, param_list, Some st_block)));
+          return (Method (modifiers, m_type, m_name, param_list, Some st_block)));
           (token ";" >> 
-          return (ATD.Method (modifiers, m_type, m_name, param_list, None)));
+          return (Method (modifiers, m_type, m_name, param_list, None)));
         ] 
   ) 
   input
@@ -642,7 +641,7 @@ let constructor_declaration input =
       sep_by param (token ",") >>= fun param_list ->
       token ")" >>
       Stat.stat_block >>= fun c_block ->
-      return (ATD.Constructor (modifiers, c_name, param_list, c_block))
+      return (Constructor (modifiers, c_name, param_list, c_block))
   )
   input
 
@@ -681,7 +680,7 @@ let class_declaration input =
     token "{" >>
     sep_by class_elem spaces >>= fun class_elements ->
     token "}" >>
-    return (ATD.Class (modifiers, class_name, extension, class_elements))
+    return (Class (modifiers, class_name, extension, class_elements))
   )
   input
 
