@@ -2,7 +2,7 @@ type modifier =
   | Public
   | Static
   | Final
-  | Abstract
+  | Abstract [@@deriving show]
 
 type type_t =
   | JInt
@@ -10,7 +10,7 @@ type type_t =
   | JClassName of string
   | JString
   | JArray of type_t
-  | JObject 
+  | JObject [@@deriving show]
 
 
 type value = 
@@ -22,7 +22,7 @@ type value =
   | JVVoid
   | JVString of string
   | JVClassName
-  | JVObject
+  | JVObject [@@deriving show]
 
 (* type jException = {jName: type_t ; message : string} 
 
@@ -58,7 +58,7 @@ type expr =
   | Null
   | FieldAccess of expr * expr
   | ArrayAccess of expr * expr (*arr_name * index*)
-  | Assign of expr * expr
+  | Assign of expr * expr [@@deriving show]
   
 and stmt =
   | If of expr * stmt * stmt option (*cond * thenStat * elseStat*)
@@ -70,14 +70,14 @@ and stmt =
   | StatBlock of stmt list
   | VarDec of type_t * ((expr * (expr option)) list)
   | Expression of expr 
-  | Throw of expr
+  | Throw of expr [@@deriving show]
 
 and field = 
   | Method of modifier list * type_t * expr * ((type_t * expr) list) (*List of pairs (type, identificator)*) * stmt option(*Statement block*)
   | VarField of modifier list * type_t * ((expr * (expr option)) list)  
-  | Constructor of modifier list * expr * ((type_t * expr) list) * stmt
+  | Constructor of modifier list * expr * ((type_t * expr) list) * stmt [@@deriving show]
 
-and class_dec = Class of modifier list * expr (*Identifier class name*) * expr option (*Parent class_name*) * field list (* class body *)
+and class_dec = Class of modifier list * expr (*Identifier class name*) * expr option (*Parent class_name*) * field list (* class body *) [@@deriving show]
 
 (* type jMethod = {mModifiers: modifier list; mName : string; mRetType : type_t; mArgs : expr list; mBody : stmt list;}  
 
