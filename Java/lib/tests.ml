@@ -4,6 +4,7 @@ open Parser.Expr
 open Opal
 
 
+
 (* -------------------  EXPRESSIONS ------------------- *)
 
 let%test _ = parse expression (LazyStream.of_string "a = 2") = Some (Assign (Identifier "a", Const (JVInt 2)))
@@ -113,17 +114,17 @@ let%test _ = parse expression (LazyStream.of_string "--(obj.f + (x + y)++)") = S
 
 (* -------------------  STATEMENTS ---------------------*)
 
-let%test _ = parse statement (LazyStream.of_string "public int a = 0, b, c, d = 5;") = Some
-(VarDec ([Public], JInt,
+let%test _ = parse statement (LazyStream.of_string "int a = 0, b, c, d = 5;") = Some
+(VarDec (JInt,
   [(Identifier "a", Some (Const (JVInt 0))); (Identifier "b", None);
     (Identifier "c", None); (Identifier "d", Some (Const (JVInt 5)))]))
 
-let%test _ = parse statement (LazyStream.of_string "public int[] a = new int[6];") = Some
-(VarDec ([Public], JArray JInt,
+let%test _ = parse statement (LazyStream.of_string "int[] a = new int[6];") = Some
+(VarDec (JArray JInt,
   [(Identifier "a", Some (ArrayCreate (JInt, Some (Const (JVInt 6)))))])) 
 
-let%test _ = parse statement (LazyStream.of_string "public static int a = 0, b = 1, c = 2;") = Some
-(VarDec ([Public; Static], JInt,
+let%test _ = parse statement (LazyStream.of_string "int a = 0, b = 1, c = 2;") = Some
+(VarDec (JInt,
   [(Identifier "a", Some (Const (JVInt 0))); (Identifier "b", Some (Const (JVInt 1)));
     (Identifier "c", Some (Const (JVInt 2)))])) 
 
@@ -131,6 +132,7 @@ let%test _ = parse statement (LazyStream.of_string "public static int a = 0, b =
 let%test _ =  parse statement (LazyStream.of_string "if (x < 10) x++;") = Some
 (If (Less (Identifier "x", Const (JVInt 10)),
   Expression (PostInc (Identifier "x")), None))
+
 
 
 
@@ -174,7 +176,7 @@ let%test _ = parse statement (LazyStream.of_string "while (d * d <= n) { if (n %
 let%test _ = parse statement (LazyStream.of_string "for (int i = 0, j = n - 1; i < j; i++, j--) { System.out.println(\"test\"); }") = Some
 (For
   (Some
-    (VarDec ([], JInt,
+    (VarDec (JInt,
       [(Identifier "i", Some (Const (JVInt 0)));
         (Identifier "j", Some (Sub (Identifier "n", Const (JVInt 1))))])),
   Some (Less (Identifier "i", Identifier "j")),
@@ -188,18 +190,20 @@ let%test _ = parse statement (LazyStream.of_string "if (somethingWrong()) throw 
                                                                         (If (CallMethod (Identifier "somethingWrong", []),
                                                                           Throw (ClassCreate ("Exception", [])), None)) 
 
+let%test _ = parse statement (LazyStream.of_string "for(public int i = 0;;) {i++;}") = None
+
 (*---------------- IN CLASSES ---------------*)                                                                          
                                                                           
-let%test _ = parse field_declaration (LazyStream.of_string "public int wheel;") = Some (VarField (VarDec ([Public], JInt, [(Identifier "wheel", None)])))
+let%test _ = parse field_declaration (LazyStream.of_string "public int wheel;") = Some (VarField ([Public], JInt, [(Identifier "wheel", None)]))
 
 let%test _ = parse method_declaration (LazyStream.of_string "public int arraySum (int[] a) { int sum = 0; for (int i = 0; i < a.length(); i++) {sum = sum + a[i];} return sum; }") = Some
 (Method ([Public], JInt, Identifier "arraySum",
   [(JArray JInt, Identifier "a")],
   Some
     (StatBlock
-      [VarDec ([], JInt, [(Identifier "sum", Some (Const (JVInt 0)))]);
+      [VarDec (JInt, [(Identifier "sum", Some (Const (JVInt 0)))]);
       For
-        (Some (VarDec ([], JInt, [(Identifier "i", Some (Const (JVInt 0)))])),
+        (Some (VarDec (JInt, [(Identifier "i", Some (Const (JVInt 0)))])),
         Some
         (Less (Identifier "i",
           FieldAccess (Identifier "a", CallMethod (Identifier "length", [])))),

@@ -285,6 +285,7 @@ module Expr = struct
 end
 
 
+
 module Stat = struct
   open Expr
 
@@ -366,10 +367,9 @@ module Stat = struct
           return (name, Some value))
           <|> return (name, None)
           in
-            many modifier >>= fun modifs -> 
             type_spec_array >>= fun type_specifier ->
             sep_by var_declarator (token ",") >>= fun dec_pairs ->
-            token ";" >> return (VarDec (modifs, type_specifier, dec_pairs))
+            token ";" >> return (VarDec (type_specifier, dec_pairs))
     
 
     and for_stat input = 
@@ -446,8 +446,19 @@ let constructor_declaration =
 
 let field_declaration = 
   (
-    Stat.var_declaration >>= fun var_dec ->
-    return (VarField (var_dec))
+    let var_declarator = Expr.identifier >>= fun name ->
+          (token "=" >>
+          Expr.expression >>= fun value ->
+          return (name, Some value))
+          <|> return (name, None)
+          in
+            many (modifier) >>= fun modifiers -> 
+            Expr.type_spec_array >>= fun type_specifier ->
+            sep_by var_declarator (token ",") >>= fun dec_pairs ->
+            token ";" >> return (VarField (modifiers, type_specifier, dec_pairs))
+    
+
+    
   )
 
 let class_elem = field_declaration <|> constructor_declaration <|> method_declaration
@@ -561,7 +572,7 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
      [(JArray JString, Identifier "args")],
      Some
       (StatBlock
-        [VarDec ([], JClassName "Person",
+        [VarDec (JClassName "Person",
           [(Identifier "p",
             Some (ClassCreate ("Person", [Const (JVInt 80); Const (JVInt 45)])))]);
          Expression
@@ -569,7 +580,7 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
             CallMethod (Identifier "println",
              [FieldAccess (Identifier "p",
                CallMethod (Identifier "getWeight", []))])));
-         VarDec ([], JClassName "Child",
+         VarDec (JClassName "Child",
           [(Identifier "ch",
             Some (ClassCreate ("Child", [Const (JVInt 66); Const (JVInt 20)])))]);
          Expression
@@ -580,8 +591,8 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
             CallMethod (Identifier "giveEvenNumbers100", [])))]))]);
             
   Class ([], Identifier "Person", None,
-   [VarField (VarDec ([Public], JInt, [(Identifier "weight", None)]));
-    VarField (VarDec ([Public], JInt, [(Identifier "age", None)]));
+   [VarField ([Public], JInt, [(Identifier "weight", None)]);
+    VarField ([Public], JInt, [(Identifier "age", None)]);
     Constructor ([Public], Identifier "Person",
      [(JInt, Identifier "w"); (JInt, Identifier "a")],
      StatBlock
@@ -605,7 +616,7 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
           (Assign (FieldAccess (This, Identifier "age"), Identifier "a"))]))]);
 
   Class ([], Identifier "Child", Some (Identifier "Person"),
-   [VarField (VarDec ([Public], JInt, [(Identifier "cash", None)]));
+   [VarField ([Public], JInt, [(Identifier "cash", None)]);
     Constructor ([Public], Identifier "Child",
      [(JInt, Identifier "w"); (JInt, Identifier "a")],
      StatBlock
@@ -627,7 +638,7 @@ let%test _ = parse parser (LazyStream.of_string "public class Main{public static
      Some
       (StatBlock
         [For
-          (Some (VarDec ([], JInt, [(Identifier "i", Some (Const (JVInt 0)))])),
+          (Some (VarDec (JInt, [(Identifier "i", Some (Const (JVInt 0)))])),
           Some (Less (Identifier "i", Const (JVInt 100))),
           [PostInc (Identifier "i")],
           StatBlock

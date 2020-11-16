@@ -68,13 +68,13 @@ and stmt =
   | Continue
   | Return of expr option (* result *)
   | StatBlock of stmt list
-  | VarDec of modifier list * type_t * ((expr * (expr option)) list)
+  | VarDec of type_t * ((expr * (expr option)) list)
   | Expression of expr 
   | Throw of expr
 
 and field = 
   | Method of modifier list * type_t * expr * ((type_t * expr) list) (*List of pairs (type, identificator)*) * stmt option(*Statement block*)
-  | VarField of stmt
+  | VarField of modifier list * type_t * ((expr * (expr option)) list)  
   | Constructor of modifier list * expr * ((type_t * expr) list) * stmt
 
 and class_dec = Class of modifier list * expr (*Identifier class name*) * expr option (*Parent class_name*) * field list (* class body *)
