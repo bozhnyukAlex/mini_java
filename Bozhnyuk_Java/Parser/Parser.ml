@@ -114,27 +114,27 @@ module Expr = struct
 
   let and_op = token "&&" >> return (fun x y -> (And (x, y)))
 
-  let lt_op = token "<" >> return (fun x y -> (Less (x, y)))
+  let l_op = token "<" >> return (fun x y -> (Less (x, y)))
 
-  let mt_op = token ">" >> return (fun x y -> (More (x, y)))
+  let m_op = token ">" >> return (fun x y -> (More (x, y)))
 
-  let loet_op =
+  let le_op =
     token "<=" >> return (fun x y -> (LessOrEqual (x, y)))
 
-  let moet_op =
+  let me_op =
     token ">=" >> return (fun x y -> (MoreOrEqual (x, y)))
 
   let eq_op = token "==" >> return (fun x y -> (Equal (x, y)))
 
   let neq_op = token "!=" >> return (fun x y -> (NotEqual (x, y)))
 
-  let atomaric =
+  let atomic =
     identifier <|> constInt <|> constString
     <|> (token "true" >> return (Const (JVBool true)))
     <|> (token "false" >> return (Const (JVBool false)))
     <|> null
   
-  let%test _ = parse atomaric (LazyStream.of_string "true") = Some (Const (JVBool true))
+  let%test _ = parse atomic (LazyStream.of_string "true") = Some (Const (JVBool true))
   
   
 
@@ -196,7 +196,7 @@ module Expr = struct
 
   and test_expr input =
     (chainl1 add_expr
-       (loet_op <|> moet_op <|> lt_op <|> mt_op <|>  eq_op <|> neq_op))
+       (le_op <|> me_op <|> l_op <|> m_op <|>  eq_op <|> neq_op))
       input
 
   and add_expr input = (chainl1 mult_expr (add_op <|> sub_op)) input
@@ -224,7 +224,7 @@ module Expr = struct
 
   and primary input =
     ( create_obj <|> create_arr <|> assign <|> field_access <|> arr_access <|> method_call <|> this
-    <|> super <|> parens expression <|> atomaric )
+    <|> super <|> parens expression <|> atomic )
       input
 
   
@@ -478,6 +478,7 @@ module Stat = struct
             sep_by var_declarator (token ",") >>= fun dec_pairs ->
             token ";" >> return (VarDec (modifs, type_specifier, dec_pairs))
     
+
     and for_stat input = 
       (
         token "for" >>

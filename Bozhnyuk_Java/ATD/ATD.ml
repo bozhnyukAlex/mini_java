@@ -1,89 +1,89 @@
 module ATD = struct
 
-  type jModifier = 
+  type modifier = 
     | Public
     | Static
     | Final
     | Abstract
 
-  type jType =
+  type type_t =
     | JInt
     | JVoid
     | JRef of string
     | JString
-    | JArray of jType * int
+    | JArray of type_t * int
     | JObject 
 
 
-  type jValue = 
+  type value = 
     | JVBool of bool
     | JVInt of int
     | JVNull
     | JVChar of char
-    | JVArray of jValue list
+    | JVArray of value list
     | JVVoid
     | JVString of string
     | JVRef
     | JVObject
 
-  (* type jException = {jName: jType ; message : string} 
+  (* type jException = {jName: type_t ; message : string} 
 
-  type jVariable = {vModifiers : jModifier list; isMutable : bool; varType : jType; varName : string; value : jValue option}  *)
+  type jVariable = {vModifiers : modifier list; isMutable : bool; varType : type_t; varName : string; value : value option}  *)
 
     
-  type jExpr =
-    | Add of jExpr * jExpr
-    | Sub of jExpr * jExpr
-    | Mult of jExpr * jExpr
-    | Div of jExpr * jExpr
-    | Mod of jExpr * jExpr
-    | PrefAdd of jExpr
-    | PrefSub of jExpr
-    | PostAdd of jExpr
-    | PostSub of jExpr 
-    | And of jExpr * jExpr
-    | Or of jExpr * jExpr
-    | Not of jExpr 
-    | Equal of jExpr * jExpr
-    | NotEqual of jExpr * jExpr
-    | Less of jExpr * jExpr
-    | More of jExpr * jExpr
-    | LessOrEqual of jExpr * jExpr
-    | MoreOrEqual of jExpr * jExpr 
-    | ClassCreate of string * jExpr list (*new clName(argList)*)
-    | ArrayCreate of jType * jExpr list (*new arrType[cntExpr]*) 
-    | CallMethod of jExpr * jExpr list  
+  type expr =
+    | Add of expr * expr
+    | Sub of expr * expr
+    | Mult of expr * expr
+    | Div of expr * expr
+    | Mod of expr * expr
+    | PrefAdd of expr
+    | PrefSub of expr
+    | PostAdd of expr
+    | PostSub of expr 
+    | And of expr * expr
+    | Or of expr * expr
+    | Not of expr 
+    | Equal of expr * expr
+    | NotEqual of expr * expr
+    | Less of expr * expr
+    | More of expr * expr
+    | LessOrEqual of expr * expr
+    | MoreOrEqual of expr * expr 
+    | ClassCreate of string * expr list (*new clName(argList)*)
+    | ArrayCreate of type_t * expr list (*new arrType[cntExpr]*) 
+    | CallMethod of expr * expr list  
     | Identifier of string 
-    | Const of jValue
+    | Const of value
     | This
     | Super
     | Null
-    | FieldAccess of jExpr * jExpr
-    | ArrayAccess of jExpr * jExpr list
-    | Assign of jExpr * jExpr
+    | FieldAccess of expr * expr
+    | ArrayAccess of expr * expr list
+    | Assign of expr * expr
     
-  and jStat =
-    | If of jExpr * jStat * jStat option (*cond * thenStat * elseStat*)
-    | While of jExpr * jStat (* cond * body *)
-    | For of jStat option * jExpr option * jExpr list * jStat(* varDec * jExpr * afterBody * body *)
+  and stmt =
+    | If of expr * stmt * stmt option (*cond * thenStat * elseStat*)
+    | While of expr * stmt (* cond * body *)
+    | For of stmt option * expr option * expr list * stmt(* varDec * expr * afterBody * body *)
     | Break
     | Continue
-    | Return of jExpr option (* result *)
-    | StatBlock of jStat list
-    | VarDec of jModifier list * jType * ((jExpr * (jExpr option)) list)
-    | Expression of jExpr 
-    | Throw of jExpr
+    | Return of expr option (* result *)
+    | StatBlock of stmt list
+    | VarDec of modifier list * type_t * ((expr * (expr option)) list)
+    | Expression of expr 
+    | Throw of expr
 
-  and jField = 
-    | Method of jModifier list * jType * jExpr * ((jType * jExpr) list) (*List of pairs (type, identificator)*) * jStat option(*Statement block*)
-    | VarField of jStat
-    | Constructor of jModifier list * jExpr * ((jType * jExpr) list) * jStat
+  and field = 
+    | Method of modifier list * type_t * expr * ((type_t * expr) list) (*List of pairs (type, identificator)*) * stmt option(*Statement block*)
+    | VarField of stmt
+    | Constructor of modifier list * expr * ((type_t * expr) list) * stmt
   
-  and jClassDec = Class of jModifier list * jExpr (*Identifier class name*) * jExpr option (*Parent class_name*) * jField list (* class body *)
+  and class_dec = Class of modifier list * expr (*Identifier class name*) * expr option (*Parent class_name*) * field list (* class body *)
 
-  (* type jMethod = {mModifiers: jModifier list; mName : string; mRetType : jType; mArgs : jExpr list; mBody : jStat list;}  
+  (* type jMethod = {mModifiers: modifier list; mName : string; mRetType : type_t; mArgs : expr list; mBody : stmt list;}  
 
-  type jClass = {cModifiers: jModifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option}   *)
+  type jClass = {cModifiers: modifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option}   *)
 
 end
 
