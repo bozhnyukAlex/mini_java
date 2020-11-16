@@ -3,4 +3,4 @@
 (cram enable)
 
 (package
- (name Lambda))
+ (name Bozhnyuk_Java))
