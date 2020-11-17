@@ -6,7 +6,7 @@
 (library
  (name java_lib)
  (public_name Java.Lib)
- (modules Atd Parser Tests)
+ (modules Ast Parser Tests)
  (libraries opal ppx_show.runtime)
  (inline_tests)
  (preprocess

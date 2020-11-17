@@ -1,19 +1,21 @@
 open Java_lib.Parser
 open Opal
-open Java_lib.Atd
+open Java_lib.Ast
 
-
-let rec print_list : class_dec list -> unit = function 
+let rec print_list : class_dec list -> unit = function
   | [] -> print_string ""
-  | e::l -> print_string (show_class_dec e) ; print_endline "" ; print_list l
-
+  | e :: l ->
+      print_string (show_class_dec e);
+      print_endline "";
+      print_list l
 
 let get_list_option opt = match opt with Some x -> x | None -> []
 
-
-
-
-let value = get_list_option (parse parser (LazyStream.of_string {| 
+let value =
+  get_list_option
+    (parse parser
+       (LazyStream.of_string
+          {| 
 public class Main
 {
 	public static void main(String[] args) {
@@ -89,7 +91,7 @@ class Child extends Person{
     
 }
 |}))
- 
-let testClass = 
-  let () = print_list value
-in ()
+
+let testClass =
+  let () = print_list value in
+  ()
