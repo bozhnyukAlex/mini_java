@@ -139,20 +139,15 @@ module Expr = struct
     parse atomic (LazyStream.of_string "true") = Some (Const (JVBool true))
 
   let type_spec_array =
+    let parse_arr_or_type t =
+      choice [ token "[]" >> return (JArray t); return t ]
+    in
     choice
       [
-        token "int"
-        >> choice [ many1 (token "[]") >> return (JArray JInt); return JInt ];
-        token "String"
-        >> choice
-             [ many1 (token "[]") >> return (JArray JString); return JString ];
+        token "int" >> parse_arr_or_type JInt;
+        token "String" >> parse_arr_or_type JString;
         token "void" >> return JVoid;
-        ( ident >>= fun class_name ->
-          choice
-            [
-              many1 (token "[]") >> return (JArray (JClassName class_name));
-              return (JClassName class_name);
-            ] );
+        (ident >>= fun class_name -> parse_arr_or_type (JClassName class_name));
       ]
 
   let%test _ = parse type_spec_array (LazyStream.of_string "int") = Some JInt
