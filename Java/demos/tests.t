@@ -1,144 +1,145 @@
   $ (cd ../../../../default && demos/demoFirst.exe)
-  Atd.Class
-  ([Atd.Public], Atd.Identifier ("Main"), None,
-   [Atd.Method
-    ([Atd.Public; Atd.Static], Atd.JVoid, Atd.Identifier ("main"),
-     [(Atd.JArray (Atd.JString), Atd.Identifier ("args"))],
-     Some (Atd.StatBlock ([Atd.VarDec
-                           (Atd.JClassName ("Person"),
-                            [(Atd.Identifier ("p"),
-                              Some (Atd.ClassCreate
+  Ast.Class
+  ([Ast.Public], Ast.Identifier ("Main"), None,
+   [Ast.Method
+    ([Ast.Public; Ast.Static], Ast.JVoid, Ast.Identifier ("main"),
+     [(Ast.JArray (Ast.JString), Ast.Identifier ("args"))],
+     Some (Ast.StatBlock ([Ast.VarDec
+                           (Ast.JClassName ("Person"),
+                            [(Ast.Identifier ("p"),
+                              Some (Ast.ClassCreate
                                     ("Person",
-                                     [Atd.Const (Atd.JVInt (80));
-                                      Atd.Const (Atd.JVInt (45))])))]);
-                           Atd.Expression (Atd.FieldAccess
-                                           (Atd.FieldAccess
-                                            (Atd.Identifier ("System"),
-                                             Atd.Identifier ("out")),
-                                            Atd.CallMethod
-                                            (Atd.Identifier ("println"),
-                                             [Atd.FieldAccess
-                                              (Atd.Identifier ("p"),
-                                               Atd.CallMethod
-                                               (Atd.Identifier ("getWeight"),
+                                     [Ast.Const (Ast.JVInt (80));
+                                      Ast.Const (Ast.JVInt (45))])))]);
+                           Ast.Expression (Ast.FieldAccess
+                                           (Ast.FieldAccess
+                                            (Ast.Identifier ("System"),
+                                             Ast.Identifier ("out")),
+                                            Ast.CallMethod
+                                            (Ast.Identifier ("println"),
+                                             [Ast.FieldAccess
+                                              (Ast.Identifier ("p"),
+                                               Ast.CallMethod
+                                               (Ast.Identifier ("getWeight"),
                                                 []))])));
-                           Atd.VarDec
-                           (Atd.JClassName ("Child"),
-                            [(Atd.Identifier ("ch"),
-                              Some (Atd.ClassCreate
+                           Ast.VarDec
+                           (Ast.JClassName ("Child"),
+                            [(Ast.Identifier ("ch"),
+                              Some (Ast.ClassCreate
                                     ("Child",
-                                     [Atd.Const (Atd.JVInt (66));
-                                      Atd.Const (Atd.JVInt (20))])))]);
-                           Atd.Expression (Atd.FieldAccess
-                                           (Atd.Identifier ("ch"),
-                                            Atd.CallMethod
-                                            (Atd.Identifier ("setCash"),
-                                             [Atd.Const (Atd.JVInt (50))])));
-                           Atd.Expression (Atd.FieldAccess
-                                           (Atd.Identifier ("ch"),
-                                            Atd.CallMethod
-                                            (Atd.Identifier ("giveEvenNumbers100"),
+                                     [Ast.Const (Ast.JVInt (66));
+                                      Ast.Const (Ast.JVInt (20))])))]);
+                           Ast.Expression (Ast.FieldAccess
+                                           (Ast.Identifier ("ch"),
+                                            Ast.CallMethod
+                                            (Ast.Identifier ("setCash"),
+                                             [Ast.Const (Ast.JVInt (50))])));
+                           Ast.Expression (Ast.FieldAccess
+                                           (Ast.Identifier ("ch"),
+                                            Ast.CallMethod
+                                            (Ast.Identifier ("giveEvenNumbers100"),
                                              [])))])))])
-  Atd.Class
-  ([], Atd.Identifier ("Person"), None,
-   [Atd.VarField ([Atd.Public], Atd.JInt, [(Atd.Identifier ("weight"), None)]);
-    Atd.VarField ([Atd.Public], Atd.JInt, [(Atd.Identifier ("age"), None)]);
-    Atd.Constructor
-    ([Atd.Public], Atd.Identifier ("Person"),
-     [(Atd.JInt, Atd.Identifier ("w")); (Atd.JInt, Atd.Identifier ("a"))],
-     Atd.StatBlock ([Atd.Expression (Atd.Assign
-                                     (Atd.FieldAccess
-                                      (Atd.This, Atd.Identifier ("weight")),
-                                      Atd.Identifier ("w")));
-                     Atd.Expression (Atd.Assign
-                                     (Atd.FieldAccess
-                                      (Atd.This, Atd.Identifier ("age")),
-                                      Atd.Identifier ("a")))]));
-    Atd.Method
-    ([Atd.Public], Atd.JInt, Atd.Identifier ("getWeight"), [],
-     Some (Atd.StatBlock ([Atd.Return (Some (Atd.Identifier ("weight")))])));
-    Atd.Method
-    ([Atd.Public], Atd.JInt, Atd.Identifier ("getAge"), [],
-     Some (Atd.StatBlock ([Atd.Return (Some (Atd.Identifier ("age")))])));
-    Atd.Method
-    ([Atd.Public], Atd.JVoid, Atd.Identifier ("setWeight"),
-     [(Atd.JInt, Atd.Identifier ("w"))],
-     Some (Atd.StatBlock ([Atd.Expression (Atd.Assign
-                                           (Atd.FieldAccess
-                                            (Atd.This,
-                                             Atd.Identifier ("weight")),
-                                            Atd.Identifier ("w")))])));
-    Atd.Method
-    ([Atd.Public], Atd.JVoid, Atd.Identifier ("setAge"),
-     [(Atd.JInt, Atd.Identifier ("a"))],
-     Some (Atd.StatBlock ([Atd.Expression (Atd.Assign
-                                           (Atd.FieldAccess
-                                            (Atd.This, Atd.Identifier ("age")),
-                                            Atd.Identifier ("a")))])))])
-  Atd.Class
-  ([], Atd.Identifier ("Child"), Some (Atd.Identifier ("Person")),
-   [Atd.VarField ([Atd.Public], Atd.JInt, [(Atd.Identifier ("cash"), None)]);
-    Atd.Constructor
-    ([Atd.Public], Atd.Identifier ("Child"),
-     [(Atd.JInt, Atd.Identifier ("w")); (Atd.JInt, Atd.Identifier ("a"))],
-     Atd.StatBlock ([Atd.Expression (Atd.CallMethod
-                                     (Atd.Super,
-                                      [Atd.Identifier ("w");
-                                       Atd.Identifier ("a")]));
-                     Atd.Expression (Atd.Assign
-                                     (Atd.Identifier ("cash"),
-                                      Atd.Const (Atd.JVInt (0))))]));
-    Atd.Method
-    ([Atd.Public], Atd.JInt, Atd.Identifier ("getCash"), [],
-     Some (Atd.StatBlock ([Atd.Return (Some (Atd.Identifier ("cash")))])));
-    Atd.Method
-    ([Atd.Public], Atd.JVoid, Atd.Identifier ("setCash"),
-     [(Atd.JInt, Atd.Identifier ("c"))],
-     Some (Atd.StatBlock ([Atd.Expression (Atd.Assign
-                                           (Atd.FieldAccess
-                                            (Atd.This, Atd.Identifier ("cash")),
-                                            Atd.Identifier ("c")))])));
-    Atd.Constructor
-    ([Atd.Public], Atd.Identifier ("Child"),
-     [(Atd.JInt, Atd.Identifier ("w")); (Atd.JInt, Atd.Identifier ("a"));
-      (Atd.JInt, Atd.Identifier ("c"))],
-     Atd.StatBlock ([Atd.Expression (Atd.CallMethod
-                                     (Atd.Super,
-                                      [Atd.Identifier ("w");
-                                       Atd.Identifier ("a")]));
-                     Atd.Expression (Atd.Assign
-                                     (Atd.Identifier ("cash"),
-                                      Atd.Identifier ("c")))]));
-    Atd.Method
-    ([Atd.Public], Atd.JVoid, Atd.Identifier ("giveEvenNumbers100"), [],
-     Some (Atd.StatBlock ([Atd.For
-                           (Some (Atd.VarDec
-                                  (Atd.JInt,
-                                   [(Atd.Identifier ("i"),
-                                     Some (Atd.Const (Atd.JVInt (0))))])),
-                            Some (Atd.Less
-                                  (Atd.Identifier ("i"),
-                                   Atd.Const (Atd.JVInt (100)))),
-                            [Atd.PostInc (Atd.Identifier ("i"))],
-                            Atd.StatBlock ([Atd.If
-                                            (Atd.And
-                                             (Atd.Equal
-                                              (Atd.Mod
-                                               (Atd.Identifier ("i"),
-                                                Atd.Const (Atd.JVInt (2))),
-                                               Atd.Const (Atd.JVInt (0))),
-                                              Atd.Not (Atd.Equal
-                                                       (Atd.Mod
-                                                        (Atd.Identifier ("i"),
-                                                         Atd.Const (Atd.JVInt (2))),
-                                                        Atd.Const (Atd.JVInt (1))))),
-                                             Atd.StatBlock ([Atd.Expression (
-                                                              Atd.FieldAccess
-                                                              (Atd.FieldAccess
-                                                               (Atd.Identifier ("System"),
-                                                                Atd.Identifier ("out")),
-                                                               Atd.CallMethod
-                                                               (Atd.Identifier ("println"),
-                                                                [Atd.Identifier ("i")])))]),
-                                             Some (Atd.StatBlock ([Atd.Continue])))]))])))])
+  Ast.Class
+  ([], Ast.Identifier ("Person"), None,
+   [Ast.VarField ([Ast.Public], Ast.JInt, [(Ast.Identifier ("weight"), None)]);
+    Ast.VarField ([Ast.Public], Ast.JInt, [(Ast.Identifier ("age"), None)]);
+    Ast.Constructor
+    ([Ast.Public], Ast.Identifier ("Person"),
+     [(Ast.JInt, Ast.Identifier ("w")); (Ast.JInt, Ast.Identifier ("a"))],
+     Ast.StatBlock ([Ast.Expression (Ast.Assign
+                                     (Ast.FieldAccess
+                                      (Ast.This, Ast.Identifier ("weight")),
+                                      Ast.Identifier ("w")));
+                     Ast.Expression (Ast.Assign
+                                     (Ast.FieldAccess
+                                      (Ast.This, Ast.Identifier ("age")),
+                                      Ast.Identifier ("a")))]));
+    Ast.Method
+    ([Ast.Public], Ast.JInt, Ast.Identifier ("getWeight"), [],
+     Some (Ast.StatBlock ([Ast.Return (Some (Ast.Identifier ("weight")))])));
+    Ast.Method
+    ([Ast.Public], Ast.JInt, Ast.Identifier ("getAge"), [],
+     Some (Ast.StatBlock ([Ast.Return (Some (Ast.Identifier ("age")))])));
+    Ast.Method
+    ([Ast.Public], Ast.JVoid, Ast.Identifier ("setWeight"),
+     [(Ast.JInt, Ast.Identifier ("w"))],
+     Some (Ast.StatBlock ([Ast.Expression (Ast.Assign
+                                           (Ast.FieldAccess
+                                            (Ast.This,
+                                             Ast.Identifier ("weight")),
+                                            Ast.Identifier ("w")))])));
+    Ast.Method
+    ([Ast.Public], Ast.JVoid, Ast.Identifier ("setAge"),
+     [(Ast.JInt, Ast.Identifier ("a"))],
+     Some (Ast.StatBlock ([Ast.Expression (Ast.Assign
+                                           (Ast.FieldAccess
+                                            (Ast.This, Ast.Identifier ("age")),
+                                            Ast.Identifier ("a")))])))])
+  Ast.Class
+  ([], Ast.Identifier ("Child"), Some (Ast.Identifier ("Person")),
+   [Ast.VarField ([Ast.Public], Ast.JInt, [(Ast.Identifier ("cash"), None)]);
+    Ast.Constructor
+    ([Ast.Public], Ast.Identifier ("Child"),
+     [(Ast.JInt, Ast.Identifier ("w")); (Ast.JInt, Ast.Identifier ("a"))],
+     Ast.StatBlock ([Ast.Expression (Ast.CallMethod
+                                     (Ast.Super,
+                                      [Ast.Identifier ("w");
+                                       Ast.Identifier ("a")]));
+                     Ast.Expression (Ast.Assign
+                                     (Ast.Identifier ("cash"),
+                                      Ast.Const (Ast.JVInt (0))))]));
+    Ast.Method
+    ([Ast.Public], Ast.JInt, Ast.Identifier ("getCash"), [],
+     Some (Ast.StatBlock ([Ast.Return (Some (Ast.Identifier ("cash")))])));
+    Ast.Method
+    ([Ast.Public], Ast.JVoid, Ast.Identifier ("setCash"),
+     [(Ast.JInt, Ast.Identifier ("c"))],
+     Some (Ast.StatBlock ([Ast.Expression (Ast.Assign
+                                           (Ast.FieldAccess
+                                            (Ast.This, Ast.Identifier ("cash")),
+                                            Ast.Identifier ("c")))])));
+    Ast.Constructor
+    ([Ast.Public], Ast.Identifier ("Child"),
+     [(Ast.JInt, Ast.Identifier ("w")); (Ast.JInt, Ast.Identifier ("a"));
+      (Ast.JInt, Ast.Identifier ("c"))],
+     Ast.StatBlock ([Ast.Expression (Ast.CallMethod
+                                     (Ast.Super,
+                                      [Ast.Identifier ("w");
+                                       Ast.Identifier ("a")]));
+                     Ast.Expression (Ast.Assign
+                                     (Ast.Identifier ("cash"),
+                                      Ast.Identifier ("c")))]));
+    Ast.Method
+    ([Ast.Public], Ast.JVoid, Ast.Identifier ("giveEvenNumbers100"), [],
+     Some (Ast.StatBlock ([Ast.For
+                           (Some (Ast.VarDec
+                                  (Ast.JInt,
+                                   [(Ast.Identifier ("i"),
+                                     Some (Ast.Const (Ast.JVInt (0))))])),
+                            Some (Ast.Less
+                                  (Ast.Identifier ("i"),
+                                   Ast.Const (Ast.JVInt (100)))),
+                            [Ast.PostInc (Ast.Identifier ("i"))],
+                            Ast.StatBlock ([Ast.If
+                                            (Ast.And
+                                             (Ast.Equal
+                                              (Ast.Mod
+                                               (Ast.Identifier ("i"),
+                                                Ast.Const (Ast.JVInt (2))),
+                                               Ast.Const (Ast.JVInt (0))),
+                                              Ast.Not (Ast.Equal
+                                                       (Ast.Mod
+                                                        (Ast.Identifier ("i"),
+                                                         Ast.Const (Ast.JVInt (2))),
+                                                        Ast.Const (Ast.JVInt (1))))),
+                                             Ast.StatBlock ([Ast.Expression (
+                                                              Ast.FieldAccess
+                                                              (Ast.FieldAccess
+                                                               (Ast.Identifier ("System"),
+                                                                Ast.Identifier ("out")),
+                                                               Ast.CallMethod
+                                                               (Ast.Identifier ("println"),
+                                                                [Ast.Identifier ("i")])))]),
+                                             Some (Ast.StatBlock ([Ast.Continue])))]))])))])
+
 
