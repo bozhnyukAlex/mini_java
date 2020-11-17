@@ -4,7 +4,7 @@ open Java_lib.Atd
 
 
 let rec print_list : class_dec list -> unit = function 
-  | [] -> print_newline () ; 
+  | [] -> print_string ""
   | e::l -> print_string (show_class_dec e) ; print_endline "" ; print_list l
 
 

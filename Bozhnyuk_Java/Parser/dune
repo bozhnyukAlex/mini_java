@@ -1,6 +1,0 @@
-(library
- (name Parser)
- (libraries ATD opal)
- (inline_tests)
- (preprocess
-  (pps ppx_expect)))
