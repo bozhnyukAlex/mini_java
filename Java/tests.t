@@ -1,1 +1,0 @@
-  $ (cd ../../../default && demos/demoFirst.exe)
