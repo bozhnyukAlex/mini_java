@@ -16,6 +16,8 @@ depends: [
   "dune" #{>= "2.7"}
   "ocamlformat" { build }
   "opal"
+  "ppx_deriving"
+  "ppx_show"
 ]
 
 

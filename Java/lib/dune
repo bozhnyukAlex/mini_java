@@ -7,7 +7,7 @@
  (name java_lib)
  (public_name Java.Lib)
  (modules Atd Parser Tests)
- (libraries opal)
+ (libraries opal ppx_show.runtime)
  (inline_tests)
  (preprocess
-  (pps ppx_expect)))
+  (pps ppx_expect ppx_show)))
