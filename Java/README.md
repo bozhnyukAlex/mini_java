@@ -6,12 +6,15 @@ License: LGPL
 
 Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
 
+Ключевые слова не могут являться именами классов. 
+
 Features done:
 
-- 1 
-- 2
+- 1 Первая версия AST
+- 2 Первая версия Парсера 
 
 Features in progress:
 
-- 1 AST
-- 2 Parser
+- 1 Исправить, чтобы в гите не отображалось лишнее
+- 2 Сделать отдельную функцию для теста
+- 3 int[][][][] = int[]? Проверить, что там
