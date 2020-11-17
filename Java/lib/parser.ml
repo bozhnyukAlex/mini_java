@@ -140,7 +140,11 @@ module Expr = struct
 
   let type_spec_array =
     let parse_arr_or_type t =
-      choice [ token "[]" >> return (JArray t); return t ]
+      many (token "[]") >>= fun br_list ->
+      match List.length br_list with
+      | 0 -> return t
+      | 1 -> return (JArray t)
+      | other -> mzero
     in
     choice
       [
@@ -149,6 +153,8 @@ module Expr = struct
         token "void" >> return JVoid;
         (ident >>= fun class_name -> parse_arr_or_type (JClassName class_name));
       ]
+
+  let%test _ = parse type_spec_array (LazyStream.of_string "int[][][]") = None
 
   let%test _ = parse type_spec_array (LazyStream.of_string "int") = Some JInt
 
