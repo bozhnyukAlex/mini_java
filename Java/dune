@@ -4,5 +4,5 @@
  (modules REPL)
  (libraries Java.Lib))
 
- ; (cram
- ;  (deps demos/demoFirst.exe))
+ (cram
+  (deps demos/demoFirst.exe))
