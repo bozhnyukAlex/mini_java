@@ -146,7 +146,6 @@ module Expr = struct
       | 1 -> return (JArray t)
       | other -> mzero
     in
-
     choice
       [
         token "int" >> parse_arr_or_type JInt;
