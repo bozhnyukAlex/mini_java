@@ -9,6 +9,8 @@ type type_t =
   | JObject
 [@@deriving show]
 
+type error = ParseError [@@deriving show]
+
 type value =
   | JVBool of bool
   | JVInt of int

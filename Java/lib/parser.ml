@@ -143,14 +143,14 @@ module Expr = struct
       many (token "[]") >>= fun br_list ->
       match List.length br_list with
       | 0 -> return t
-      | 1 -> return (JArray t)
-      | other -> mzero
+      | 1 when t <> JVoid -> return (JArray t)
+      | _ -> mzero
     in
     choice
       [
         token "int" >> parse_arr_or_type JInt;
         token "String" >> parse_arr_or_type JString;
-        token "void" >> return JVoid;
+        token "void" >> parse_arr_or_type JVoid;
         (ident >>= fun class_name -> parse_arr_or_type (JClassName class_name));
       ]
 
@@ -160,6 +160,8 @@ module Expr = struct
 
   let%test _ =
     parse type_spec_array (LazyStream.of_string "int[]") = Some (JArray JInt)
+
+  let%test _ = parse type_spec_array (LazyStream.of_string "void[]") = None
 
   let%test _ =
     parse type_spec_array (LazyStream.of_string "Car[]")
@@ -177,6 +179,9 @@ module Expr = struct
   let%test _ = parse type_spec (LazyStream.of_string "int") = Some JInt
 
   let%test _ = parse type_spec (LazyStream.of_string "   void") = Some JVoid
+
+  let%test _ =
+    parse type_spec (LazyStream.of_string "Car") = Some (JClassName "Car")
 
   let rec expression input = choice [ numeric ] input
 
