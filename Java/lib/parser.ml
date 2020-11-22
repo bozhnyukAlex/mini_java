@@ -27,6 +27,8 @@ let reserved =
     "return";
   ]
 
+let apply p s = parse p (LazyStream.of_string s)
+
 let parens = between (token "(") (token ")")
 
 let brackets = between (token "[") (token "]")
@@ -50,30 +52,27 @@ let modifier input =
 module Expr = struct
   let null = token "null" >> return Null
 
-  let%test _ = parse null (LazyStream.of_string "null") = Some Null
+  let%test _ = apply null "null" = Some Null
 
-  let%test _ = parse null (LazyStream.of_string "   null") = Some Null
+  let%test _ = apply null "   null" = Some Null
 
   let super = token "super" >> return Super
 
-  let%test _ = parse super (LazyStream.of_string "super") = Some Super
+  let%test _ = apply super "super" = Some Super
 
-  let%test _ = parse super (LazyStream.of_string "   super") = Some Super
+  let%test _ = apply super "   super" = Some Super
 
   let this = token "this" >> return This
 
-  let%test _ = parse this (LazyStream.of_string "this") = Some This
+  let%test _ = apply this "this" = Some This
 
-  let%test _ = parse this (LazyStream.of_string "   this") = Some This
+  let%test _ = apply this "   this" = Some This
 
   let constInt = integer >>= fun n -> return (Const (JVInt n))
 
-  let%test _ =
-    parse constInt (LazyStream.of_string "100500") = Some (Const (JVInt 100500))
+  let%test _ = apply constInt "100500" = Some (Const (JVInt 100500))
 
-  let%test _ =
-    parse constInt (LazyStream.of_string "    100500")
-    = Some (Const (JVInt 100500))
+  let%test _ = apply constInt "    100500" = Some (Const (JVInt 100500))
 
   let constString =
     let string_of_chars chars =
@@ -85,7 +84,7 @@ module Expr = struct
     token "\"" >> return (Const (JVString (string_of_chars list)))
 
   let%test _ =
-    parse constString (LazyStream.of_string "\"hello world!\"")
+    apply constString "\"hello world!\""
     = Some (Const (JVString "hello world!"))
 
   let ident =
@@ -95,13 +94,11 @@ module Expr = struct
 
   let identifier = ident => fun s -> Identifier s
 
-  let%test _ =
-    parse identifier (LazyStream.of_string "IdentSample")
-    = Some (Identifier "IdentSample")
+  let%test _ = apply identifier "IdentSample" = Some (Identifier "IdentSample")
 
-  let%test _ = parse identifier (LazyStream.of_string "super") = None
+  let%test _ = apply identifier "super" = None
 
-  let%test _ = parse identifier (LazyStream.of_string "123bob") = None
+  let%test _ = apply identifier "123bob" = None
 
   let add_op = token "+" >> return (fun x y -> Add (x, y))
 
@@ -135,8 +132,7 @@ module Expr = struct
     <|> (token "false" >> return (Const (JVBool false)))
     <|> null
 
-  let%test _ =
-    parse atomic (LazyStream.of_string "true") = Some (Const (JVBool true))
+  let%test _ = apply atomic "true" = Some (Const (JVBool true))
 
   let type_spec_array =
     let parse_arr_or_type t =
@@ -154,18 +150,15 @@ module Expr = struct
         (ident >>= fun class_name -> parse_arr_or_type (JClassName class_name));
       ]
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "int[][][]") = None
+  let%test _ = apply type_spec_array "int[][][]" = None
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "int") = Some JInt
+  let%test _ = apply type_spec_array "int" = Some JInt
 
-  let%test _ =
-    parse type_spec_array (LazyStream.of_string "int[]") = Some (JArray JInt)
+  let%test _ = apply type_spec_array "int[]" = Some (JArray JInt)
 
-  let%test _ = parse type_spec_array (LazyStream.of_string "void[]") = None
+  let%test _ = apply type_spec_array "void[]" = None
 
-  let%test _ =
-    parse type_spec_array (LazyStream.of_string "Car[]")
-    = Some (JArray (JClassName "Car"))
+  let%test _ = apply type_spec_array "Car[]" = Some (JArray (JClassName "Car"))
 
   let type_spec =
     choice
@@ -176,12 +169,11 @@ module Expr = struct
         (ident >>= fun class_name -> return (JClassName class_name));
       ]
 
-  let%test _ = parse type_spec (LazyStream.of_string "int") = Some JInt
+  let%test _ = apply type_spec "int" = Some JInt
 
-  let%test _ = parse type_spec (LazyStream.of_string "   void") = Some JVoid
+  let%test _ = apply type_spec "   void" = Some JVoid
 
-  let%test _ =
-    parse type_spec (LazyStream.of_string "Car") = Some (JClassName "Car")
+  let%test _ = apply type_spec "Car" = Some (JClassName "Car")
 
   let rec expression input = choice [ numeric ] input
 
@@ -275,12 +267,11 @@ module Stat = struct
 
   let break_stat = token "break" >> token ";" >> return Break
 
-  let%test _ = parse break_stat (LazyStream.of_string "break;") = Some Break
+  let%test _ = apply break_stat "break;" = Some Break
 
   let continue_stat = token "continue" >> token ";" >> return Continue
 
-  let%test _ =
-    parse continue_stat (LazyStream.of_string "continue;") = Some Continue
+  let%test _ = apply continue_stat "continue;" = Some Continue
 
   let return_stat =
     token "return "
@@ -291,23 +282,21 @@ module Stat = struct
          ]
 
   let%test _ =
-    parse return_stat (LazyStream.of_string "return 0;")
-    = Some (Return (Some (Const (JVInt 0))))
+    apply return_stat "return 0;" = Some (Return (Some (Const (JVInt 0))))
 
   let%test _ =
-    parse return_stat (LazyStream.of_string "return a < b;")
+    apply return_stat "return a < b;"
     = Some (Return (Some (Less (Identifier "a", Identifier "b"))))
 
   let expr_stat =
     expression >>= fun expr -> token ";" >> return (Expression expr)
 
   let%test _ =
-    parse expr_stat (LazyStream.of_string "fork();")
+    apply expr_stat "fork();"
     = Some (Expression (CallMethod (Identifier "fork", [])))
 
   let%test _ =
-    parse expr_stat (LazyStream.of_string "i++;")
-    = Some (Expression (PostInc (Identifier "i")))
+    apply expr_stat "i++;" = Some (Expression (PostInc (Identifier "i")))
 
   let rec statement input =
     choice

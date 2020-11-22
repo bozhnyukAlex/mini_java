@@ -6,24 +6,22 @@ open Opal
 (* -------------------  EXPRESSIONS ------------------- *)
 
 let%test _ =
-  parse expression (LazyStream.of_string "a = 2")
-  = Some (Assign (Identifier "a", Const (JVInt 2)))
+  apply expression "a = 2" = Some (Assign (Identifier "a", Const (JVInt 2)))
 
 let%test _ =
-  parse expression (LazyStream.of_string "a[i] = 2")
+  apply expression "a[i] = 2"
   = Some
       (Assign (ArrayAccess (Identifier "a", Identifier "i"), Const (JVInt 2)))
 
 let%test _ =
-  parse expression (LazyStream.of_string "a = b = 3")
+  apply expression "a = b = 3"
   = Some (Assign (Identifier "a", Assign (Identifier "b", Const (JVInt 3))))
 
 let%test _ =
-  parse expression (LazyStream.of_string "1 + 2")
-  = Some (Add (Const (JVInt 1), Const (JVInt 2)))
+  apply expression "1 + 2" = Some (Add (Const (JVInt 1), Const (JVInt 2)))
 
 let%test _ =
-  parse expression (LazyStream.of_string "1 + 2 * 3 / 4 % 5 - 6")
+  apply expression "1 + 2 * 3 / 4 % 5 - 6"
   = Some
       (Sub
          ( Add
@@ -34,8 +32,7 @@ let%test _ =
            Const (JVInt 6) ))
 
 let%test _ =
-  parse expression
-    (LazyStream.of_string "(x + y <= 10) && (a % 2 == 0) || !(c / 2 > 3)")
+  apply expression "(x + y <= 10) && (a % 2 == 0) || !(c / 2 > 3)"
   = Some
       (Or
          ( And
@@ -46,18 +43,17 @@ let%test _ =
          ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "2 + 3 * (5 - 3)")
+  apply expression "2 + 3 * (5 - 3)"
   = Some
       (Add
          ( Const (JVInt 2),
            Mult (Const (JVInt 3), Sub (Const (JVInt 5), Const (JVInt 3))) ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "a[i]")
-  = Some (ArrayAccess (Identifier "a", Identifier "i"))
+  apply expression "a[i]" = Some (ArrayAccess (Identifier "a", Identifier "i"))
 
 let%test _ =
-  parse expression (LazyStream.of_string "someObj.method(arg1, arg2, arg3)")
+  apply expression "someObj.method(arg1, arg2, arg3)"
   = Some
       (FieldAccess
          ( Identifier "someObj",
@@ -66,14 +62,14 @@ let%test _ =
                [ Identifier "arg1"; Identifier "arg2"; Identifier "arg3" ] ) ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "arr[i].get()")
+  apply expression "arr[i].get()"
   = Some
       (FieldAccess
          ( ArrayAccess (Identifier "arr", Identifier "i"),
            CallMethod (Identifier "get", []) ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "a[i].b[j]")
+  apply expression "a[i].b[j]"
   = Some
       (ArrayAccess
          ( FieldAccess
@@ -81,14 +77,14 @@ let%test _ =
            Identifier "j" ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "this.getArray()[i]")
+  apply expression "this.getArray()[i]"
   = Some
       (ArrayAccess
          ( FieldAccess (This, CallMethod (Identifier "getArray", [])),
            Identifier "i" ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "this.getCar().wheels[2].rad")
+  apply expression "this.getCar().wheels[2].rad"
   = Some
       (FieldAccess
          ( ArrayAccess
@@ -99,7 +95,7 @@ let%test _ =
            Identifier "rad" ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "a.b[i].c[j]")
+  apply expression "a.b[i].c[j]"
   = Some
       (ArrayAccess
          ( FieldAccess
@@ -109,35 +105,33 @@ let%test _ =
            Identifier "j" ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "a.b.c")
+  apply expression "a.b.c"
   = Some
       (FieldAccess (FieldAccess (Identifier "a", Identifier "b"), Identifier "c"))
 
 let%test _ =
-  parse expression (LazyStream.of_string "call(1 + 2, 40)")
+  apply expression "call(1 + 2, 40)"
   = Some
       (CallMethod
          ( Identifier "call",
            [ Add (Const (JVInt 1), Const (JVInt 2)); Const (JVInt 40) ] ))
 
-let%test _ =
-  parse expression (LazyStream.of_string "new int[]")
-  = Some (ArrayCreate (JInt, None))
+let%test _ = apply expression "new int[]" = Some (ArrayCreate (JInt, None))
 
 let%test _ =
-  parse expression (LazyStream.of_string "new int[4]")
+  apply expression "new int[4]"
   = Some (ArrayCreate (JInt, Some (Const (JVInt 4))))
 
 let%test _ =
-  parse expression (LazyStream.of_string "new arr[i]")
+  apply expression "new arr[i]"
   = Some (ArrayCreate (JClassName "arr", Some (Identifier "i")))
 
 let%test _ =
-  parse expression (LazyStream.of_string "new Car(2,\"Ford\")")
+  apply expression "new Car(2,\"Ford\")"
   = Some (ClassCreate ("Car", [ Const (JVInt 2); Const (JVString "Ford") ]))
 
 let%test _ =
-  parse expression (LazyStream.of_string "get(new Sth(), new String[10])")
+  apply expression "get(new Sth(), new String[10])"
   = Some
       (CallMethod
          ( Identifier "get",
@@ -147,14 +141,14 @@ let%test _ =
            ] ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "(new Man(3,\"John\")).scream())")
+  apply expression "(new Man(3,\"John\")).scream())"
   = Some
       (FieldAccess
          ( ClassCreate ("Man", [ Const (JVInt 3); Const (JVString "John") ]),
            CallMethod (Identifier "scream", []) ))
 
 let%test _ =
-  parse expression (LazyStream.of_string "--(obj.f + (x + y)++)")
+  apply expression "--(obj.f + (x + y)++)"
   = Some
       (PrefDec
          (Add
@@ -164,7 +158,7 @@ let%test _ =
 (* -------------------  STATEMENTS ---------------------*)
 
 let%test _ =
-  parse statement (LazyStream.of_string "int a = 0, b, c, d = 5;")
+  apply statement "int a = 0, b, c, d = 5;"
   = Some
       (VarDec
          ( JInt,
@@ -176,7 +170,7 @@ let%test _ =
            ] ))
 
 let%test _ =
-  parse statement (LazyStream.of_string "int[] a = new int[6];")
+  apply statement "int[] a = new int[6];"
   = Some
       (VarDec
          ( JArray JInt,
@@ -185,7 +179,7 @@ let%test _ =
            ] ))
 
 let%test _ =
-  parse statement (LazyStream.of_string "int a = 0, b = 1, c = 2;")
+  apply statement "int a = 0, b = 1, c = 2;"
   = Some
       (VarDec
          ( JInt,
@@ -196,7 +190,7 @@ let%test _ =
            ] ))
 
 let%test _ =
-  parse statement (LazyStream.of_string "if (x < 10) x++;")
+  apply statement "if (x < 10) x++;"
   = Some
       (If
          ( Less (Identifier "x", Const (JVInt 10)),
@@ -204,9 +198,8 @@ let%test _ =
            None ))
 
 let%test _ =
-  parse statement
-    (LazyStream.of_string
-       "if (a < b) {\n return b - a; \n } else { \n return a - b; \n }")
+  apply statement
+    "if (a < b) {\n return b - a; \n } else { \n return a - b; \n }"
   = Some
       (If
          ( Less (Identifier "a", Identifier "b"),
@@ -216,22 +209,21 @@ let%test _ =
          ))
 
 let%test _ =
-  parse statement (LazyStream.of_string "array = new int[3];")
+  apply statement "array = new int[3];"
   = Some
       (Expression
          (Assign (Identifier "array", ArrayCreate (JInt, Some (Const (JVInt 3))))))
 
 let%test _ =
-  parse statement
-    (LazyStream.of_string
-       "if (a % 2 == 0 && b < 2) {\n\
-       \ a++;\n\
-       \ b--;\n\
-       \ return a * b; \n\
-       \ } else if (!(b / 2 != 5)) { \n\
-       \ --b; \n\
-       \  return (a + b)*3; \n\
-       \ } else continue;")
+  apply statement
+    "if (a % 2 == 0 && b < 2) {\n\
+    \ a++;\n\
+    \ b--;\n\
+    \ return a * b; \n\
+    \ } else if (!(b / 2 != 5)) { \n\
+    \ --b; \n\
+    \  return (a + b)*3; \n\
+    \ } else continue;"
   = Some
       (If
          ( And
@@ -260,9 +252,7 @@ let%test _ =
                   Some Continue )) ))
 
 let%test _ =
-  parse statement
-    (LazyStream.of_string
-       "while (d * d <= n) { if (n % d == 0) { return true; } d++; }")
+  apply statement "while (d * d <= n) { if (n % d == 0) { return true; } d++; }"
   = Some
       (While
          ( LessOrEqual (Mult (Identifier "d", Identifier "d"), Identifier "n"),
@@ -276,10 +266,9 @@ let%test _ =
              ] ))
 
 let%test _ =
-  parse statement
-    (LazyStream.of_string
-       "for (int i = 0, j = n - 1; i < j; i++, j--) { \
-        System.out.println(\"test\"); }")
+  apply statement
+    "for (int i = 0, j = n - 1; i < j; i++, j--) { \
+     System.out.println(\"test\"); }"
   = Some
       (For
          ( Some
@@ -302,28 +291,25 @@ let%test _ =
              ] ))
 
 let%test _ =
-  parse statement
-    (LazyStream.of_string "if (somethingWrong()) throw new Exception();")
+  apply statement "if (somethingWrong()) throw new Exception();"
   = Some
       (If
          ( CallMethod (Identifier "somethingWrong", []),
            Throw (ClassCreate ("Exception", [])),
            None ))
 
-let%test _ =
-  parse statement (LazyStream.of_string "for(public int i = 0;;) {i++;}") = None
+let%test _ = apply statement "for(public int i = 0;;) {i++;}" = None
 
 (*---------------- IN CLASSES ---------------*)
 
 let%test _ =
-  parse field_declaration (LazyStream.of_string "public int wheel;")
+  apply field_declaration "public int wheel;"
   = Some (VarField ([ Public ], JInt, [ (Identifier "wheel", None) ]))
 
 let%test _ =
-  parse method_declaration
-    (LazyStream.of_string
-       "public int arraySum (int[] a) { int sum = 0; for (int i = 0; i < \
-        a.length(); i++) {sum = sum + a[i];} return sum; }")
+  apply method_declaration
+    "public int arraySum (int[] a) { int sum = 0; for (int i = 0; i < \
+     a.length(); i++) {sum = sum + a[i];} return sum; }"
   = Some
       (Method
          ( [ Public ],
@@ -359,10 +345,9 @@ let%test _ =
                 ]) ))
 
 let%test _ =
-  parse constructor_declaration
-    (LazyStream.of_string
-       "public Car(int speed, int[] wheels) {this.speed = speed; this.wheels = \
-        wheels;}")
+  apply constructor_declaration
+    "public Car(int speed, int[] wheels) {this.speed = speed; this.wheels = \
+     wheels;}"
   = Some
       (Constructor
          ( [ Public ],

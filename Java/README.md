@@ -10,9 +10,8 @@ Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
 
 Features done:
 
-- 1 Первая версия AST
-- 2 Первая версия Парсера 
-- 3 int[][][] и int[] теперь не парсятся одинаково
+- 1 Отдельная функция для теста
+- 2
 
 Features in progress:
 
