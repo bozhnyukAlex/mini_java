@@ -11,7 +11,7 @@ Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
 Features done:
 
 - 1 Отдельная функция для теста
-- 2
+- 2 
 
 Features in progress:
 
