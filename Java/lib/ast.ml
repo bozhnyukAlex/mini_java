@@ -47,7 +47,8 @@ type expr =
   | LessOrEqual of expr * expr
   | MoreOrEqual of expr * expr
   | ClassCreate of string * expr list (*new clName(argList)*)
-  | ArrayCreate of type_t * expr option (*new arrType[cntExpr]*)
+  | ArrayCreateSized of type_t * expr (*new arrType[cntExpr]*)
+  | ArrayCreateElements of type_t * expr list (*new arrType[] {expr, ... , expr}*)
   | CallMethod of expr * expr list
   | Identifier of string
   | Const of value

@@ -116,15 +116,27 @@ let%test _ =
          ( Identifier "call",
            [ Add (Const (JVInt 1), Const (JVInt 2)); Const (JVInt 40) ] ))
 
-let%test _ = apply expression "new int[]" = Some (ArrayCreate (JInt, None))
+let%test _ = apply expression "new int[]" = None
+
+let%test _ =
+  apply expression "new int[] {1, 2, 7*8, var}"
+  = Some
+      (ArrayCreateElements
+         ( JInt,
+           [
+             Const (JVInt 1);
+             Const (JVInt 2);
+             Mult (Const (JVInt 7), Const (JVInt 8));
+             Identifier "var";
+           ] ))
 
 let%test _ =
   apply expression "new int[4]"
-  = Some (ArrayCreate (JInt, Some (Const (JVInt 4))))
+  = Some (ArrayCreateSized (JInt, Const (JVInt 4)))
 
 let%test _ =
   apply expression "new arr[i]"
-  = Some (ArrayCreate (JClassName "arr", Some (Identifier "i")))
+  = Some (ArrayCreateSized (JClassName "arr", Identifier "i"))
 
 let%test _ =
   apply expression "new Car(2,\"Ford\")"
@@ -137,7 +149,7 @@ let%test _ =
          ( Identifier "get",
            [
              ClassCreate ("Sth", []);
-             ArrayCreate (JString, Some (Const (JVInt 10)));
+             ArrayCreateSized (JString, Const (JVInt 10));
            ] ))
 
 let%test _ =
@@ -174,9 +186,8 @@ let%test _ =
   = Some
       (VarDec
          ( JArray JInt,
-           [
-             (Identifier "a", Some (ArrayCreate (JInt, Some (Const (JVInt 6)))));
-           ] ))
+           [ (Identifier "a", Some (ArrayCreateSized (JInt, Const (JVInt 6)))) ]
+         ))
 
 let%test _ =
   apply statement "int a = 0, b = 1, c = 2;"
@@ -212,7 +223,7 @@ let%test _ =
   apply statement "array = new int[3];"
   = Some
       (Expression
-         (Assign (Identifier "array", ArrayCreate (JInt, Some (Const (JVInt 3))))))
+         (Assign (Identifier "array", ArrayCreateSized (JInt, Const (JVInt 3)))))
 
 let%test _ =
   apply statement

@@ -11,12 +11,13 @@ Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
 Features done:
 
 - 1 Отдельная функция для теста
-- 2 build/log не отображается
+- 2 build/log не отображается теперь 
+- 3 Исправил создание массивов, new type[] не должен парситься, только new type[expr] или new type[] {expr, ... , expr} 
 
 Features in progress:
 
 - 1
 - 2
-- 3 new int[][][]; - не должно парситься! new int[][][] { объявление конкретных элементов }
+- 3 
 
 

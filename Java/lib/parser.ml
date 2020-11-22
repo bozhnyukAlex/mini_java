@@ -249,9 +249,10 @@ module Expr = struct
     ( token "new" >> type_spec >>= fun ts ->
       choice
         [
-          token "[]" >> return (ArrayCreate (ts, None));
+          ( token "[]" >> token "{" >> sep_by1 expression (token ",")
+          >>= fun el_list -> return (ArrayCreateElements (ts, el_list)) );
           ( brackets expression >>= fun size ->
-            return (ArrayCreate (ts, Some size)) );
+            return (ArrayCreateSized (ts, size)) );
         ] )
       input
 
@@ -343,7 +344,7 @@ module Stat = struct
       <|> return (name, None)
     in
     type_spec_array >>= fun type_specifier ->
-    sep_by var_declarator (token ",") >>= fun dec_pairs ->
+    sep_by1 var_declarator (token ",") >>= fun dec_pairs ->
     token ";" >> return (VarDec (type_specifier, dec_pairs))
 
   and for_stat input =
