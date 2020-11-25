@@ -13,6 +13,7 @@ Features done:
 - 1 Отдельная функция для теста
 - 2 build/log не отображается теперь 
 - 3 Исправил создание массивов, new type[] не должен парситься, только new type[expr] или new type[] {expr, ... , expr} 
+- 4 Переименовал элементы в Ast
 
 Features in progress:
 
