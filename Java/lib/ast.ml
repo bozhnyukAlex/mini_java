@@ -1,4 +1,5 @@
-type modifier = Public | Static | Final | Abstract [@@deriving show]
+type modifier = Public | Static | Final | Abstract | Override
+[@@deriving show]
 
 type type_t =
   | Int

@@ -42,6 +42,7 @@ let get_list_option opt = match opt with Some x -> x | None -> []
 let modifier input =
   choice
     [
+      token "@Override" >> return Override;
       token "public" >> return Public;
       token "static" >> return Static;
       token "final" >> return Final;
