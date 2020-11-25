@@ -1,35 +1,34 @@
 open Parser
-open Parser.Stat
+open Parser.Stmt
 open Parser.Expr
 open Opal
 
 (* -------------------  EXPRESSIONS ------------------- *)
 
 let%test _ =
-  apply expression "a = 2" = Some (Assign (Identifier "a", Const (JVInt 2)))
+  apply expression "a = 2" = Some (Assign (Identifier "a", Const (VInt 2)))
 
 let%test _ =
   apply expression "a[i] = 2"
-  = Some
-      (Assign (ArrayAccess (Identifier "a", Identifier "i"), Const (JVInt 2)))
+  = Some (Assign (ArrayAccess (Identifier "a", Identifier "i"), Const (VInt 2)))
 
 let%test _ =
   apply expression "a = b = 3"
-  = Some (Assign (Identifier "a", Assign (Identifier "b", Const (JVInt 3))))
+  = Some (Assign (Identifier "a", Assign (Identifier "b", Const (VInt 3))))
 
 let%test _ =
-  apply expression "1 + 2" = Some (Add (Const (JVInt 1), Const (JVInt 2)))
+  apply expression "1 + 2" = Some (Add (Const (VInt 1), Const (VInt 2)))
 
 let%test _ =
   apply expression "1 + 2 * 3 / 4 % 5 - 6"
   = Some
       (Sub
          ( Add
-             ( Const (JVInt 1),
+             ( Const (VInt 1),
                Mod
-                 ( Div (Mult (Const (JVInt 2), Const (JVInt 3)), Const (JVInt 4)),
-                   Const (JVInt 5) ) ),
-           Const (JVInt 6) ))
+                 ( Div (Mult (Const (VInt 2), Const (VInt 3)), Const (VInt 4)),
+                   Const (VInt 5) ) ),
+           Const (VInt 6) ))
 
 let%test _ =
   apply expression "(x + y <= 10) && (a % 2 == 0) || !(c / 2 > 3)"
@@ -37,17 +36,16 @@ let%test _ =
       (Or
          ( And
              ( LessOrEqual
-                 (Add (Identifier "x", Identifier "y"), Const (JVInt 10)),
-               Equal (Mod (Identifier "a", Const (JVInt 2)), Const (JVInt 0)) ),
-           Not (More (Div (Identifier "c", Const (JVInt 2)), Const (JVInt 3)))
-         ))
+                 (Add (Identifier "x", Identifier "y"), Const (VInt 10)),
+               Equal (Mod (Identifier "a", Const (VInt 2)), Const (VInt 0)) ),
+           Not (More (Div (Identifier "c", Const (VInt 2)), Const (VInt 3))) ))
 
 let%test _ =
   apply expression "2 + 3 * (5 - 3)"
   = Some
       (Add
-         ( Const (JVInt 2),
-           Mult (Const (JVInt 3), Sub (Const (JVInt 5), Const (JVInt 3))) ))
+         ( Const (VInt 2),
+           Mult (Const (VInt 3), Sub (Const (VInt 5), Const (VInt 3))) ))
 
 let%test _ =
   apply expression "a[i]" = Some (ArrayAccess (Identifier "a", Identifier "i"))
@@ -91,7 +89,7 @@ let%test _ =
              ( FieldAccess
                  ( FieldAccess (This, CallMethod (Identifier "getCar", [])),
                    Identifier "wheels" ),
-               Const (JVInt 2) ),
+               Const (VInt 2) ),
            Identifier "rad" ))
 
 let%test _ =
@@ -114,7 +112,7 @@ let%test _ =
   = Some
       (CallMethod
          ( Identifier "call",
-           [ Add (Const (JVInt 1), Const (JVInt 2)); Const (JVInt 40) ] ))
+           [ Add (Const (VInt 1), Const (VInt 2)); Const (VInt 40) ] ))
 
 let%test _ = apply expression "new int[]" = None
 
@@ -122,25 +120,24 @@ let%test _ =
   apply expression "new int[] {1, 2, 7*8, var}"
   = Some
       (ArrayCreateElements
-         ( JInt,
+         ( Int,
            [
-             Const (JVInt 1);
-             Const (JVInt 2);
-             Mult (Const (JVInt 7), Const (JVInt 8));
+             Const (VInt 1);
+             Const (VInt 2);
+             Mult (Const (VInt 7), Const (VInt 8));
              Identifier "var";
            ] ))
 
 let%test _ =
-  apply expression "new int[4]"
-  = Some (ArrayCreateSized (JInt, Const (JVInt 4)))
+  apply expression "new int[4]" = Some (ArrayCreateSized (Int, Const (VInt 4)))
 
 let%test _ =
   apply expression "new arr[i]"
-  = Some (ArrayCreateSized (JClassName "arr", Identifier "i"))
+  = Some (ArrayCreateSized (ClassName "arr", Identifier "i"))
 
 let%test _ =
   apply expression "new Car(2,\"Ford\")"
-  = Some (ClassCreate ("Car", [ Const (JVInt 2); Const (JVString "Ford") ]))
+  = Some (ClassCreate ("Car", [ Const (VInt 2); Const (VString "Ford") ]))
 
 let%test _ =
   apply expression "get(new Sth(), new String[10])"
@@ -148,15 +145,14 @@ let%test _ =
       (CallMethod
          ( Identifier "get",
            [
-             ClassCreate ("Sth", []);
-             ArrayCreateSized (JString, Const (JVInt 10));
+             ClassCreate ("Sth", []); ArrayCreateSized (String, Const (VInt 10));
            ] ))
 
 let%test _ =
   apply expression "(new Man(3,\"John\")).scream())"
   = Some
       (FieldAccess
-         ( ClassCreate ("Man", [ Const (JVInt 3); Const (JVString "John") ]),
+         ( ClassCreate ("Man", [ Const (VInt 3); Const (VString "John") ]),
            CallMethod (Identifier "scream", []) ))
 
 let%test _ =
@@ -173,38 +169,38 @@ let%test _ =
   apply statement "int a = 0, b, c, d = 5;"
   = Some
       (VarDec
-         ( JInt,
+         ( Int,
            [
-             (Identifier "a", Some (Const (JVInt 0)));
+             (Identifier "a", Some (Const (VInt 0)));
              (Identifier "b", None);
              (Identifier "c", None);
-             (Identifier "d", Some (Const (JVInt 5)));
+             (Identifier "d", Some (Const (VInt 5)));
            ] ))
 
 let%test _ =
   apply statement "int[] a = new int[6];"
   = Some
       (VarDec
-         ( JArray JInt,
-           [ (Identifier "a", Some (ArrayCreateSized (JInt, Const (JVInt 6)))) ]
+         ( Array Int,
+           [ (Identifier "a", Some (ArrayCreateSized (Int, Const (VInt 6)))) ]
          ))
 
 let%test _ =
   apply statement "int a = 0, b = 1, c = 2;"
   = Some
       (VarDec
-         ( JInt,
+         ( Int,
            [
-             (Identifier "a", Some (Const (JVInt 0)));
-             (Identifier "b", Some (Const (JVInt 1)));
-             (Identifier "c", Some (Const (JVInt 2)));
+             (Identifier "a", Some (Const (VInt 0)));
+             (Identifier "b", Some (Const (VInt 1)));
+             (Identifier "c", Some (Const (VInt 2)));
            ] ))
 
 let%test _ =
   apply statement "if (x < 10) x++;"
   = Some
       (If
-         ( Less (Identifier "x", Const (JVInt 10)),
+         ( Less (Identifier "x", Const (VInt 10)),
            Expression (PostInc (Identifier "x")),
            None ))
 
@@ -214,16 +210,16 @@ let%test _ =
   = Some
       (If
          ( Less (Identifier "a", Identifier "b"),
-           StatBlock [ Return (Some (Sub (Identifier "b", Identifier "a"))) ],
+           StmtBlock [ Return (Some (Sub (Identifier "b", Identifier "a"))) ],
            Some
-             (StatBlock [ Return (Some (Sub (Identifier "a", Identifier "b"))) ])
+             (StmtBlock [ Return (Some (Sub (Identifier "a", Identifier "b"))) ])
          ))
 
 let%test _ =
   apply statement "array = new int[3];"
   = Some
       (Expression
-         (Assign (Identifier "array", ArrayCreateSized (JInt, Const (JVInt 3)))))
+         (Assign (Identifier "array", ArrayCreateSized (Int, Const (VInt 3)))))
 
 let%test _ =
   apply statement
@@ -238,9 +234,9 @@ let%test _ =
   = Some
       (If
          ( And
-             ( Equal (Mod (Identifier "a", Const (JVInt 2)), Const (JVInt 0)),
-               Less (Identifier "b", Const (JVInt 2)) ),
-           StatBlock
+             ( Equal (Mod (Identifier "a", Const (VInt 2)), Const (VInt 0)),
+               Less (Identifier "b", Const (VInt 2)) ),
+           StmtBlock
              [
                Expression (PostInc (Identifier "a"));
                Expression (PostDec (Identifier "b"));
@@ -250,15 +246,15 @@ let%test _ =
              (If
                 ( Not
                     (NotEqual
-                       (Div (Identifier "b", Const (JVInt 2)), Const (JVInt 5))),
-                  StatBlock
+                       (Div (Identifier "b", Const (VInt 2)), Const (VInt 5))),
+                  StmtBlock
                     [
                       Expression (PrefDec (Identifier "b"));
                       Return
                         (Some
                            (Mult
                               ( Add (Identifier "a", Identifier "b"),
-                                Const (JVInt 3) )));
+                                Const (VInt 3) )));
                     ],
                   Some Continue )) ))
 
@@ -267,11 +263,11 @@ let%test _ =
   = Some
       (While
          ( LessOrEqual (Mult (Identifier "d", Identifier "d"), Identifier "n"),
-           StatBlock
+           StmtBlock
              [
                If
-                 ( Equal (Mod (Identifier "n", Identifier "d"), Const (JVInt 0)),
-                   StatBlock [ Return (Some (Const (JVBool true))) ],
+                 ( Equal (Mod (Identifier "n", Identifier "d"), Const (VInt 0)),
+                   StmtBlock [ Return (Some (Const (VBool true))) ],
                    None );
                Expression (PostInc (Identifier "d"));
              ] ))
@@ -284,21 +280,20 @@ let%test _ =
       (For
          ( Some
              (VarDec
-                ( JInt,
+                ( Int,
                   [
-                    (Identifier "i", Some (Const (JVInt 0)));
-                    ( Identifier "j",
-                      Some (Sub (Identifier "n", Const (JVInt 1))) );
+                    (Identifier "i", Some (Const (VInt 0)));
+                    (Identifier "j", Some (Sub (Identifier "n", Const (VInt 1))));
                   ] )),
            Some (Less (Identifier "i", Identifier "j")),
            [ PostInc (Identifier "i"); PostDec (Identifier "j") ],
-           StatBlock
+           StmtBlock
              [
                Expression
                  (FieldAccess
                     ( FieldAccess (Identifier "System", Identifier "out"),
                       CallMethod
-                        (Identifier "println", [ Const (JVString "test") ]) ));
+                        (Identifier "println", [ Const (VString "test") ]) ));
              ] ))
 
 let%test _ =
@@ -315,7 +310,7 @@ let%test _ = apply statement "for(public int i = 0;;) {i++;}" = None
 
 let%test _ =
   apply field_declaration "public int wheel;"
-  = Some (VarField ([ Public ], JInt, [ (Identifier "wheel", None) ]))
+  = Some (VarField ([ Public ], Int, [ (Identifier "wheel", None) ]))
 
 let%test _ =
   apply method_declaration
@@ -324,17 +319,17 @@ let%test _ =
   = Some
       (Method
          ( [ Public ],
-           JInt,
+           Int,
            Identifier "arraySum",
-           [ (JArray JInt, Identifier "a") ],
+           [ (Array Int, Identifier "a") ],
            Some
-             (StatBlock
+             (StmtBlock
                 [
-                  VarDec (JInt, [ (Identifier "sum", Some (Const (JVInt 0))) ]);
+                  VarDec (Int, [ (Identifier "sum", Some (Const (VInt 0))) ]);
                   For
                     ( Some
                         (VarDec
-                           (JInt, [ (Identifier "i", Some (Const (JVInt 0))) ])),
+                           (Int, [ (Identifier "i", Some (Const (VInt 0))) ])),
                       Some
                         (Less
                            ( Identifier "i",
@@ -342,7 +337,7 @@ let%test _ =
                                ( Identifier "a",
                                  CallMethod (Identifier "length", []) ) )),
                       [ PostInc (Identifier "i") ],
-                      StatBlock
+                      StmtBlock
                         [
                           Expression
                             (Assign
@@ -363,8 +358,8 @@ let%test _ =
       (Constructor
          ( [ Public ],
            Identifier "Car",
-           [ (JInt, Identifier "speed"); (JArray JInt, Identifier "wheels") ],
-           StatBlock
+           [ (Int, Identifier "speed"); (Array Int, Identifier "wheels") ],
+           StmtBlock
              [
                Expression
                  (Assign

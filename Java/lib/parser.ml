@@ -68,11 +68,11 @@ module Expr = struct
 
   let%test _ = apply this "   this" = Some This
 
-  let constInt = integer >>= fun n -> return (Const (JVInt n))
+  let constInt = integer >>= fun n -> return (Const (VInt n))
 
-  let%test _ = apply constInt "100500" = Some (Const (JVInt 100500))
+  let%test _ = apply constInt "100500" = Some (Const (VInt 100500))
 
-  let%test _ = apply constInt "    100500" = Some (Const (JVInt 100500))
+  let%test _ = apply constInt "    100500" = Some (Const (VInt 100500))
 
   let constString =
     let string_of_chars chars =
@@ -81,11 +81,10 @@ module Expr = struct
       Buffer.contents buf
     in
     token "\"" >> many (satisfy (fun c -> c <> '\"')) >>= fun list ->
-    token "\"" >> return (Const (JVString (string_of_chars list)))
+    token "\"" >> return (Const (VString (string_of_chars list)))
 
   let%test _ =
-    apply constString "\"hello world!\""
-    = Some (Const (JVString "hello world!"))
+    apply constString "\"hello world!\"" = Some (Const (VString "hello world!"))
 
   let ident =
     spaces >> letter <~> many alpha_num => implode >>= function
@@ -128,52 +127,52 @@ module Expr = struct
 
   let atomic =
     identifier <|> constInt <|> constString
-    <|> (token "true" >> return (Const (JVBool true)))
-    <|> (token "false" >> return (Const (JVBool false)))
+    <|> (token "true" >> return (Const (VBool true)))
+    <|> (token "false" >> return (Const (VBool false)))
     <|> null
 
-  let%test _ = apply atomic "true" = Some (Const (JVBool true))
+  let%test _ = apply atomic "true" = Some (Const (VBool true))
 
   let type_spec_array =
     let parse_arr_or_type t =
       many (token "[]") >>= fun br_list ->
       match List.length br_list with
       | 0 -> return t
-      | 1 when t <> JVoid -> return (JArray t)
+      | 1 when t <> Void -> return (Array t)
       | _ -> mzero
     in
     choice
       [
-        token "int" >> parse_arr_or_type JInt;
-        token "String" >> parse_arr_or_type JString;
-        token "void" >> parse_arr_or_type JVoid;
-        (ident >>= fun class_name -> parse_arr_or_type (JClassName class_name));
+        token "int" >> parse_arr_or_type Int;
+        token "String" >> parse_arr_or_type String;
+        token "void" >> parse_arr_or_type Void;
+        (ident >>= fun class_name -> parse_arr_or_type (ClassName class_name));
       ]
 
   let%test _ = apply type_spec_array "int[][][]" = None
 
-  let%test _ = apply type_spec_array "int" = Some JInt
+  let%test _ = apply type_spec_array "int" = Some Int
 
-  let%test _ = apply type_spec_array "int[]" = Some (JArray JInt)
+  let%test _ = apply type_spec_array "int[]" = Some (Array Int)
 
   let%test _ = apply type_spec_array "void[]" = None
 
-  let%test _ = apply type_spec_array "Car[]" = Some (JArray (JClassName "Car"))
+  let%test _ = apply type_spec_array "Car[]" = Some (Array (ClassName "Car"))
 
   let type_spec =
     choice
       [
-        token "int" >> return JInt;
-        token "String" >> return JString;
-        token "void" >> return JVoid;
-        (ident >>= fun class_name -> return (JClassName class_name));
+        token "int" >> return Int;
+        token "String" >> return String;
+        token "void" >> return Void;
+        (ident >>= fun class_name -> return (ClassName class_name));
       ]
 
-  let%test _ = apply type_spec "int" = Some JInt
+  let%test _ = apply type_spec "int" = Some Int
 
-  let%test _ = apply type_spec "   void" = Some JVoid
+  let%test _ = apply type_spec "   void" = Some Void
 
-  let%test _ = apply type_spec "Car" = Some (JClassName "Car")
+  let%test _ = apply type_spec "Car" = Some (ClassName "Car")
 
   let rec expression input = choice [ numeric ] input
 
@@ -195,7 +194,7 @@ module Expr = struct
       [
         (token "!" >> lexeme primary >>= fun s -> return (Not s));
         ( token "-" >> lexeme primary >>= fun x ->
-          return (Sub (Const (JVInt 0), x)) );
+          return (Sub (Const (VInt 0), x)) );
         (token "++" >> lexeme primary >>= fun x -> return (PrefInc x));
         (token "--" >> lexeme primary >>= fun x -> return (PrefDec x));
         (lexeme primary >>= fun x -> token "++" >> return (PostInc x));
@@ -263,7 +262,7 @@ module Expr = struct
       input
 end
 
-module Stat = struct
+module Stmt = struct
   open Expr
 
   let break_stat = token "break" >> token ";" >> return Break
@@ -283,7 +282,7 @@ module Stat = struct
          ]
 
   let%test _ =
-    apply return_stat "return 0;" = Some (Return (Some (Const (JVInt 0))))
+    apply return_stat "return 0;" = Some (Return (Some (Const (VInt 0))))
 
   let%test _ =
     apply return_stat "return a < b;"
@@ -328,7 +327,7 @@ module Stat = struct
 
   and stat_block input =
     ( token "{" >> sep_by statement spaces >>= fun block_stats ->
-      token "}" >> return (StatBlock block_stats) )
+      token "}" >> return (StmtBlock block_stats) )
       input
 
   and while_stat input =
@@ -382,7 +381,7 @@ let method_declaration =
   token ")"
   >> choice
        [
-         ( Stat.stat_block >>= fun st_block ->
+         ( Stmt.stat_block >>= fun st_block ->
            return
              (Method (modifiers, m_type, m_name, param_list, Some st_block)) );
          token ";"
@@ -397,7 +396,7 @@ let constructor_declaration =
   many modifier >>= fun modifiers ->
   Expr.identifier >>= fun c_name ->
   token "(" >> sep_by param (token ",") >>= fun param_list ->
-  token ")" >> Stat.stat_block >>= fun c_block ->
+  token ")" >> Stmt.stat_block >>= fun c_block ->
   return (Constructor (modifiers, c_name, param_list, c_block))
 
 let field_declaration =

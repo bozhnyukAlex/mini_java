@@ -1,26 +1,26 @@
 type modifier = Public | Static | Final | Abstract [@@deriving show]
 
 type type_t =
-  | JInt
-  | JVoid
-  | JClassName of string
-  | JString
-  | JArray of type_t
-  | JObject
+  | Int
+  | Void
+  | ClassName of string
+  | String
+  | Array of type_t
+  | Object
 [@@deriving show]
 
 type error = ParseError [@@deriving show]
 
 type value =
-  | JVBool of bool
-  | JVInt of int
-  | JVNull
-  | JVChar of char
-  | JVArray of value list
-  | JVVoid
-  | JVString of string
-  | JVClassName
-  | JVObject
+  | VBool of bool
+  | VInt of int
+  | VNull
+  | VChar of char
+  | VArray of value list
+  | VVoid
+  | VString of string
+  | VClassName
+  | VObject
 [@@deriving show]
 
 (* type jException = {jName: type_t ; message : string} 
@@ -67,7 +67,7 @@ and stmt =
   | Break
   | Continue
   | Return of expr option (* result *)
-  | StatBlock of stmt list
+  | StmtBlock of stmt list
   | VarDec of type_t * (expr * expr option) list
   | Expression of expr
   | Throw of expr
@@ -79,8 +79,8 @@ and field =
       * type_t
       * expr
       * (type_t * expr) list
-      * (*List of pairs (type, identificator)*)
-      stmt option (*Statement block*)
+      (*List of pairs (type, identificator)*)
+      * stmt option (*Statement block*)
   | VarField of modifier list * type_t * (expr * expr option) list
   | Constructor of modifier list * expr * (type_t * expr) list * stmt
 [@@deriving show]
