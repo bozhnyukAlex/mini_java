@@ -14,6 +14,8 @@ Features done:
 - 2 build/log не отображается теперь 
 - 3 Исправил создание массивов, new type[] не должен парситься, только new type[expr] или new type[] {expr, ... , expr} 
 - 4 Переименовал элементы в Ast
+- 5 Исправил функции в demoFirst на "из коробки"
+- 6 Парсинг @Override
 
 Features in progress:
 

@@ -25,6 +25,7 @@ let reserved =
     "continue";
     "extends";
     "return";
+    "@Override";
   ]
 
 let apply p s = parse p (LazyStream.of_string s)
@@ -36,8 +37,6 @@ let brackets = between (token "[") (token "]")
 let digits = spaces >> many1 digit => implode
 
 let integer = digits => int_of_string
-
-let get_list_option opt = match opt with Some x -> x | None -> []
 
 let modifier input =
   choice

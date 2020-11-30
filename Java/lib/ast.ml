@@ -10,8 +10,6 @@ type type_t =
   | Object
 [@@deriving show]
 
-type error = ParseError [@@deriving show]
-
 type value =
   | VBool of bool
   | VInt of int
