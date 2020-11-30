@@ -22,6 +22,8 @@ type value =
   | VObject
 [@@deriving show]
 
+type name = Name of string [@@deriving show]
+
 (* type jException = {jName: type_t ; message : string} 
 
 type jVariable = {vModifiers : modifier list; isMutable : bool; varType : type_t; varName : string; value : value option}  *)
@@ -45,17 +47,17 @@ type expr =
   | More of expr * expr
   | LessOrEqual of expr * expr
   | MoreOrEqual of expr * expr
-  | ClassCreate of string * expr list (*new clName(argList)*)
+  | ClassCreate of name * expr list (*new clName(argList)*)
   | ArrayCreateSized of type_t * expr (*new arrType[cntExpr]*)
   | ArrayCreateElements of type_t * expr list (*new arrType[] {expr, ... , expr}*)
-  | CallMethod of expr * expr list
+  | CallMethod of expr * expr list (*this(...), super(...) ident(...)*)
   | Identifier of string
   | Const of value
   | This
   | Super
   | Null
   | FieldAccess of expr * expr
-  | ArrayAccess of expr * expr (*arr_name * index*)
+  | ArrayAccess of expr * expr (*arr_name[index]*)
   | Assign of expr * expr
 [@@deriving show]
 
@@ -67,7 +69,7 @@ and stmt =
   | Continue
   | Return of expr option (* result *)
   | StmtBlock of stmt list
-  | VarDec of type_t * (expr * expr option) list
+  | VarDec of type_t * (name * expr option) list
   | Expression of expr
   | Throw of expr
 [@@deriving show]
@@ -76,19 +78,19 @@ and field =
   | Method of
       modifier list
       * type_t
-      * expr
-      * (type_t * expr) list
+      * name
+      * (type_t * name) list
       (*List of pairs (type, identificator)*)
       * stmt option (*Statement block*)
-  | VarField of modifier list * type_t * (expr * expr option) list
-  | Constructor of modifier list * expr * (type_t * expr) list * stmt
+  | VarField of modifier list * type_t * (name * expr option) list
+  | Constructor of modifier list * name * (type_t * name) list * stmt
 [@@deriving show]
 
 and class_dec =
   | Class of
       modifier list
-      * expr (*Identifier class name*)
-      * expr option
+      * name (*class name*)
+      * name option
       (*Parent class_name*)
       * field list
 (* class body *) [@@deriving show]

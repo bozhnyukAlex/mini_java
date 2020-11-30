@@ -137,7 +137,7 @@ let%test _ =
 
 let%test _ =
   apply expression "new Car(2,\"Ford\")"
-  = Some (ClassCreate ("Car", [ Const (VInt 2); Const (VString "Ford") ]))
+  = Some (ClassCreate (Name "Car", [ Const (VInt 2); Const (VString "Ford") ]))
 
 let%test _ =
   apply expression "get(new Sth(), new String[10])"
@@ -145,14 +145,15 @@ let%test _ =
       (CallMethod
          ( Identifier "get",
            [
-             ClassCreate ("Sth", []); ArrayCreateSized (String, Const (VInt 10));
+             ClassCreate (Name "Sth", []);
+             ArrayCreateSized (String, Const (VInt 10));
            ] ))
 
 let%test _ =
   apply expression "(new Man(3,\"John\")).scream())"
   = Some
       (FieldAccess
-         ( ClassCreate ("Man", [ Const (VInt 3); Const (VString "John") ]),
+         ( ClassCreate (Name "Man", [ Const (VInt 3); Const (VString "John") ]),
            CallMethod (Identifier "scream", []) ))
 
 let%test _ =
@@ -171,10 +172,10 @@ let%test _ =
       (VarDec
          ( Int,
            [
-             (Identifier "a", Some (Const (VInt 0)));
-             (Identifier "b", None);
-             (Identifier "c", None);
-             (Identifier "d", Some (Const (VInt 5)));
+             (Name "a", Some (Const (VInt 0)));
+             (Name "b", None);
+             (Name "c", None);
+             (Name "d", Some (Const (VInt 5)));
            ] ))
 
 let%test _ =
@@ -182,8 +183,7 @@ let%test _ =
   = Some
       (VarDec
          ( Array Int,
-           [ (Identifier "a", Some (ArrayCreateSized (Int, Const (VInt 6)))) ]
-         ))
+           [ (Name "a", Some (ArrayCreateSized (Int, Const (VInt 6)))) ] ))
 
 let%test _ =
   apply statement "int a = 0, b = 1, c = 2;"
@@ -191,9 +191,9 @@ let%test _ =
       (VarDec
          ( Int,
            [
-             (Identifier "a", Some (Const (VInt 0)));
-             (Identifier "b", Some (Const (VInt 1)));
-             (Identifier "c", Some (Const (VInt 2)));
+             (Name "a", Some (Const (VInt 0)));
+             (Name "b", Some (Const (VInt 1)));
+             (Name "c", Some (Const (VInt 2)));
            ] ))
 
 let%test _ =
@@ -282,8 +282,8 @@ let%test _ =
              (VarDec
                 ( Int,
                   [
-                    (Identifier "i", Some (Const (VInt 0)));
-                    (Identifier "j", Some (Sub (Identifier "n", Const (VInt 1))));
+                    (Name "i", Some (Const (VInt 0)));
+                    (Name "j", Some (Sub (Identifier "n", Const (VInt 1))));
                   ] )),
            Some (Less (Identifier "i", Identifier "j")),
            [ PostInc (Identifier "i"); PostDec (Identifier "j") ],
@@ -301,7 +301,7 @@ let%test _ =
   = Some
       (If
          ( CallMethod (Identifier "somethingWrong", []),
-           Throw (ClassCreate ("Exception", [])),
+           Throw (ClassCreate (Name "Exception", [])),
            None ))
 
 let%test _ = apply statement "for(public int i = 0;;) {i++;}" = None
@@ -310,7 +310,7 @@ let%test _ = apply statement "for(public int i = 0;;) {i++;}" = None
 
 let%test _ =
   apply field_declaration "public int wheel;"
-  = Some (VarField ([ Public ], Int, [ (Identifier "wheel", None) ]))
+  = Some (VarField ([ Public ], Int, [ (Name "wheel", None) ]))
 
 let%test _ =
   apply method_declaration
@@ -320,16 +320,14 @@ let%test _ =
       (Method
          ( [ Public ],
            Int,
-           Identifier "arraySum",
-           [ (Array Int, Identifier "a") ],
+           Name "arraySum",
+           [ (Array Int, Name "a") ],
            Some
              (StmtBlock
                 [
-                  VarDec (Int, [ (Identifier "sum", Some (Const (VInt 0))) ]);
+                  VarDec (Int, [ (Name "sum", Some (Const (VInt 0))) ]);
                   For
-                    ( Some
-                        (VarDec
-                           (Int, [ (Identifier "i", Some (Const (VInt 0))) ])),
+                    ( Some (VarDec (Int, [ (Name "i", Some (Const (VInt 0))) ])),
                       Some
                         (Less
                            ( Identifier "i",
@@ -357,8 +355,8 @@ let%test _ =
   = Some
       (Constructor
          ( [ Public ],
-           Identifier "Car",
-           [ (Int, Identifier "speed"); (Array Int, Identifier "wheels") ],
+           Name "Car",
+           [ (Int, Name "speed"); (Array Int, Name "wheels") ],
            StmtBlock
              [
                Expression

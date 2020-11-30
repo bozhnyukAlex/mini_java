@@ -1,14 +1,14 @@
   $ (cd ../../../../default && demos/demoFirst.exe)
   Ast.Class
-  ([Ast.Public], Ast.Identifier ("Main"), None,
+  ([Ast.Public], Ast.Name ("Main"), None,
    [Ast.Method
-    ([Ast.Public; Ast.Static], Ast.Void, Ast.Identifier ("main"),
-     [(Ast.Array (Ast.String), Ast.Identifier ("args"))],
+    ([Ast.Public; Ast.Static], Ast.Void, Ast.Name ("main"),
+     [(Ast.Array (Ast.String), Ast.Name ("args"))],
      Some (Ast.StmtBlock ([Ast.VarDec
                            (Ast.ClassName ("Person"),
-                            [(Ast.Identifier ("p"),
+                            [(Ast.Name ("p"),
                               Some (Ast.ClassCreate
-                                    ("Person",
+                                    (Ast.Name ("Person"),
                                      [Ast.Const (Ast.VInt (80));
                                       Ast.Const (Ast.VInt (45))])))]);
                            Ast.Expression (Ast.FieldAccess
@@ -24,9 +24,9 @@
                                                 []))])));
                            Ast.VarDec
                            (Ast.ClassName ("Child"),
-                            [(Ast.Identifier ("ch"),
+                            [(Ast.Name ("ch"),
                               Some (Ast.ClassCreate
-                                    ("Child",
+                                    (Ast.Name ("Child"),
                                      [Ast.Const (Ast.VInt (66));
                                       Ast.Const (Ast.VInt (20))])))]);
                            Ast.Expression (Ast.FieldAccess
@@ -40,12 +40,12 @@
                                             (Ast.Identifier ("giveEvenNumbers100"),
                                              [])))])))])
   Ast.Class
-  ([], Ast.Identifier ("Person"), None,
-   [Ast.VarField ([Ast.Public], Ast.Int, [(Ast.Identifier ("weight"), None)]);
-    Ast.VarField ([Ast.Public], Ast.Int, [(Ast.Identifier ("age"), None)]);
+  ([], Ast.Name ("Person"), None,
+   [Ast.VarField ([Ast.Public], Ast.Int, [(Ast.Name ("weight"), None)]);
+    Ast.VarField ([Ast.Public], Ast.Int, [(Ast.Name ("age"), None)]);
     Ast.Constructor
-    ([Ast.Public], Ast.Identifier ("Person"),
-     [(Ast.Int, Ast.Identifier ("w")); (Ast.Int, Ast.Identifier ("a"))],
+    ([Ast.Public], Ast.Name ("Person"),
+     [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))],
      Ast.StmtBlock ([Ast.Expression (Ast.Assign
                                      (Ast.FieldAccess
                                       (Ast.This, Ast.Identifier ("weight")),
@@ -55,32 +55,31 @@
                                       (Ast.This, Ast.Identifier ("age")),
                                       Ast.Identifier ("a")))]));
     Ast.Method
-    ([Ast.Public], Ast.Int, Ast.Identifier ("getWeight"), [],
+    ([Ast.Public], Ast.Int, Ast.Name ("getWeight"), [],
      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("weight")))])));
     Ast.Method
-    ([Ast.Public], Ast.Int, Ast.Identifier ("getAge"), [],
+    ([Ast.Public], Ast.Int, Ast.Name ("getAge"), [],
      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("age")))])));
     Ast.Method
-    ([Ast.Public], Ast.Void, Ast.Identifier ("setWeight"),
-     [(Ast.Int, Ast.Identifier ("w"))],
+    ([Ast.Public], Ast.Void, Ast.Name ("setWeight"),
+     [(Ast.Int, Ast.Name ("w"))],
      Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
                                            (Ast.FieldAccess
                                             (Ast.This,
                                              Ast.Identifier ("weight")),
                                             Ast.Identifier ("w")))])));
     Ast.Method
-    ([Ast.Public], Ast.Void, Ast.Identifier ("setAge"),
-     [(Ast.Int, Ast.Identifier ("a"))],
+    ([Ast.Public], Ast.Void, Ast.Name ("setAge"), [(Ast.Int, Ast.Name ("a"))],
      Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
                                            (Ast.FieldAccess
                                             (Ast.This, Ast.Identifier ("age")),
                                             Ast.Identifier ("a")))])))])
   Ast.Class
-  ([], Ast.Identifier ("Child"), Some (Ast.Identifier ("Person")),
-   [Ast.VarField ([Ast.Public], Ast.Int, [(Ast.Identifier ("cash"), None)]);
+  ([], Ast.Name ("Child"), Some (Ast.Name ("Person")),
+   [Ast.VarField ([Ast.Public], Ast.Int, [(Ast.Name ("cash"), None)]);
     Ast.Constructor
-    ([Ast.Public], Ast.Identifier ("Child"),
-     [(Ast.Int, Ast.Identifier ("w")); (Ast.Int, Ast.Identifier ("a"))],
+    ([Ast.Public], Ast.Name ("Child"),
+     [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))],
      Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
                                      (Ast.Super,
                                       [Ast.Identifier ("w");
@@ -89,19 +88,18 @@
                                      (Ast.Identifier ("cash"),
                                       Ast.Const (Ast.VInt (0))))]));
     Ast.Method
-    ([Ast.Public], Ast.Int, Ast.Identifier ("getCash"), [],
+    ([Ast.Public], Ast.Int, Ast.Name ("getCash"), [],
      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("cash")))])));
     Ast.Method
-    ([Ast.Public], Ast.Void, Ast.Identifier ("setCash"),
-     [(Ast.Int, Ast.Identifier ("c"))],
+    ([Ast.Public], Ast.Void, Ast.Name ("setCash"), [(Ast.Int, Ast.Name ("c"))],
      Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
                                            (Ast.FieldAccess
                                             (Ast.This, Ast.Identifier ("cash")),
                                             Ast.Identifier ("c")))])));
     Ast.Constructor
-    ([Ast.Public], Ast.Identifier ("Child"),
-     [(Ast.Int, Ast.Identifier ("w")); (Ast.Int, Ast.Identifier ("a"));
-      (Ast.Int, Ast.Identifier ("c"))],
+    ([Ast.Public], Ast.Name ("Child"),
+     [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"));
+      (Ast.Int, Ast.Name ("c"))],
      Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
                                      (Ast.Super,
                                       [Ast.Identifier ("w");
@@ -110,11 +108,11 @@
                                      (Ast.Identifier ("cash"),
                                       Ast.Identifier ("c")))]));
     Ast.Method
-    ([Ast.Public], Ast.Void, Ast.Identifier ("giveEvenNumbers100"), [],
+    ([Ast.Public], Ast.Void, Ast.Name ("giveEvenNumbers100"), [],
      Some (Ast.StmtBlock ([Ast.For
                            (Some (Ast.VarDec
                                   (Ast.Int,
-                                   [(Ast.Identifier ("i"),
+                                   [(Ast.Name ("i"),
                                      Some (Ast.Const (Ast.VInt (0))))])),
                             Some (Ast.Less
                                   (Ast.Identifier ("i"),

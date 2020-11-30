@@ -49,6 +49,13 @@ let modifier input =
     ]
     input
 
+let ident =
+  spaces >> letter <~> many alpha_num => implode >>= function
+  | s when List.mem s reserved -> mzero
+  | s -> return s
+
+let name = ident >>= fun name -> return (Name name)
+
 module Expr = struct
   let null = token "null" >> return Null
 
@@ -85,11 +92,6 @@ module Expr = struct
 
   let%test _ =
     apply constString "\"hello world!\"" = Some (Const (VString "hello world!"))
-
-  let ident =
-    spaces >> letter <~> many alpha_num => implode >>= function
-    | s when List.mem s reserved -> mzero
-    | s -> return s
 
   let identifier = ident => fun s -> Identifier s
 
@@ -239,7 +241,7 @@ module Expr = struct
       input
 
   and create_obj input =
-    ( token "new" >> ident >>= fun class_name ->
+    ( token "new" >> name >>= fun class_name ->
       token "(" >> expr_sep_by_comma >>= fun expr_list ->
       token ")" >> return (ClassCreate (class_name, expr_list)) )
       input
@@ -337,10 +339,10 @@ module Stmt = struct
 
   and var_declaration =
     let var_declarator =
-      identifier >>= fun name ->
+      name >>= fun v_name ->
       token "=" >> expression
-      >>= (fun value -> return (name, Some value))
-      <|> return (name, None)
+      >>= (fun value -> return (v_name, Some value))
+      <|> return (v_name, None)
     in
     type_spec_array >>= fun type_specifier ->
     sep_by1 var_declarator (token ",") >>= fun dec_pairs ->
@@ -372,11 +374,11 @@ end
 let method_declaration =
   let param =
     Expr.type_spec_array >>= fun type_par ->
-    Expr.identifier >>= fun id_par -> return (type_par, id_par)
+    name >>= fun id_par -> return (type_par, id_par)
   in
   many modifier >>= fun modifiers ->
   Expr.type_spec_array >>= fun m_type ->
-  Expr.identifier >>= fun m_name ->
+  name >>= fun m_name ->
   token "(" >> sep_by param (token ",") >>= fun param_list ->
   token ")"
   >> choice
@@ -391,17 +393,17 @@ let method_declaration =
 let constructor_declaration =
   let param =
     Expr.type_spec_array >>= fun type_par ->
-    Expr.identifier >>= fun id_par -> return (type_par, id_par)
+    name >>= fun id_par -> return (type_par, id_par)
   in
   many modifier >>= fun modifiers ->
-  Expr.identifier >>= fun c_name ->
+  name >>= fun c_name ->
   token "(" >> sep_by param (token ",") >>= fun param_list ->
   token ")" >> Stmt.stat_block >>= fun c_block ->
   return (Constructor (modifiers, c_name, param_list, c_block))
 
 let field_declaration =
   let var_declarator =
-    Expr.identifier >>= fun name ->
+    name >>= fun name ->
     token "=" >> Expr.expression
     >>= (fun value -> return (name, Some value))
     <|> return (name, None)
@@ -416,11 +418,10 @@ let class_elem =
 
 let class_declaration =
   many modifier >>= fun modifiers ->
-  token "class" >> Expr.identifier >>= fun class_name ->
+  token "class" >> name >>= fun class_name ->
   choice
     [
-      ( token "extends" >> Expr.identifier >>= fun parent_name ->
-        return (Some parent_name) );
+      (token "extends" >> name >>= fun parent_name -> return (Some parent_name));
       return None;
     ]
   >>= fun extension ->
