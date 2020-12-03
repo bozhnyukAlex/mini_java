@@ -376,7 +376,6 @@ let method_declaration =
     Expr.type_spec_array >>= fun type_par ->
     name >>= fun id_par -> return (type_par, id_par)
   in
-  many modifier >>= fun modifiers ->
   Expr.type_spec_array >>= fun m_type ->
   name >>= fun m_name ->
   token "(" >> sep_by param (token ",") >>= fun param_list ->
@@ -384,10 +383,8 @@ let method_declaration =
   >> choice
        [
          ( Stmt.stat_block >>= fun st_block ->
-           return
-             (Method (modifiers, m_type, m_name, param_list, Some st_block)) );
-         token ";"
-         >> return (Method (modifiers, m_type, m_name, param_list, None));
+           return (Method (m_type, m_name, param_list, Some st_block)) );
+         token ";" >> return (Method (m_type, m_name, param_list, None));
        ]
 
 let constructor_declaration =
@@ -395,11 +392,10 @@ let constructor_declaration =
     Expr.type_spec_array >>= fun type_par ->
     name >>= fun id_par -> return (type_par, id_par)
   in
-  many modifier >>= fun modifiers ->
   name >>= fun c_name ->
   token "(" >> sep_by param (token ",") >>= fun param_list ->
   token ")" >> Stmt.stat_block >>= fun c_block ->
-  return (Constructor (modifiers, c_name, param_list, c_block))
+  return (Constructor (c_name, param_list, c_block))
 
 let field_declaration =
   let var_declarator =
@@ -408,13 +404,14 @@ let field_declaration =
     >>= (fun value -> return (name, Some value))
     <|> return (name, None)
   in
-  many modifier >>= fun modifiers ->
   Expr.type_spec_array >>= fun type_specifier ->
   sep_by var_declarator (token ",") >>= fun dec_pairs ->
-  token ";" >> return (VarField (modifiers, type_specifier, dec_pairs))
+  token ";" >> return (VarField (type_specifier, dec_pairs))
 
 let class_elem =
+  many modifier >>= fun modifiers ->
   field_declaration <|> constructor_declaration <|> method_declaration
+  >>= fun class_elem -> return (modifiers, class_elem)
 
 let class_declaration =
   many modifier >>= fun modifiers ->

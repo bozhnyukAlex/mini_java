@@ -309,61 +309,61 @@ let%test _ = apply statement "for(public int i = 0;;) {i++;}" = None
 (*---------------- IN CLASSES ---------------*)
 
 let%test _ =
-  apply field_declaration "public int wheel;"
-  = Some (VarField ([ Public ], Int, [ (Name "wheel", None) ]))
+  apply class_elem "public int wheel;"
+  = Some ([ Public ], VarField (Int, [ (Name "wheel", None) ]))
 
 let%test _ =
-  apply method_declaration
+  apply class_elem
     "public int arraySum (int[] a) { int sum = 0; for (int i = 0; i < \
      a.length(); i++) {sum = sum + a[i];} return sum; }"
   = Some
-      (Method
-         ( [ Public ],
-           Int,
-           Name "arraySum",
-           [ (Array Int, Name "a") ],
-           Some
-             (StmtBlock
-                [
-                  VarDec (Int, [ (Name "sum", Some (Const (VInt 0))) ]);
-                  For
-                    ( Some (VarDec (Int, [ (Name "i", Some (Const (VInt 0))) ])),
-                      Some
-                        (Less
-                           ( Identifier "i",
-                             FieldAccess
-                               ( Identifier "a",
-                                 CallMethod (Identifier "length", []) ) )),
-                      [ PostInc (Identifier "i") ],
-                      StmtBlock
-                        [
-                          Expression
-                            (Assign
-                               ( Identifier "sum",
-                                 Add
-                                   ( Identifier "sum",
-                                     ArrayAccess (Identifier "a", Identifier "i")
-                                   ) ));
-                        ] );
-                  Return (Some (Identifier "sum"));
-                ]) ))
+      ( [ Public ],
+        Method
+          ( Int,
+            Name "arraySum",
+            [ (Array Int, Name "a") ],
+            Some
+              (StmtBlock
+                 [
+                   VarDec (Int, [ (Name "sum", Some (Const (VInt 0))) ]);
+                   For
+                     ( Some (VarDec (Int, [ (Name "i", Some (Const (VInt 0))) ])),
+                       Some
+                         (Less
+                            ( Identifier "i",
+                              FieldAccess
+                                ( Identifier "a",
+                                  CallMethod (Identifier "length", []) ) )),
+                       [ PostInc (Identifier "i") ],
+                       StmtBlock
+                         [
+                           Expression
+                             (Assign
+                                ( Identifier "sum",
+                                  Add
+                                    ( Identifier "sum",
+                                      ArrayAccess
+                                        (Identifier "a", Identifier "i") ) ));
+                         ] );
+                   Return (Some (Identifier "sum"));
+                 ]) ) )
 
 let%test _ =
-  apply constructor_declaration
+  apply class_elem
     "public Car(int speed, int[] wheels) {this.speed = speed; this.wheels = \
      wheels;}"
   = Some
-      (Constructor
-         ( [ Public ],
-           Name "Car",
-           [ (Int, Name "speed"); (Array Int, Name "wheels") ],
-           StmtBlock
-             [
-               Expression
-                 (Assign
-                    (FieldAccess (This, Identifier "speed"), Identifier "speed"));
-               Expression
-                 (Assign
-                    ( FieldAccess (This, Identifier "wheels"),
-                      Identifier "wheels" ));
-             ] ))
+      ( [ Public ],
+        Constructor
+          ( Name "Car",
+            [ (Int, Name "speed"); (Array Int, Name "wheels") ],
+            StmtBlock
+              [
+                Expression
+                  (Assign
+                     (FieldAccess (This, Identifier "speed"), Identifier "speed"));
+                Expression
+                  (Assign
+                     ( FieldAccess (This, Identifier "wheels"),
+                       Identifier "wheels" ));
+              ] ) )

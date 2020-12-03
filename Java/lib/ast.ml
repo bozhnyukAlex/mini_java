@@ -76,14 +76,13 @@ and stmt =
 
 and field =
   | Method of
-      modifier list
-      * type_t
+      type_t
       * name
       * (type_t * name) list
       (*List of pairs (type, identificator)*)
       * stmt option (*Statement block*)
-  | VarField of modifier list * type_t * (name * expr option) list
-  | Constructor of modifier list * name * (type_t * name) list * stmt
+  | VarField of type_t * (name * expr option) list
+  | Constructor of name * (type_t * name) list * stmt
 [@@deriving show]
 
 and class_dec =
@@ -92,7 +91,7 @@ and class_dec =
       * name (*class name*)
       * name option
       (*Parent class_name*)
-      * field list
+      * (modifier list * field) list
 (* class body *) [@@deriving show]
 
 (* type jMethod = {mModifiers: modifier list; mName : string; mRetType : type_t; mArgs : expr list; mBody : stmt list;}  
