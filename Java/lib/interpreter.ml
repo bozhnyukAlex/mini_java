@@ -43,6 +43,7 @@ type method_r = {
   m_type : type_t;
   is_abstract : bool;
   is_overridable : bool;
+  has_override_annotation : bool;
   args : (type_t * name) list;
   key : key_t;
   body : stmt option;
@@ -87,6 +88,8 @@ module Preparation (M : MONADERROR) = struct
         match f with
         | Method (_, Name n, _, _) ->
             if (not (is_static l)) && n <> "main" then return ()
+            else if is_abstract l && is_final l then
+              error "Wrong method modifiers"
             else error "Wrong method modifiers"
         | VarField (_, _) ->
             if
@@ -108,6 +111,7 @@ module Preparation (M : MONADERROR) = struct
   let check_modifiers_c = function
     | Class (ml, _, _, _) ->
         if (not (is_static ml)) && not (is_override ml) then return ()
+        else if is_abstract ml && is_final ml then error "Wrong class modifiers"
         else error "Wrong class modifiers"
 
   let get_type_list = List.map (function t, _ -> t)
@@ -119,7 +123,7 @@ module Preparation (M : MONADERROR) = struct
     | _ -> error e_message
 
   (* Сначала надо просто заполнить таблицу классов *)
-  let c_table_adding : class_dec list -> unit M.t =
+  let c_table_add : class_dec list -> unit M.t =
    fun cd_list ->
     let add_to_class_table : class_dec -> unit M.t =
      fun class_d ->
@@ -158,7 +162,7 @@ module Preparation (M : MONADERROR) = struct
                 in
                 check_modifiers_f field_elem >>= fun _ -> helper pairs
             | m_ms, Method (m_t, Name name, args_list, m_body) ->
-                (* Формирование ключа: method_key = name ++ arg1 ++ arg2 ++ ... ++ argn *)
+                (* Формирование ключа: method_key = name ++ type1 ++ type2 ++ ... ++ typen *)
                 let method_key =
                   String.concat ""
                     (name :: List.map show_type_t (get_type_list args_list))
@@ -187,7 +191,8 @@ module Preparation (M : MONADERROR) = struct
                   {
                     m_type = m_t;
                     is_abstract = is_method_abstract;
-                    is_overridable = is_override m_ms;
+                    is_overridable = not (is_final m_ms);
+                    has_override_annotation = is_override m_ms;
                     args = args_list;
                     key = method_key;
                     body = m_body;
@@ -237,7 +242,6 @@ module Preparation (M : MONADERROR) = struct
 
   (* После добавления надо обновить child_keys у каждого класса *)
   let update_child_keys_exn : unit M.t =
-    let open M in
     let update key = function
       | {
           field_table = _;
@@ -252,7 +256,11 @@ module Preparation (M : MONADERROR) = struct
           | None -> ()
           | Some p_key ->
               (*raises exception if not found, needs to be handled*)
-              let parent = Hashtbl.find class_table p_key in
+              let parent =
+                try Hashtbl.find class_table p_key
+                with Not_found ->
+                  raise (InheritanceException "No parent class found")
+              in
               let par_ch_keys = parent.children_keys in
               if parent.is_inheritable then
                 (* От final класса наследоваться нельзя, проверяем *)
@@ -261,4 +269,115 @@ module Preparation (M : MONADERROR) = struct
                 raise (InheritanceException "Final class cannot be inherited") )
     in
     return (Hashtbl.iter update class_table)
+
+  (* Отдельная функция, которая берет родителя и ребенка,
+        свойства родителя передает ребенку с необходимыми проверками, далее обрабатывает рекурсивно все дерево наследования от родителя *)
+  let rec dfs : class_r -> class_r -> unit =
+   fun parent child ->
+    let process_field : key_t -> field_r -> unit =
+     fun _ cur_field ->
+      match Hashtbl.find_all child.field_table cur_field.key with
+      | [] -> Hashtbl.add child.field_table cur_field.key cur_field
+      | _ -> ()
+    in
+    let process_fields = Hashtbl.iter process_field parent.field_table in
+    (* Конструкторы не переносим, но у конструкторов ребенка первый стейтмент - вызов super(...). Проверяем это *)
+    let check_child_constructors =
+      let check_constructor_exn : key_t -> constructor_r -> unit =
+       fun _ cur_cr ->
+        match cur_cr with
+        | {
+         args = _;
+         body = StmtBlock (Expression (CallMethod (Super, _)) :: _);
+        } ->
+            ()
+        | _ ->
+            raise
+              (InheritanceException
+                 "No super headed statement in inherited constructor")
+      in
+      Hashtbl.iter check_constructor_exn child.constructor_table
+    in
+    let process_method_exn : key_t -> method_r -> unit =
+     fun _ cur_method ->
+      match Hashtbl.find_all child.method_table cur_method.key with
+      | [] -> (
+          match cur_method.is_abstract with
+          (* Не нашли переопределенного метода - смотрим, наш абстрактный? *)
+          | true ->
+              if child.is_abstract then
+                Hashtbl.add child.method_table cur_method.key cur_method
+                (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод *)
+              else
+                raise (InheritanceException "Abstract method must be overriden")
+                (*Если ребенок не абстрактный - кидаем исключение*)
+          | false ->
+              if cur_method.is_overridable then
+                Hashtbl.add child.method_table cur_method.key cur_method
+                (*Наш не абстрактный. Если наш не final - переносим в ребенка *)
+          )
+      | _ -> ()
+     (*Нашли переопредленный метод - ну и ок, проверять тут нечего*)
+    in
+    let process_methods_exn =
+      Hashtbl.iter process_method_exn parent.method_table
+    in
+    (* Проверка на то, что аннотации @Override стоят только у переопределенных методов*)
+    let check_override_annotations =
+      let check_override_ann : key_t -> method_r -> unit =
+       fun _ ch_mr ->
+        match
+          ch_mr.has_override_annotation
+          && Hashtbl.find_all parent.method_table ch_mr.key = []
+        with
+        | true -> ()
+        | false ->
+            raise
+              (InheritanceException
+                 "@Override annotation on not overriden method")
+      in
+      Hashtbl.iter check_override_ann child.method_table
+    in
+    let run_dfs_on_children =
+      let process_child ch_key =
+        let key_ch = Hashtbl.find class_table ch_key in
+        (*Нашли ребенка - он есть, конечно*)
+        List.iter
+          (fun ch_ch_key -> dfs key_ch (Hashtbl.find class_table ch_ch_key))
+          key_ch.children_keys
+      in
+      List.iter process_child child.children_keys
+    in
+    process_fields |> fun _ ->
+    process_methods_exn |> fun _ ->
+    check_override_annotations |> fun _ ->
+    check_child_constructors |> fun _ -> run_dfs_on_children
+
+  let do_inheritance =
+    let processing _ cur_class =
+      match cur_class with
+      | {
+       field_table = _;
+       method_table = _;
+       constructor_table = _;
+       children_keys = ch_list;
+       is_abstract = _;
+       is_inheritable = _;
+       parent_key = p_key_o;
+      } -> (
+          match p_key_o with
+          | Some _ -> ()
+          | None ->
+              List.iter
+                (fun c_key -> dfs cur_class (Hashtbl.find class_table c_key))
+                ch_list )
+    in
+    return (Hashtbl.iter processing class_table)
+
+  let load_classes cd_list =
+    c_table_add cd_list >>= fun _ ->
+    ( try update_child_keys_exn
+      with InheritanceException message -> error message )
+    >>= fun _ ->
+    try do_inheritance with InheritanceException message -> error message
 end
