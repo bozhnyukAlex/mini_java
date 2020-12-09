@@ -68,6 +68,8 @@ type record =
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
 module Preparation (M : MONADERROR) = struct
+  open M
+
   let is_abstract = List.mem Abstract
 
   let is_final = List.mem Final
@@ -78,118 +80,151 @@ module Preparation (M : MONADERROR) = struct
 
   let is_public = List.mem Public
 
+  (*Функция для проверки полей, методов и конструкторов на наличие бредовых модификаторов*)
+  let check_modifiers_f pair =
+    match pair with
+    | l, f -> (
+        match f with
+        | Method (_, Name n, _, _) ->
+            if (not (is_static l)) && n <> "main" then return ()
+            else error "Wrong method modifiers"
+        | VarField (_, _) ->
+            if
+              (not (is_static l))
+              && (not (is_abstract l))
+              && not (is_override l)
+            then return ()
+            else error "Wrong field modifiers"
+        | Constructor (_, _, _) ->
+            if
+              (not (is_static l))
+              && (not (is_abstract l))
+              && (not (is_final l))
+              && not (is_override l)
+            then return ()
+            else error "Wrong constructor modifiers" )
+
+  (*Функция для проверки класса на наличие бредовых модификаторов*)
+  let check_modifiers_c = function
+    | Class (ml, _, _, _) ->
+        if (not (is_static ml)) && not (is_override ml) then return ()
+        else error "Wrong class modifiers"
+
   let get_type_list = List.map (function t, _ -> t)
 
+  (* Отдельная функция для добавления в таблицу с проверкой на существование *)
   let add_with_check ht key value e_message =
-    let open M in
     match Hashtbl.find_all ht key with
     | [] -> return (Hashtbl.add ht key value)
     | _ -> error e_message
 
+  (* Сначала надо просто заполнить таблицу классов *)
   let c_table_adding : class_dec list -> unit M.t =
    fun cd_list ->
-    let open M in
-    let add_to_class_table : class_dec -> unit M.t = function
+    let add_to_class_table : class_dec -> unit M.t =
+     fun class_d ->
+      match class_d with
       | Class (ml, Name cl_n, parent_o, fields) ->
-          let is_new =
+          (* У нас не может быть несколько одинаковых классов в программе *)
+          let check_new =
             match Hashtbl.find_all class_table cl_n with
-            | [] -> true
-            | _ -> false
+            | [] -> return ()
+            | _ -> error "Similar classes"
           in
-          let modif_correct = is_override ml = false && is_static ml = false in
           let m_table = Hashtbl.create 1024 in
           let f_table = Hashtbl.create 1024 in
           let c_table = Hashtbl.create 1024 in
-          if is_new = false && modif_correct = false then
-            error "Similar classes"
-          else
-            let add_field : modifier list * field -> unit M.t = function
-              | f_ms, VarField (f_t, pairs) ->
-                  let rec helper = function
-                    | [] -> return ()
-                    | (Name f_name, expr_o) :: ps ->
-                        add_with_check f_table f_name
-                          {
-                            f_type = f_t;
-                            key = f_name;
-                            is_abstract = is_abstract f_ms;
-                            is_mutable = is_final f_ms;
-                            f_value = None;
-                            sub_tree = expr_o;
-                          }
-                          "Similar fields"
-                        >>= fun _ -> helper ps
-                  in
-                  helper pairs
-              | m_ms, Method (m_t, Name name, args_list, m_body) -> (
-                  let method_key =
-                    String.concat ""
-                      (name :: List.map show_type_t (get_type_list args_list))
-                  in
-                  if is_abstract m_ms = true then
-                    match m_body with
-                    | Some _ -> error "Abstract method cannot have body!"
-                    | None ->
-                        if is_abstract ml then
-                          add_with_check m_table method_key
-                            {
-                              m_type = m_t;
-                              is_abstract = true;
-                              is_overridable = true;
-                              args = args_list;
-                              key = method_key;
-                              body = m_body;
-                            }
-                            "Method with this type exists"
-                        else error "Abstract method in non-abstract class"
-                  else
-                    match m_body with
-                    | Some _ ->
-                        add_with_check m_table method_key
-                          {
-                            m_type = m_t;
-                            is_abstract = false;
-                            is_overridable = is_override m_ms;
-                            args = args_list;
-                            key = method_key;
-                            body = m_body;
-                          }
-                          "Method with this type exists"
-                    | None -> error "No body of non-abstract method" )
-              | c_ms, Constructor (Name name, args_list, c_body) ->
-                  let constr_key =
-                    String.concat ""
-                      (name :: List.map show_type_t (get_type_list args_list))
-                  in
-                  let is_correct =
-                    (not (is_abstract c_ms))
-                    && (not (is_final c_ms))
-                    && is_public c_ms
-                    && (not (is_static c_ms))
-                    && name = cl_n
-                  in
-                  if is_correct then
-                    add_with_check c_table constr_key
-                      { args = args_list; body = c_body }
-                      "Constructor with this type exists"
-                  else error "Constructor syntax error!"
-            in
-            let rec helper_add = function
-              | [] -> return ()
-              | f :: fs -> add_field f >>= fun _ -> helper_add fs
-            in
-            helper_add fields >>= fun _ ->
-            return
-              (Hashtbl.add class_table cl_n
-                 {
-                   field_table = f_table;
-                   method_table = m_table;
-                   constructor_table = c_table;
-                   children_keys = [];
-                   is_abstract = is_abstract ml;
-                   is_inheritable = is_final ml;
-                   parent_key = convert_name_to_key parent_o;
-                 })
+          check_new >>= fun _ ->
+          check_modifiers_c class_d >>= fun _ ->
+          (* Функция добавления элемента класса в соответствующую таблицу *)
+          let add_field : modifier list * field -> unit M.t =
+           fun field_elem ->
+            match field_elem with
+            | f_ms, VarField (f_t, pairs) ->
+                let rec helper = function
+                  | [] -> return ()
+                  | (Name f_name, expr_o) :: ps ->
+                      add_with_check f_table f_name
+                        {
+                          f_type = f_t;
+                          key = f_name;
+                          is_abstract = is_abstract f_ms;
+                          is_mutable = is_final f_ms;
+                          f_value = None;
+                          sub_tree = expr_o;
+                        }
+                        "Similar fields"
+                      >>= fun _ -> helper ps
+                in
+                check_modifiers_f field_elem >>= fun _ -> helper pairs
+            | m_ms, Method (m_t, Name name, args_list, m_body) ->
+                (* Формирование ключа: method_key = name ++ arg1 ++ arg2 ++ ... ++ argn *)
+                let method_key =
+                  String.concat ""
+                    (name :: List.map show_type_t (get_type_list args_list))
+                in
+                let is_class_abstract = is_abstract ml in
+                let is_method_abstract = is_abstract m_ms in
+
+                (*Перед добавлением стоит проверять, чтобы у абстрактного класса не было тела и прочие ошибки*)
+                let check_abstract_body_syntax =
+                  match is_method_abstract with
+                  | true -> (
+                      if not is_class_abstract then
+                        error "Abstract method in non-abstract class"
+                      else
+                        match m_body with
+                        | Some _ -> error "Abstract method cannot have body"
+                        | None -> return () )
+                  | false -> (
+                      match m_body with
+                      | Some _ -> return ()
+                      | None -> error "No body of non-abstract method" )
+                in
+                check_modifiers_f field_elem >>= fun _ ->
+                check_abstract_body_syntax >>= fun _ ->
+                add_with_check m_table method_key
+                  {
+                    m_type = m_t;
+                    is_abstract = is_method_abstract;
+                    is_overridable = is_override m_ms;
+                    args = args_list;
+                    key = method_key;
+                    body = m_body;
+                  }
+                  "Method with this type exists"
+            | _, Constructor (Name name, args_list, c_body) ->
+                let constr_key =
+                  String.concat ""
+                    (name :: List.map show_type_t (get_type_list args_list))
+                in
+                (*Смотрим, чтобы имя конструктора совпадало с классом*)
+                let check_names_match =
+                  if name = cl_n then return ()
+                  else error "Constructor name error"
+                in
+                check_names_match >>= fun _ ->
+                check_modifiers_f field_elem >>= fun _ ->
+                add_with_check c_table constr_key
+                  { args = args_list; body = c_body }
+                  "Constructor with this type exists"
+          in
+          let rec helper_add = function
+            | [] -> return ()
+            | f :: fs -> add_field f >>= fun _ -> helper_add fs
+          in
+          helper_add fields >>= fun _ ->
+          return
+            (Hashtbl.add class_table cl_n
+               {
+                 field_table = f_table;
+                 method_table = m_table;
+                 constructor_table = c_table;
+                 children_keys = [];
+                 is_abstract = is_abstract ml;
+                 is_inheritable = not (is_final ml);
+                 parent_key = convert_name_to_key parent_o;
+               })
     in
     let rec helper_classes_add = function
       | [] -> return ()
@@ -197,6 +232,10 @@ module Preparation (M : MONADERROR) = struct
     in
     helper_classes_add cd_list
 
+  (* Решил прибегнуть к исключениям, так как сложно нормально итерироваться по таблицам *)
+  exception InheritanceException of string
+
+  (* После добавления надо обновить child_keys у каждого класса *)
   let update_child_keys_exn : unit M.t =
     let open M in
     let update key = function
@@ -212,10 +251,14 @@ module Preparation (M : MONADERROR) = struct
           match p_key_o with
           | None -> ()
           | Some p_key ->
-              (*raises exception if not found, need to be handled*)
+              (*raises exception if not found, needs to be handled*)
               let parent = Hashtbl.find class_table p_key in
               let par_ch_keys = parent.children_keys in
-              parent.children_keys <- key :: par_ch_keys )
+              if parent.is_inheritable then
+                (* От final класса наследоваться нельзя, проверяем *)
+                parent.children_keys <- key :: par_ch_keys
+              else
+                raise (InheritanceException "Final class cannot be inherited") )
     in
     return (Hashtbl.iter update class_table)
 end
