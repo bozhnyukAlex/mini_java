@@ -116,6 +116,8 @@ module Preparation (M : MONADERROR) = struct
 
   let get_type_list = List.map (function t, _ -> t)
 
+  let get_class_by_key key = Hashtbl.find class_table key
+
   (* Отдельная функция для добавления в таблицу с проверкой на существование *)
   let add_with_check ht key value e_message =
     match Hashtbl.find_all ht key with
@@ -272,7 +274,7 @@ module Preparation (M : MONADERROR) = struct
 
   (* Отдельная функция, которая берет родителя и ребенка,
         свойства родителя передает ребенку с необходимыми проверками, далее обрабатывает рекурсивно все дерево наследования от родителя *)
-  let rec dfs : class_r -> class_r -> unit =
+  let rec transfert : class_r -> class_r -> unit =
    fun parent child ->
     let process_field : key_t -> field_r -> unit =
      fun _ cur_field ->
@@ -343,7 +345,7 @@ module Preparation (M : MONADERROR) = struct
         let key_ch = Hashtbl.find class_table ch_key in
         (*Нашли ребенка - он есть, конечно*)
         List.iter
-          (fun ch_ch_key -> dfs key_ch (Hashtbl.find class_table ch_ch_key))
+          (fun ch_ch_key -> transfert key_ch (get_class_by_key ch_ch_key))
           key_ch.children_keys
       in
       List.iter process_child child.children_keys
@@ -369,7 +371,7 @@ module Preparation (M : MONADERROR) = struct
           | Some _ -> ()
           | None ->
               List.iter
-                (fun c_key -> dfs cur_class (Hashtbl.find class_table c_key))
+                (fun c_key -> transfert cur_class (get_class_by_key c_key))
                 ch_list )
     in
     return (Hashtbl.iter processing class_table)
