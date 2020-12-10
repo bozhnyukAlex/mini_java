@@ -26,9 +26,10 @@ module Result = struct
   let error = Result.error
 end
 
-type key_t = string
+type key_t = string [@@deriving show]
 
 type constructor_r = { args : (type_t * name) list; body : stmt }
+[@@deriving show]
 
 type field_r = {
   f_type : type_t;
@@ -37,6 +38,7 @@ type field_r = {
   mutable f_value : value option;
   sub_tree : expr option;
 }
+[@@deriving show]
 
 type method_r = {
   m_type : type_t;
@@ -47,6 +49,7 @@ type method_r = {
   key : key_t;
   body : stmt option;
 }
+[@@deriving show]
 
 type class_r = {
   mutable field_table : (key_t, field_r) Hashtbl.t;

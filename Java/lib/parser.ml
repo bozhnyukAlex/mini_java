@@ -251,7 +251,8 @@ module Expr = struct
       choice
         [
           ( token "[]" >> token "{" >> sep_by1 expression (token ",")
-          >>= fun el_list -> return (ArrayCreateElements (ts, el_list)) );
+          >>= fun el_list ->
+            token "}" >> return (ArrayCreateElements (ts, el_list)) );
           ( brackets expression >>= fun size ->
             return (ArrayCreateSized (ts, size)) );
         ] )

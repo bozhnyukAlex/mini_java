@@ -309,6 +309,26 @@ let%test _ =
 
 let%test _ = apply statement "for(public int i = 0;;) {i++;}" = None
 
+let%test _ =
+  apply statement
+    "Figure[] list = new Figure[] {new Circle(5), new Rectangle(2,4), new \
+     Triangle()};"
+  = Some
+      (VarDec
+         ( Array (ClassName "Figure"),
+           [
+             ( Name "list",
+               Some
+                 (ArrayCreateElements
+                    ( ClassName "Figure",
+                      [
+                        ClassCreate (Name "Circle", [ Const (VInt 5) ]);
+                        ClassCreate
+                          (Name "Rectangle", [ Const (VInt 2); Const (VInt 4) ]);
+                        ClassCreate (Name "Triangle", []);
+                      ] )) );
+           ] ))
+
 (*---------------- IN CLASSES ---------------*)
 
 let%test _ =
