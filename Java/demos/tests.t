@@ -466,4 +466,135 @@
                                                 [Ast.This]))))]))))])
 
 
- 
+
+
+
+
+
+
+
+
+  $ (cd ../../../../default && demos/demoClassLoader.exe)
+  [[Child -> { this_key : Child; field_table : [[cash -> { Interpreter.f_type = Ast.Int; Interpreter.key = "cash";
+    Interpreter.is_mutable = false; Interpreter.f_value = None;
+    Interpreter.sub_tree = None }
+  ]]; method_table : [[setCashAst.Int -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
+    Interpreter.is_overridable = true;
+    Interpreter.has_override_annotation = false;
+    Interpreter.args = [(Ast.Int, Ast.Name ("c"))];
+    Interpreter.key = "setCashAst.Int";
+    Interpreter.body =
+    Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
+                                          (Ast.FieldAccess
+                                           (Ast.This, Ast.Identifier ("cash")),
+                                           Ast.Identifier ("c")))]))
+    }
+  getCash -> { Interpreter.m_type = Ast.Int; Interpreter.is_abstract = false;
+    Interpreter.is_overridable = true;
+    Interpreter.has_override_annotation = false; Interpreter.args = [];
+    Interpreter.key = "getCash";
+    Interpreter.body =
+    Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("cash")))])) }
+  ]]; constructor_table : [[ChildAst.IntAst.IntAst.Int -> { Interpreter.args =
+    [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"));
+     (Ast.Int, Ast.Name ("c"))];
+    Interpreter.body =
+    Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
+                                    (Ast.Super,
+                                     [Ast.Identifier ("w");
+                                      Ast.Identifier ("a")]));
+                    Ast.Expression (Ast.Assign
+                                    (Ast.Identifier ("cash"),
+                                     Ast.Identifier ("c")))])
+    }
+  ChildAst.IntAst.Int -> { Interpreter.args = [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))];
+    Interpreter.body =
+    Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
+                                    (Ast.Super,
+                                     [Ast.Identifier ("w");
+                                      Ast.Identifier ("a")]));
+                    Ast.Expression (Ast.Assign
+                                    (Ast.Identifier ("cash"),
+                                     Ast.Const (Ast.VInt (0))))])
+    }
+  ]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : Person} 
+  Person -> { this_key : Person; field_table : [[weight -> { Interpreter.f_type = Ast.Int; Interpreter.key = "weight";
+    Interpreter.is_mutable = false; Interpreter.f_value = None;
+    Interpreter.sub_tree = None }
+  age -> { Interpreter.f_type = Ast.Int; Interpreter.key = "age";
+    Interpreter.is_mutable = false; Interpreter.f_value = None;
+    Interpreter.sub_tree = None }
+  ]]; method_table : [[setAgeAst.Int -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
+    Interpreter.is_overridable = true;
+    Interpreter.has_override_annotation = false;
+    Interpreter.args = [(Ast.Int, Ast.Name ("a"))];
+    Interpreter.key = "setAgeAst.Int";
+    Interpreter.body =
+    Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
+                                          (Ast.FieldAccess
+                                           (Ast.This, Ast.Identifier ("age")),
+                                           Ast.Identifier ("a")))]))
+    }
+  getAge -> { Interpreter.m_type = Ast.Int; Interpreter.is_abstract = false;
+    Interpreter.is_overridable = true;
+    Interpreter.has_override_annotation = false; Interpreter.args = [];
+    Interpreter.key = "getAge";
+    Interpreter.body =
+    Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("age")))])) }
+  setWeightAst.Int -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
+    Interpreter.is_overridable = true;
+    Interpreter.has_override_annotation = false;
+    Interpreter.args = [(Ast.Int, Ast.Name ("w"))];
+    Interpreter.key = "setWeightAst.Int";
+    Interpreter.body =
+    Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
+                                          (Ast.FieldAccess
+                                           (Ast.This,
+                                            Ast.Identifier ("weight")),
+                                           Ast.Identifier ("w")))]))
+    }
+  getWeight -> { Interpreter.m_type = Ast.Int; Interpreter.is_abstract = false;
+    Interpreter.is_overridable = true;
+    Interpreter.has_override_annotation = false; Interpreter.args = [];
+    Interpreter.key = "getWeight";
+    Interpreter.body =
+    Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("weight")))])) }
+  ]]; constructor_table : [[PersonAst.IntAst.Int -> { Interpreter.args = [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))];
+    Interpreter.body =
+    Ast.StmtBlock ([Ast.Expression (Ast.Assign
+                                    (Ast.FieldAccess
+                                     (Ast.This, Ast.Identifier ("weight")),
+                                     Ast.Identifier ("w")));
+                    Ast.Expression (Ast.Assign
+                                    (Ast.FieldAccess
+                                     (Ast.This, Ast.Identifier ("age")),
+                                     Ast.Identifier ("a")))])
+    }
+  ]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : } 
+  Main -> { this_key : Main; field_table : [[]]; method_table : [[mainAst.Array (Ast.String) -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
+    Interpreter.is_overridable = true;
+    Interpreter.has_override_annotation = false;
+    Interpreter.args = [(Ast.Array (Ast.String), Ast.Name ("args"))];
+    Interpreter.key = "mainAst.Array (Ast.String)";
+    Interpreter.body =
+    Some (Ast.StmtBlock ([Ast.VarDec
+                          (Ast.ClassName ("Person"),
+                           [(Ast.Name ("p"),
+                             Some (Ast.ClassCreate
+                                   (Ast.Name ("Person"),
+                                    [Ast.Const (Ast.VInt (80));
+                                     Ast.Const (Ast.VInt (45))])))]);
+                          Ast.Expression (Ast.FieldAccess
+                                          (Ast.FieldAccess
+                                           (Ast.Identifier ("System"),
+                                            Ast.Identifier ("out")),
+                                           Ast.CallMethod
+                                           (Ast.Identifier ("println"),
+                                            [Ast.FieldAccess
+                                             (Ast.Identifier ("p"),
+                                              Ast.CallMethod
+                                              (Ast.Identifier ("getWeight"),
+                                               []))])))]))
+    }
+  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : } 
+  ]]

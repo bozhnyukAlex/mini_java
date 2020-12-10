@@ -52,6 +52,7 @@ type method_r = {
 [@@deriving show]
 
 type class_r = {
+  this_key : key_t;
   mutable field_table : (key_t, field_r) Hashtbl.t;
   mutable method_table : (key_t, method_r) Hashtbl.t;
   mutable constructor_table : (key_t, constructor_r) Hashtbl.t;
@@ -237,6 +238,7 @@ module ClassLoader (M : MONADERROR) = struct
           return
             (Hashtbl.add class_table cl_n
                {
+                 this_key = cl_n;
                  field_table = f_table;
                  method_table = m_table;
                  constructor_table = c_table;
@@ -256,6 +258,7 @@ module ClassLoader (M : MONADERROR) = struct
   let update_child_keys_exn : unit M.t =
     let update key = function
       | {
+          this_key = _;
           field_table = _;
           method_table = _;
           constructor_table = _;
@@ -311,7 +314,8 @@ module ClassLoader (M : MONADERROR) = struct
               (InheritanceException
                  "No super headed statement in inherited constructor")
       in
-      Hashtbl.iter check_constructor_exn child.constructor_table
+      if Hashtbl.length parent.constructor_table > 0 then
+        Hashtbl.iter check_constructor_exn child.constructor_table
     in
     (* Перенос метода. Тут надо много всего проверять на абстрактность *)
     let process_method_exn : key_t -> method_r -> unit =
@@ -374,6 +378,7 @@ module ClassLoader (M : MONADERROR) = struct
     let processing _ cur_class =
       match cur_class with
       | {
+       this_key = _;
        field_table = _;
        method_table = _;
        constructor_table = _;

@@ -17,3 +17,10 @@
  (libraries Java.Lib)
  (preprocess
   (pps ppx_expect ppx_deriving.show)))
+
+(executable
+ (name demoClassLoader)
+ (modules demoClassLoader)
+ (libraries Java.Lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show)))
