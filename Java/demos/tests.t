@@ -1,469 +1,392 @@
   $ (cd ../../../../default && demos/demoParserFirst.exe)
-  Ast.Class
-  ([Ast.Public], Ast.Name ("Main"), None,
-   [([Ast.Public; Ast.Static],
-     Ast.Method
-     (Ast.Void, Ast.Name ("main"),
-      [(Ast.Array (Ast.String), Ast.Name ("args"))],
-      Some (Ast.StmtBlock ([Ast.VarDec
-                            (Ast.ClassName ("Person"),
-                             [(Ast.Name ("p"),
-                               Some (Ast.ClassCreate
-                                     (Ast.Name ("Person"),
-                                      [Ast.Const (Ast.VInt (80));
-                                       Ast.Const (Ast.VInt (45))])))]);
-                            Ast.Expression (Ast.FieldAccess
-                                            (Ast.FieldAccess
-                                             (Ast.Identifier ("System"),
-                                              Ast.Identifier ("out")),
-                                             Ast.CallMethod
-                                             (Ast.Identifier ("println"),
-                                              [Ast.FieldAccess
-                                               (Ast.Identifier ("p"),
-                                                Ast.CallMethod
-                                                (Ast.Identifier ("getWeight"),
-                                                 []))])));
-                            Ast.VarDec
-                            (Ast.ClassName ("Child"),
-                             [(Ast.Name ("ch"),
-                               Some (Ast.ClassCreate
-                                     (Ast.Name ("Child"),
-                                      [Ast.Const (Ast.VInt (66));
-                                       Ast.Const (Ast.VInt (20))])))]);
-                            Ast.Expression (Ast.FieldAccess
-                                            (Ast.Identifier ("ch"),
-                                             Ast.CallMethod
-                                             (Ast.Identifier ("setCash"),
-                                              [Ast.Const (Ast.VInt (50))])));
-                            Ast.Expression (Ast.FieldAccess
-                                            (Ast.Identifier ("ch"),
-                                             Ast.CallMethod
-                                             (Ast.Identifier ("giveEvenNumbers100"),
-                                              [])))]))))])
-  Ast.Class
-  ([], Ast.Name ("Person"), None,
-   [([Ast.Public], Ast.VarField (Ast.Int, [(Ast.Name ("weight"), None)]));
-    ([Ast.Public], Ast.VarField (Ast.Int, [(Ast.Name ("age"), None)]));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Person"),
-      [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))],
-      Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("weight")),
-                                       Ast.Identifier ("w")));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("age")),
-                                       Ast.Identifier ("a")))])));
-    ([Ast.Public],
-     Ast.Method
-     (Ast.Int, Ast.Name ("getWeight"), [],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("weight")))]))));
-    ([Ast.Public],
-     Ast.Method
-     (Ast.Int, Ast.Name ("getAge"), [],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("age")))]))));
-    ([Ast.Public],
-     Ast.Method
-     (Ast.Void, Ast.Name ("setWeight"), [(Ast.Int, Ast.Name ("w"))],
-      Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                            (Ast.FieldAccess
-                                             (Ast.This,
-                                              Ast.Identifier ("weight")),
-                                             Ast.Identifier ("w")))]))));
-    ([Ast.Public],
-     Ast.Method
-     (Ast.Void, Ast.Name ("setAge"), [(Ast.Int, Ast.Name ("a"))],
-      Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                            (Ast.FieldAccess
-                                             (Ast.This, Ast.Identifier ("age")),
-                                             Ast.Identifier ("a")))]))))])
-  Ast.Class
-  ([], Ast.Name ("Child"), Some (Ast.Name ("Person")),
-   [([Ast.Public], Ast.VarField (Ast.Int, [(Ast.Name ("cash"), None)]));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Child"),
-      [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))],
-      Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
-                                      (Ast.Super,
-                                       [Ast.Identifier ("w");
-                                        Ast.Identifier ("a")]));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.Identifier ("cash"),
-                                       Ast.Const (Ast.VInt (0))))])));
-    ([Ast.Public],
-     Ast.Method
-     (Ast.Int, Ast.Name ("getCash"), [],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("cash")))]))));
-    ([Ast.Public],
-     Ast.Method
-     (Ast.Void, Ast.Name ("setCash"), [(Ast.Int, Ast.Name ("c"))],
-      Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                            (Ast.FieldAccess
-                                             (Ast.This,
-                                              Ast.Identifier ("cash")),
-                                             Ast.Identifier ("c")))]))));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Child"),
-      [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"));
-       (Ast.Int, Ast.Name ("c"))],
-      Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
-                                      (Ast.Super,
-                                       [Ast.Identifier ("w");
-                                        Ast.Identifier ("a")]));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.Identifier ("cash"),
-                                       Ast.Identifier ("c")))])));
-    ([Ast.Public],
-     Ast.Method
-     (Ast.Void, Ast.Name ("giveEvenNumbers100"), [],
-      Some (Ast.StmtBlock ([Ast.For
-                            (Some (Ast.VarDec
-                                   (Ast.Int,
-                                    [(Ast.Name ("i"),
-                                      Some (Ast.Const (Ast.VInt (0))))])),
-                             Some (Ast.Less
-                                   (Ast.Identifier ("i"),
-                                    Ast.Const (Ast.VInt (100)))),
-                             [Ast.PostInc (Ast.Identifier ("i"))],
-                             Ast.StmtBlock ([Ast.If
-                                             (Ast.And
-                                              (Ast.Equal
-                                               (Ast.Mod
-                                                (Ast.Identifier ("i"),
-                                                 Ast.Const (Ast.VInt (2))),
-                                                Ast.Const (Ast.VInt (0))),
-                                               Ast.Not (Ast.Equal
-                                                        (Ast.Mod
-                                                         (Ast.Identifier ("i"),
-                                                          Ast.Const (Ast.VInt (2))),
-                                                         Ast.Const (Ast.VInt (1))))),
-                                              Ast.StmtBlock ([Ast.Expression (
-                                                               Ast.FieldAccess
-                                                               (Ast.FieldAccess
-                                                                (Ast.Identifier ("System"),
-                                                                 Ast.Identifier ("out")),
-                                                                Ast.CallMethod
-                                                                (Ast.Identifier ("println"),
-                                                                 [Ast.Identifier ("i")])))]),
-                                              Some (Ast.StmtBlock ([Ast.Continue])))]))]))))])
+  Class
+  ([Public], Name ("Main"), None,
+   [([Public; Static],
+     Method
+     (Void, Name ("main"), [(Array (String), Name ("args"))],
+      Some (StmtBlock ([VarDec
+                        (ClassName ("Person"),
+                         [(Name ("p"),
+                           Some (ClassCreate
+                                 (Name ("Person"),
+                                  [Const (VInt (80)); Const (VInt (45))])))]);
+                        Expression (FieldAccess
+                                    (FieldAccess
+                                     (Identifier ("System"),
+                                      Identifier ("out")),
+                                     CallMethod
+                                     (Identifier ("println"),
+                                      [FieldAccess
+                                       (Identifier ("p"),
+                                        CallMethod
+                                        (Identifier ("getWeight"), []))])));
+                        VarDec
+                        (ClassName ("Child"),
+                         [(Name ("ch"),
+                           Some (ClassCreate
+                                 (Name ("Child"),
+                                  [Const (VInt (66)); Const (VInt (20))])))]);
+                        Expression (FieldAccess
+                                    (Identifier ("ch"),
+                                     CallMethod
+                                     (Identifier ("setCash"),
+                                      [Const (VInt (50))])));
+                        Expression (FieldAccess
+                                    (Identifier ("ch"),
+                                     CallMethod
+                                     (Identifier ("giveEvenNumbers100"), [])))]))))])
+  Class
+  ([], Name ("Person"), None,
+   [([Public], VarField (Int, [(Name ("weight"), None)]));
+    ([Public], VarField (Int, [(Name ("age"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Person"), [(Int, Name ("w")); (Int, Name ("a"))],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("weight")),
+                               Identifier ("w")));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("age")),
+                               Identifier ("a")))])));
+    ([Public],
+     Method
+     (Int, Name ("getWeight"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("weight")))]))));
+    ([Public],
+     Method
+     (Int, Name ("getAge"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("age")))]))));
+    ([Public],
+     Method
+     (Void, Name ("setWeight"), [(Int, Name ("w"))],
+      Some (StmtBlock ([Expression (Assign
+                                    (FieldAccess (This, Identifier ("weight")),
+                                     Identifier ("w")))]))));
+    ([Public],
+     Method
+     (Void, Name ("setAge"), [(Int, Name ("a"))],
+      Some (StmtBlock ([Expression (Assign
+                                    (FieldAccess (This, Identifier ("age")),
+                                     Identifier ("a")))]))))])
+  Class
+  ([], Name ("Child"), Some (Name ("Person")),
+   [([Public], VarField (Int, [(Name ("cash"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Child"), [(Int, Name ("w")); (Int, Name ("a"))],
+      StmtBlock ([Expression (CallMethod
+                              (Super, [Identifier ("w"); Identifier ("a")]));
+                  Expression (Assign (Identifier ("cash"), Const (VInt (0))))])));
+    ([Public],
+     Method
+     (Int, Name ("getCash"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("cash")))]))));
+    ([Public],
+     Method
+     (Void, Name ("setCash"), [(Int, Name ("c"))],
+      Some (StmtBlock ([Expression (Assign
+                                    (FieldAccess (This, Identifier ("cash")),
+                                     Identifier ("c")))]))));
+    ([Public],
+     Constructor
+     (Name ("Child"),
+      [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))],
+      StmtBlock ([Expression (CallMethod
+                              (Super, [Identifier ("w"); Identifier ("a")]));
+                  Expression (Assign (Identifier ("cash"), Identifier ("c")))])));
+    ([Public],
+     Method
+     (Void, Name ("giveEvenNumbers100"), [],
+      Some (StmtBlock ([For
+                        (Some (VarDec
+                               (Int, [(Name ("i"), Some (Const (VInt (0))))])),
+                         Some (Less (Identifier ("i"), Const (VInt (100)))),
+                         [PostInc (Identifier ("i"))],
+                         StmtBlock ([If
+                                     (And
+                                      (Equal
+                                       (Mod
+                                        (Identifier ("i"), Const (VInt (2))),
+                                        Const (VInt (0))),
+                                       Not (Equal
+                                            (Mod
+                                             (Identifier ("i"),
+                                              Const (VInt (2))),
+                                             Const (VInt (1))))),
+                                      StmtBlock ([Expression (FieldAccess
+                                                              (FieldAccess
+                                                               (Identifier ("System"),
+                                                                Identifier ("out")),
+                                                               CallMethod
+                                                               (Identifier ("println"),
+                                                                [Identifier ("i")])))]),
+                                      Some (StmtBlock ([Continue])))]))]))))])
   $ (cd ../../../../default && demos/demoParserSecond.exe)
-  Ast.Class
-  ([Ast.Public], Ast.Name ("Main"), None,
-   [([Ast.Public; Ast.Static],
-     Ast.Method
-     (Ast.Void, Ast.Name ("main"),
-      [(Ast.Array (Ast.String), Ast.Name ("args"))],
-      Some (Ast.StmtBlock ([Ast.VarDec
-                            (Ast.Array (Ast.ClassName ("Figure")),
-                             [(Ast.Name ("list"),
-                               Some (Ast.ArrayCreateElements
-                                     (Ast.ClassName ("Figure"),
-                                      [Ast.ClassCreate
-                                       (Ast.Name ("Circle"),
-                                        [Ast.Const (Ast.VInt (5))]);
-                                       Ast.ClassCreate
-                                       (Ast.Name ("Rectangle"),
-                                        [Ast.Const (Ast.VInt (2));
-                                         Ast.Const (Ast.VInt (4))]);
-                                       Ast.ClassCreate
-                                       (Ast.Name ("Triangle"), [])])))]);
-                            Ast.VarDec
-                            (Ast.ClassName ("AreaVisitor"),
-                             [(Ast.Name ("areaVisitor"),
-                               Some (Ast.ClassCreate
-                                     (Ast.Name ("AreaVisitor"), [])))]);
-                            Ast.VarDec
-                            (Ast.ClassName ("PerimeterVisitor"),
-                             [(Ast.Name ("perimeterVisitor"),
-                               Some (Ast.ClassCreate
-                                     (Ast.Name ("PerimeterVisitor"), [])))]);
-                            Ast.For
-                            (Some (Ast.VarDec
-                                   (Ast.Int,
-                                    [(Ast.Name ("i"),
-                                      Some (Ast.Const (Ast.VInt (0))))])),
-                             Some (Ast.Less
-                                   (Ast.Identifier ("i"),
-                                    Ast.FieldAccess
-                                    (Ast.Identifier ("list"),
-                                     Ast.Identifier ("length")))),
-                             [Ast.PostInc (Ast.Identifier ("i"))],
-                             Ast.StmtBlock ([Ast.Expression (Ast.FieldAccess
-                                                             (Ast.FieldAccess
-                                                              (Ast.Identifier ("System"),
-                                                               Ast.Identifier ("out")),
-                                                              Ast.CallMethod
-                                                              (Ast.Identifier ("println"),
-                                                               [Ast.FieldAccess
-                                                                (Ast.ArrayAccess
-                                                                 (Ast.Identifier ("list"),
-                                                                  Ast.Identifier ("i")),
-                                                                 Ast.CallMethod
-                                                                 (Ast.Identifier ("accept"),
-                                                                  [Ast.Identifier ("areaVisitor")]))])))]));
-                            Ast.For
-                            (Some (Ast.VarDec
-                                   (Ast.Int,
-                                    [(Ast.Name ("j"),
-                                      Some (Ast.Const (Ast.VInt (0))))])),
-                             Some (Ast.Less
-                                   (Ast.Identifier ("j"),
-                                    Ast.FieldAccess
-                                    (Ast.Identifier ("list"),
-                                     Ast.Identifier ("length")))),
-                             [Ast.PostInc (Ast.Identifier ("j"))],
-                             Ast.StmtBlock ([Ast.Expression (Ast.FieldAccess
-                                                             (Ast.FieldAccess
-                                                              (Ast.Identifier ("System"),
-                                                               Ast.Identifier ("out")),
-                                                              Ast.CallMethod
-                                                              (Ast.Identifier ("println"),
-                                                               [Ast.FieldAccess
-                                                                (Ast.ArrayAccess
-                                                                 (Ast.Identifier ("list"),
-                                                                  Ast.Identifier ("j")),
-                                                                 Ast.CallMethod
-                                                                 (Ast.Identifier ("accept"),
-                                                                  [Ast.Identifier ("perimeterVisitor")]))])))]))]))))])
-  Ast.Class
-  ([Ast.Abstract], Ast.Name ("Figure"), None,
-   [([Ast.Abstract],
-     Ast.Method
-     (Ast.Int, Ast.Name ("accept"),
-      [(Ast.ClassName ("Visitor"), Ast.Name ("v"))], None))])
-  Ast.Class
-  ([Ast.Abstract], Ast.Name ("Visitor"), None,
-   [([Ast.Abstract],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Circle"), Ast.Name ("circle"))], None));
-    ([Ast.Abstract],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Rectangle"), Ast.Name ("rectangle"))], None));
-    ([Ast.Abstract],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Triangle"), Ast.Name ("triangle"))], None))])
-  Ast.Class
-  ([], Ast.Name ("AreaVisitor"), Some (Ast.Name ("Visitor")),
-   [([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Circle"), Ast.Name ("circle"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Mult
-                                              (Ast.Mult
-                                               (Ast.Const (Ast.VInt (3)),
-                                                Ast.FieldAccess
-                                                (Ast.Identifier ("circle"),
-                                                 Ast.Identifier ("radius"))),
-                                               Ast.FieldAccess
-                                               (Ast.Identifier ("circle"),
-                                                Ast.Identifier ("radius")))))]))));
-    ([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Rectangle"), Ast.Name ("rectangle"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Mult
-                                              (Ast.FieldAccess
-                                               (Ast.Identifier ("rectangle"),
-                                                Ast.Identifier ("a")),
-                                               Ast.FieldAccess
-                                               (Ast.Identifier ("rectangle"),
-                                                Ast.Identifier ("b")))))]))));
-    ([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Triangle"), Ast.Name ("triangle"))],
-      Some (Ast.StmtBlock ([Ast.VarDec
-                            (Ast.Int,
-                             [(Ast.Name ("p"),
-                               Some (Ast.Div
-                                     (Ast.Add
-                                      (Ast.Add
-                                       (Ast.FieldAccess
-                                        (Ast.Identifier ("triangle"),
-                                         Ast.Identifier ("a")),
-                                        Ast.FieldAccess
-                                        (Ast.Identifier ("triangle"),
-                                         Ast.Identifier ("b"))),
-                                       Ast.FieldAccess
-                                       (Ast.Identifier ("triangle"),
-                                        Ast.Identifier ("c"))),
-                                      Ast.Const (Ast.VInt (2)))))]);
-                            Ast.Return (Some (Ast.Mult
-                                              (Ast.Mult
-                                               (Ast.Mult
-                                                (Ast.Identifier ("p"),
-                                                 Ast.Sub
-                                                 (Ast.Identifier ("p"),
-                                                  Ast.FieldAccess
-                                                  (Ast.Identifier ("triangle"),
-                                                   Ast.Identifier ("a")))),
-                                                Ast.Sub
-                                                (Ast.Identifier ("p"),
-                                                 Ast.FieldAccess
-                                                 (Ast.Identifier ("triangle"),
-                                                  Ast.Identifier ("b")))),
-                                               Ast.Sub
-                                               (Ast.Identifier ("p"),
-                                                Ast.FieldAccess
-                                                (Ast.Identifier ("triangle"),
-                                                 Ast.Identifier ("c"))))))]))))])
-  Ast.Class
-  ([], Ast.Name ("PerimeterVisitor"), Some (Ast.Name ("Visitor")),
-   [([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Circle"), Ast.Name ("circle"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Mult
-                                              (Ast.Mult
-                                               (Ast.Const (Ast.VInt (2)),
-                                                Ast.Const (Ast.VInt (3))),
-                                               Ast.FieldAccess
-                                               (Ast.Identifier ("circle"),
-                                                Ast.Identifier ("radius")))))]))));
-    ([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Rectangle"), Ast.Name ("rectangle"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Mult
-                                              (Ast.Add
-                                               (Ast.FieldAccess
-                                                (Ast.Identifier ("rectangle"),
-                                                 Ast.Identifier ("a")),
-                                                Ast.FieldAccess
-                                                (Ast.Identifier ("rectangle"),
-                                                 Ast.Identifier ("b"))),
-                                               Ast.Const (Ast.VInt (2)))))]))));
-    ([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("visit"),
-      [(Ast.ClassName ("Triangle"), Ast.Name ("triangle"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Add
-                                              (Ast.Add
-                                               (Ast.FieldAccess
-                                                (Ast.Identifier ("triangle"),
-                                                 Ast.Identifier ("a")),
-                                                Ast.FieldAccess
-                                                (Ast.Identifier ("triangle"),
-                                                 Ast.Identifier ("b"))),
-                                               Ast.FieldAccess
-                                               (Ast.Identifier ("triangle"),
-                                                Ast.Identifier ("c")))))]))))])
-  Ast.Class
-  ([], Ast.Name ("Circle"), Some (Ast.Name ("Figure")),
-   [([Ast.Public], Ast.VarField (Ast.Int, [(Ast.Name ("radius"), None)]));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Circle"), [(Ast.Int, Ast.Name ("radius"))],
-      Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("radius")),
-                                       Ast.Identifier ("radius")))])));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Circle"), [],
-      Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("radius")),
-                                       Ast.Const (Ast.VInt (1))))])));
-    ([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("accept"),
-      [(Ast.ClassName ("Visitor"), Ast.Name ("v"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.FieldAccess
-                                              (Ast.Identifier ("v"),
-                                               Ast.CallMethod
-                                               (Ast.Identifier ("visit"),
-                                                [Ast.This]))))]))))])
-  Ast.Class
-  ([], Ast.Name ("Triangle"), Some (Ast.Name ("Figure")),
-   [([Ast.Public],
-     Ast.VarField
-     (Ast.Int,
-      [(Ast.Name ("a"), None); (Ast.Name ("b"), None); (Ast.Name ("c"), None)]));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Triangle"),
-      [(Ast.Int, Ast.Name ("a")); (Ast.Int, Ast.Name ("b"));
-       (Ast.Int, Ast.Name ("c"))],
-      Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("a")),
-                                       Ast.Identifier ("a")));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("b")),
-                                       Ast.Identifier ("b")));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("c")),
-                                       Ast.Identifier ("c")))])));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Triangle"), [],
-      Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("a")),
-                                       Ast.Const (Ast.VInt (1))));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("b")),
-                                       Ast.Const (Ast.VInt (1))));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("c")),
-                                       Ast.Const (Ast.VInt (1))))])));
-    ([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("accept"),
-      [(Ast.ClassName ("Visitor"), Ast.Name ("v"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.FieldAccess
-                                              (Ast.Identifier ("v"),
-                                               Ast.CallMethod
-                                               (Ast.Identifier ("visit"),
-                                                [Ast.This]))))]))))])
-  Ast.Class
-  ([], Ast.Name ("Rectangle"), Some (Ast.Name ("Figure")),
-   [([Ast.Public],
-     Ast.VarField (Ast.Int, [(Ast.Name ("a"), None); (Ast.Name ("b"), None)]));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Rectangle"), [],
-      Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("a")),
-                                       Ast.Const (Ast.VInt (1))));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("b")),
-                                       Ast.Const (Ast.VInt (1))))])));
-    ([Ast.Public],
-     Ast.Constructor
-     (Ast.Name ("Rectangle"),
-      [(Ast.Int, Ast.Name ("a")); (Ast.Int, Ast.Name ("b"))],
-      Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("a")),
-                                       Ast.Identifier ("a")));
-                      Ast.Expression (Ast.Assign
-                                      (Ast.FieldAccess
-                                       (Ast.This, Ast.Identifier ("b")),
-                                       Ast.Identifier ("b")))])));
-    ([Ast.Override],
-     Ast.Method
-     (Ast.Int, Ast.Name ("accept"),
-      [(Ast.ClassName ("Visitor"), Ast.Name ("v"))],
-      Some (Ast.StmtBlock ([Ast.Return (Some (Ast.FieldAccess
-                                              (Ast.Identifier ("v"),
-                                               Ast.CallMethod
-                                               (Ast.Identifier ("visit"),
-                                                [Ast.This]))))]))))])
+  Class
+  ([Public], Name ("Main"), None,
+   [([Public; Static],
+     Method
+     (Void, Name ("main"), [(Array (String), Name ("args"))],
+      Some (StmtBlock ([VarDec
+                        (Array (ClassName ("Figure")),
+                         [(Name ("list"),
+                           Some (ArrayCreateElements
+                                 (ClassName ("Figure"),
+                                  [ClassCreate
+                                   (Name ("Circle"), [Const (VInt (5))]);
+                                   ClassCreate
+                                   (Name ("Rectangle"),
+                                    [Const (VInt (2)); Const (VInt (4))]);
+                                   ClassCreate (Name ("Triangle"), [])])))]);
+                        VarDec
+                        (ClassName ("AreaVisitor"),
+                         [(Name ("areaVisitor"),
+                           Some (ClassCreate (Name ("AreaVisitor"), [])))]);
+                        VarDec
+                        (ClassName ("PerimeterVisitor"),
+                         [(Name ("perimeterVisitor"),
+                           Some (ClassCreate (Name ("PerimeterVisitor"), [])))]);
+                        For
+                        (Some (VarDec
+                               (Int, [(Name ("i"), Some (Const (VInt (0))))])),
+                         Some (Less
+                               (Identifier ("i"),
+                                FieldAccess
+                                (Identifier ("list"), Identifier ("length")))),
+                         [PostInc (Identifier ("i"))],
+                         StmtBlock ([Expression (FieldAccess
+                                                 (FieldAccess
+                                                  (Identifier ("System"),
+                                                   Identifier ("out")),
+                                                  CallMethod
+                                                  (Identifier ("println"),
+                                                   [FieldAccess
+                                                    (ArrayAccess
+                                                     (Identifier ("list"),
+                                                      Identifier ("i")),
+                                                     CallMethod
+                                                     (Identifier ("accept"),
+                                                      [Identifier ("areaVisitor")]))])))]));
+                        For
+                        (Some (VarDec
+                               (Int, [(Name ("j"), Some (Const (VInt (0))))])),
+                         Some (Less
+                               (Identifier ("j"),
+                                FieldAccess
+                                (Identifier ("list"), Identifier ("length")))),
+                         [PostInc (Identifier ("j"))],
+                         StmtBlock ([Expression (FieldAccess
+                                                 (FieldAccess
+                                                  (Identifier ("System"),
+                                                   Identifier ("out")),
+                                                  CallMethod
+                                                  (Identifier ("println"),
+                                                   [FieldAccess
+                                                    (ArrayAccess
+                                                     (Identifier ("list"),
+                                                      Identifier ("j")),
+                                                     CallMethod
+                                                     (Identifier ("accept"),
+                                                      [Identifier ("perimeterVisitor")]))])))]))]))))])
+  Class
+  ([Abstract], Name ("Figure"), None,
+   [([Abstract],
+     Method (Int, Name ("accept"), [(ClassName ("Visitor"), Name ("v"))], None))])
+  Class
+  ([Abstract], Name ("Visitor"), None,
+   [([Abstract],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Circle"), Name ("circle"))], None));
+    ([Abstract],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Rectangle"), Name ("rectangle"))],
+      None));
+    ([Abstract],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Triangle"), Name ("triangle"))], None))])
+  Class
+  ([], Name ("AreaVisitor"), Some (Name ("Visitor")),
+   [([Override],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Circle"), Name ("circle"))],
+      Some (StmtBlock ([Return (Some (Mult
+                                      (Mult
+                                       (Const (VInt (3)),
+                                        FieldAccess
+                                        (Identifier ("circle"),
+                                         Identifier ("radius"))),
+                                       FieldAccess
+                                       (Identifier ("circle"),
+                                        Identifier ("radius")))))]))));
+    ([Override],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Rectangle"), Name ("rectangle"))],
+      Some (StmtBlock ([Return (Some (Mult
+                                      (FieldAccess
+                                       (Identifier ("rectangle"),
+                                        Identifier ("a")),
+                                       FieldAccess
+                                       (Identifier ("rectangle"),
+                                        Identifier ("b")))))]))));
+    ([Override],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Triangle"), Name ("triangle"))],
+      Some (StmtBlock ([VarDec
+                        (Int,
+                         [(Name ("p"),
+                           Some (Div
+                                 (Add
+                                  (Add
+                                   (FieldAccess
+                                    (Identifier ("triangle"), Identifier ("a")),
+                                    FieldAccess
+                                    (Identifier ("triangle"), Identifier ("b"))),
+                                   FieldAccess
+                                   (Identifier ("triangle"), Identifier ("c"))),
+                                  Const (VInt (2)))))]);
+                        Return (Some (Mult
+                                      (Mult
+                                       (Mult
+                                        (Identifier ("p"),
+                                         Sub
+                                         (Identifier ("p"),
+                                          FieldAccess
+                                          (Identifier ("triangle"),
+                                           Identifier ("a")))),
+                                        Sub
+                                        (Identifier ("p"),
+                                         FieldAccess
+                                         (Identifier ("triangle"),
+                                          Identifier ("b")))),
+                                       Sub
+                                       (Identifier ("p"),
+                                        FieldAccess
+                                        (Identifier ("triangle"),
+                                         Identifier ("c"))))))]))))])
+  Class
+  ([], Name ("PerimeterVisitor"), Some (Name ("Visitor")),
+   [([Override],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Circle"), Name ("circle"))],
+      Some (StmtBlock ([Return (Some (Mult
+                                      (Mult
+                                       (Const (VInt (2)), Const (VInt (3))),
+                                       FieldAccess
+                                       (Identifier ("circle"),
+                                        Identifier ("radius")))))]))));
+    ([Override],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Rectangle"), Name ("rectangle"))],
+      Some (StmtBlock ([Return (Some (Mult
+                                      (Add
+                                       (FieldAccess
+                                        (Identifier ("rectangle"),
+                                         Identifier ("a")),
+                                        FieldAccess
+                                        (Identifier ("rectangle"),
+                                         Identifier ("b"))),
+                                       Const (VInt (2)))))]))));
+    ([Override],
+     Method
+     (Int, Name ("visit"), [(ClassName ("Triangle"), Name ("triangle"))],
+      Some (StmtBlock ([Return (Some (Add
+                                      (Add
+                                       (FieldAccess
+                                        (Identifier ("triangle"),
+                                         Identifier ("a")),
+                                        FieldAccess
+                                        (Identifier ("triangle"),
+                                         Identifier ("b"))),
+                                       FieldAccess
+                                       (Identifier ("triangle"),
+                                        Identifier ("c")))))]))))])
+  Class
+  ([], Name ("Circle"), Some (Name ("Figure")),
+   [([Public], VarField (Int, [(Name ("radius"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Circle"), [(Int, Name ("radius"))],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("radius")),
+                               Identifier ("radius")))])));
+    ([Public],
+     Constructor
+     (Name ("Circle"), [],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("radius")),
+                               Const (VInt (1))))])));
+    ([Override],
+     Method
+     (Int, Name ("accept"), [(ClassName ("Visitor"), Name ("v"))],
+      Some (StmtBlock ([Return (Some (FieldAccess
+                                      (Identifier ("v"),
+                                       CallMethod
+                                       (Identifier ("visit"), [This]))))]))))])
+  Class
+  ([], Name ("Triangle"), Some (Name ("Figure")),
+   [([Public],
+     VarField
+     (Int, [(Name ("a"), None); (Name ("b"), None); (Name ("c"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Triangle"),
+      [(Int, Name ("a")); (Int, Name ("b")); (Int, Name ("c"))],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("a")),
+                               Identifier ("a")));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("b")),
+                               Identifier ("b")));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("c")),
+                               Identifier ("c")))])));
+    ([Public],
+     Constructor
+     (Name ("Triangle"), [],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("a")),
+                               Const (VInt (1))));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("b")),
+                               Const (VInt (1))));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("c")),
+                               Const (VInt (1))))])));
+    ([Override],
+     Method
+     (Int, Name ("accept"), [(ClassName ("Visitor"), Name ("v"))],
+      Some (StmtBlock ([Return (Some (FieldAccess
+                                      (Identifier ("v"),
+                                       CallMethod
+                                       (Identifier ("visit"), [This]))))]))))])
+  Class
+  ([], Name ("Rectangle"), Some (Name ("Figure")),
+   [([Public], VarField (Int, [(Name ("a"), None); (Name ("b"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Rectangle"), [],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("a")),
+                               Const (VInt (1))));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("b")),
+                               Const (VInt (1))))])));
+    ([Public],
+     Constructor
+     (Name ("Rectangle"), [(Int, Name ("a")); (Int, Name ("b"))],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("a")),
+                               Identifier ("a")));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("b")),
+                               Identifier ("b")))])));
+    ([Override],
+     Method
+     (Int, Name ("accept"), [(ClassName ("Visitor"), Name ("v"))],
+      Some (StmtBlock ([Return (Some (FieldAccess
+                                      (Identifier ("v"),
+                                       CallMethod
+                                       (Identifier ("visit"), [This]))))]))))])
 
 
 
@@ -475,126 +398,296 @@
 
 
   $ (cd ../../../../default && demos/demoClassLoader.exe)
-  [[Child -> { this_key : Child; field_table : [[cash -> { Interpreter.f_type = Ast.Int; Interpreter.key = "cash";
-    Interpreter.is_mutable = false; Interpreter.f_value = None;
-    Interpreter.sub_tree = None }
-  ]]; method_table : [[setCashAst.Int -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
-    Interpreter.is_overridable = true;
-    Interpreter.has_override_annotation = false;
-    Interpreter.args = [(Ast.Int, Ast.Name ("c"))];
-    Interpreter.key = "setCashAst.Int";
-    Interpreter.body =
-    Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                          (Ast.FieldAccess
-                                           (Ast.This, Ast.Identifier ("cash")),
-                                           Ast.Identifier ("c")))]))
+  [[PerimeterVisitor -> { this_key : PerimeterVisitor; field_table : [[]]; method_table : [[visitClassName ("Circle") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Circle"), Name ("circle"))];
+    key = "visitClassName (\"Circle\")";
+    body =
+    Some (StmtBlock ([Return (Some (Mult
+                                    (Mult (Const (VInt (2)), Const (VInt (3))),
+                                     FieldAccess
+                                     (Identifier ("circle"),
+                                      Identifier ("radius")))))]))
     }
-  getCash -> { Interpreter.m_type = Ast.Int; Interpreter.is_abstract = false;
-    Interpreter.is_overridable = true;
-    Interpreter.has_override_annotation = false; Interpreter.args = [];
-    Interpreter.key = "getCash";
-    Interpreter.body =
-    Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("cash")))])) }
-  ]]; constructor_table : [[ChildAst.IntAst.IntAst.Int -> { Interpreter.args =
-    [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"));
-     (Ast.Int, Ast.Name ("c"))];
-    Interpreter.body =
-    Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
-                                    (Ast.Super,
-                                     [Ast.Identifier ("w");
-                                      Ast.Identifier ("a")]));
-                    Ast.Expression (Ast.Assign
-                                    (Ast.Identifier ("cash"),
-                                     Ast.Identifier ("c")))])
+  visitClassName ("Rectangle") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Rectangle"), Name ("rectangle"))];
+    key = "visitClassName (\"Rectangle\")";
+    body =
+    Some (StmtBlock ([Return (Some (Mult
+                                    (Add
+                                     (FieldAccess
+                                      (Identifier ("rectangle"),
+                                       Identifier ("a")),
+                                      FieldAccess
+                                      (Identifier ("rectangle"),
+                                       Identifier ("b"))),
+                                     Const (VInt (2)))))]))
     }
-  ChildAst.IntAst.Int -> { Interpreter.args = [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))];
-    Interpreter.body =
-    Ast.StmtBlock ([Ast.Expression (Ast.CallMethod
-                                    (Ast.Super,
-                                     [Ast.Identifier ("w");
-                                      Ast.Identifier ("a")]));
-                    Ast.Expression (Ast.Assign
-                                    (Ast.Identifier ("cash"),
-                                     Ast.Const (Ast.VInt (0))))])
+  visitClassName ("Triangle") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Triangle"), Name ("triangle"))];
+    key = "visitClassName (\"Triangle\")";
+    body =
+    Some (StmtBlock ([Return (Some (Add
+                                    (Add
+                                     (FieldAccess
+                                      (Identifier ("triangle"),
+                                       Identifier ("a")),
+                                      FieldAccess
+                                      (Identifier ("triangle"),
+                                       Identifier ("b"))),
+                                     FieldAccess
+                                     (Identifier ("triangle"),
+                                      Identifier ("c")))))]))
     }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : Person} 
-  Person -> { this_key : Person; field_table : [[weight -> { Interpreter.f_type = Ast.Int; Interpreter.key = "weight";
-    Interpreter.is_mutable = false; Interpreter.f_value = None;
-    Interpreter.sub_tree = None }
-  age -> { Interpreter.f_type = Ast.Int; Interpreter.key = "age";
-    Interpreter.is_mutable = false; Interpreter.f_value = None;
-    Interpreter.sub_tree = None }
-  ]]; method_table : [[setAgeAst.Int -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
-    Interpreter.is_overridable = true;
-    Interpreter.has_override_annotation = false;
-    Interpreter.args = [(Ast.Int, Ast.Name ("a"))];
-    Interpreter.key = "setAgeAst.Int";
-    Interpreter.body =
-    Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                          (Ast.FieldAccess
-                                           (Ast.This, Ast.Identifier ("age")),
-                                           Ast.Identifier ("a")))]))
+  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : Visitor} 
+  Visitor -> { this_key : Visitor; field_table : [[]]; method_table : [[visitClassName ("Circle") -> { m_type = Int; is_abstract = true; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Circle"), Name ("circle"))];
+    key = "visitClassName (\"Circle\")"; body = None }
+  visitClassName ("Rectangle") -> { m_type = Int; is_abstract = true; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Rectangle"), Name ("rectangle"))];
+    key = "visitClassName (\"Rectangle\")"; body = None }
+  visitClassName ("Triangle") -> { m_type = Int; is_abstract = true; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Triangle"), Name ("triangle"))];
+    key = "visitClassName (\"Triangle\")"; body = None }
+  ]]; constructor_table : [[]]; children_keys : ; is_abstract : true; is_inheritable : true; parent_key : } 
+  Figure -> { this_key : Figure; field_table : [[]]; method_table : [[acceptClassName ("Visitor") -> { m_type = Int; is_abstract = true; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Visitor"), Name ("v"))];
+    key = "acceptClassName (\"Visitor\")"; body = None }
+  ]]; constructor_table : [[]]; children_keys : ; is_abstract : true; is_inheritable : true; parent_key : } 
+  Circle -> { this_key : Circle; field_table : [[radius -> { f_type = Int; key = "radius"; is_mutable = false; f_value = None;
+    sub_tree = None }
+  ]]; method_table : [[acceptClassName ("Visitor") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Visitor"), Name ("v"))];
+    key = "acceptClassName (\"Visitor\")";
+    body =
+    Some (StmtBlock ([Return (Some (FieldAccess
+                                    (Identifier ("v"),
+                                     CallMethod (Identifier ("visit"), [This]))))]))
     }
-  getAge -> { Interpreter.m_type = Ast.Int; Interpreter.is_abstract = false;
-    Interpreter.is_overridable = true;
-    Interpreter.has_override_annotation = false; Interpreter.args = [];
-    Interpreter.key = "getAge";
-    Interpreter.body =
-    Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("age")))])) }
-  setWeightAst.Int -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
-    Interpreter.is_overridable = true;
-    Interpreter.has_override_annotation = false;
-    Interpreter.args = [(Ast.Int, Ast.Name ("w"))];
-    Interpreter.key = "setWeightAst.Int";
-    Interpreter.body =
-    Some (Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                          (Ast.FieldAccess
-                                           (Ast.This,
-                                            Ast.Identifier ("weight")),
-                                           Ast.Identifier ("w")))]))
+  ]]; constructor_table : [[CircleInt -> { args = [(Int, Name ("radius"))];
+    body =
+    StmtBlock ([Expression (Assign
+                            (FieldAccess (This, Identifier ("radius")),
+                             Identifier ("radius")))])
     }
-  getWeight -> { Interpreter.m_type = Ast.Int; Interpreter.is_abstract = false;
-    Interpreter.is_overridable = true;
-    Interpreter.has_override_annotation = false; Interpreter.args = [];
-    Interpreter.key = "getWeight";
-    Interpreter.body =
-    Some (Ast.StmtBlock ([Ast.Return (Some (Ast.Identifier ("weight")))])) }
-  ]]; constructor_table : [[PersonAst.IntAst.Int -> { Interpreter.args = [(Ast.Int, Ast.Name ("w")); (Ast.Int, Ast.Name ("a"))];
-    Interpreter.body =
-    Ast.StmtBlock ([Ast.Expression (Ast.Assign
-                                    (Ast.FieldAccess
-                                     (Ast.This, Ast.Identifier ("weight")),
-                                     Ast.Identifier ("w")));
-                    Ast.Expression (Ast.Assign
-                                    (Ast.FieldAccess
-                                     (Ast.This, Ast.Identifier ("age")),
-                                     Ast.Identifier ("a")))])
+  Circle -> { args = [];
+    body =
+    StmtBlock ([Expression (Assign
+                            (FieldAccess (This, Identifier ("radius")),
+                             Const (VInt (1))))])
     }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : } 
-  Main -> { this_key : Main; field_table : [[]]; method_table : [[mainAst.Array (Ast.String) -> { Interpreter.m_type = Ast.Void; Interpreter.is_abstract = false;
-    Interpreter.is_overridable = true;
-    Interpreter.has_override_annotation = false;
-    Interpreter.args = [(Ast.Array (Ast.String), Ast.Name ("args"))];
-    Interpreter.key = "mainAst.Array (Ast.String)";
-    Interpreter.body =
-    Some (Ast.StmtBlock ([Ast.VarDec
-                          (Ast.ClassName ("Person"),
-                           [(Ast.Name ("p"),
-                             Some (Ast.ClassCreate
-                                   (Ast.Name ("Person"),
-                                    [Ast.Const (Ast.VInt (80));
-                                     Ast.Const (Ast.VInt (45))])))]);
-                          Ast.Expression (Ast.FieldAccess
-                                          (Ast.FieldAccess
-                                           (Ast.Identifier ("System"),
-                                            Ast.Identifier ("out")),
-                                           Ast.CallMethod
-                                           (Ast.Identifier ("println"),
-                                            [Ast.FieldAccess
-                                             (Ast.Identifier ("p"),
-                                              Ast.CallMethod
-                                              (Ast.Identifier ("getWeight"),
-                                               []))])))]))
+  ]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : Figure} 
+  Triangle -> { this_key : Triangle; field_table : [[a -> { f_type = Int; key = "a"; is_mutable = false; f_value = None;
+    sub_tree = None }
+  b -> { f_type = Int; key = "b"; is_mutable = false; f_value = None;
+    sub_tree = None }
+  c -> { f_type = Int; key = "c"; is_mutable = false; f_value = None;
+    sub_tree = None }
+  ]]; method_table : [[acceptClassName ("Visitor") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Visitor"), Name ("v"))];
+    key = "acceptClassName (\"Visitor\")";
+    body =
+    Some (StmtBlock ([Return (Some (FieldAccess
+                                    (Identifier ("v"),
+                                     CallMethod (Identifier ("visit"), [This]))))]))
+    }
+  ]]; constructor_table : [[Triangle -> { args = [];
+    body =
+    StmtBlock ([Expression (Assign
+                            (FieldAccess (This, Identifier ("a")),
+                             Const (VInt (1))));
+                Expression (Assign
+                            (FieldAccess (This, Identifier ("b")),
+                             Const (VInt (1))));
+                Expression (Assign
+                            (FieldAccess (This, Identifier ("c")),
+                             Const (VInt (1))))])
+    }
+  TriangleIntIntInt -> { args = [(Int, Name ("a")); (Int, Name ("b")); (Int, Name ("c"))];
+    body =
+    StmtBlock ([Expression (Assign
+                            (FieldAccess (This, Identifier ("a")),
+                             Identifier ("a")));
+                Expression (Assign
+                            (FieldAccess (This, Identifier ("b")),
+                             Identifier ("b")));
+                Expression (Assign
+                            (FieldAccess (This, Identifier ("c")),
+                             Identifier ("c")))])
+    }
+  ]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : Figure} 
+  Main -> { this_key : Main; field_table : [[]]; method_table : [[mainArray (String) -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = [(Array (String), Name ("args"))];
+    key = "mainArray (String)";
+    body =
+    Some (StmtBlock ([VarDec
+                      (Array (ClassName ("Figure")),
+                       [(Name ("list"),
+                         Some (ArrayCreateElements
+                               (ClassName ("Figure"),
+                                [ClassCreate
+                                 (Name ("Circle"), [Const (VInt (5))]);
+                                 ClassCreate
+                                 (Name ("Rectangle"),
+                                  [Const (VInt (2)); Const (VInt (4))]);
+                                 ClassCreate (Name ("Triangle"), [])])))]);
+                      VarDec
+                      (ClassName ("AreaVisitor"),
+                       [(Name ("areaVisitor"),
+                         Some (ClassCreate (Name ("AreaVisitor"), [])))]);
+                      VarDec
+                      (ClassName ("PerimeterVisitor"),
+                       [(Name ("perimeterVisitor"),
+                         Some (ClassCreate (Name ("PerimeterVisitor"), [])))]);
+                      For
+                      (Some (VarDec
+                             (Int, [(Name ("i"), Some (Const (VInt (0))))])),
+                       Some (Less
+                             (Identifier ("i"),
+                              FieldAccess
+                              (Identifier ("list"), Identifier ("length")))),
+                       [PostInc (Identifier ("i"))],
+                       StmtBlock ([Expression (FieldAccess
+                                               (FieldAccess
+                                                (Identifier ("System"),
+                                                 Identifier ("out")),
+                                                CallMethod
+                                                (Identifier ("println"),
+                                                 [FieldAccess
+                                                  (ArrayAccess
+                                                   (Identifier ("list"),
+                                                    Identifier ("i")),
+                                                   CallMethod
+                                                   (Identifier ("accept"),
+                                                    [Identifier ("areaVisitor")]))])))]));
+                      For
+                      (Some (VarDec
+                             (Int, [(Name ("j"), Some (Const (VInt (0))))])),
+                       Some (Less
+                             (Identifier ("j"),
+                              FieldAccess
+                              (Identifier ("list"), Identifier ("length")))),
+                       [PostInc (Identifier ("j"))],
+                       StmtBlock ([Expression (FieldAccess
+                                               (FieldAccess
+                                                (Identifier ("System"),
+                                                 Identifier ("out")),
+                                                CallMethod
+                                                (Identifier ("println"),
+                                                 [FieldAccess
+                                                  (ArrayAccess
+                                                   (Identifier ("list"),
+                                                    Identifier ("j")),
+                                                   CallMethod
+                                                   (Identifier ("accept"),
+                                                    [Identifier ("perimeterVisitor")]))])))]))]))
     }
   ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : } 
+  Rectangle -> { this_key : Rectangle; field_table : [[a -> { f_type = Int; key = "a"; is_mutable = false; f_value = None;
+    sub_tree = None }
+  b -> { f_type = Int; key = "b"; is_mutable = false; f_value = None;
+    sub_tree = None }
+  ]]; method_table : [[acceptClassName ("Visitor") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Visitor"), Name ("v"))];
+    key = "acceptClassName (\"Visitor\")";
+    body =
+    Some (StmtBlock ([Return (Some (FieldAccess
+                                    (Identifier ("v"),
+                                     CallMethod (Identifier ("visit"), [This]))))]))
+    }
+  ]]; constructor_table : [[RectangleIntInt -> { args = [(Int, Name ("a")); (Int, Name ("b"))];
+    body =
+    StmtBlock ([Expression (Assign
+                            (FieldAccess (This, Identifier ("a")),
+                             Identifier ("a")));
+                Expression (Assign
+                            (FieldAccess (This, Identifier ("b")),
+                             Identifier ("b")))])
+    }
+  Rectangle -> { args = [];
+    body =
+    StmtBlock ([Expression (Assign
+                            (FieldAccess (This, Identifier ("a")),
+                             Const (VInt (1))));
+                Expression (Assign
+                            (FieldAccess (This, Identifier ("b")),
+                             Const (VInt (1))))])
+    }
+  ]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : Figure} 
+  AreaVisitor -> { this_key : AreaVisitor; field_table : [[]]; method_table : [[visitClassName ("Circle") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Circle"), Name ("circle"))];
+    key = "visitClassName (\"Circle\")";
+    body =
+    Some (StmtBlock ([Return (Some (Mult
+                                    (Mult
+                                     (Const (VInt (3)),
+                                      FieldAccess
+                                      (Identifier ("circle"),
+                                       Identifier ("radius"))),
+                                     FieldAccess
+                                     (Identifier ("circle"),
+                                      Identifier ("radius")))))]))
+    }
+  visitClassName ("Rectangle") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Rectangle"), Name ("rectangle"))];
+    key = "visitClassName (\"Rectangle\")";
+    body =
+    Some (StmtBlock ([Return (Some (Mult
+                                    (FieldAccess
+                                     (Identifier ("rectangle"),
+                                      Identifier ("a")),
+                                     FieldAccess
+                                     (Identifier ("rectangle"),
+                                      Identifier ("b")))))]))
+    }
+  visitClassName ("Triangle") -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = true;
+    args = [(ClassName ("Triangle"), Name ("triangle"))];
+    key = "visitClassName (\"Triangle\")";
+    body =
+    Some (StmtBlock ([VarDec
+                      (Int,
+                       [(Name ("p"),
+                         Some (Div
+                               (Add
+                                (Add
+                                 (FieldAccess
+                                  (Identifier ("triangle"), Identifier ("a")),
+                                  FieldAccess
+                                  (Identifier ("triangle"), Identifier ("b"))),
+                                 FieldAccess
+                                 (Identifier ("triangle"), Identifier ("c"))),
+                                Const (VInt (2)))))]);
+                      Return (Some (Mult
+                                    (Mult
+                                     (Mult
+                                      (Identifier ("p"),
+                                       Sub
+                                       (Identifier ("p"),
+                                        FieldAccess
+                                        (Identifier ("triangle"),
+                                         Identifier ("a")))),
+                                      Sub
+                                      (Identifier ("p"),
+                                       FieldAccess
+                                       (Identifier ("triangle"),
+                                        Identifier ("b")))),
+                                     Sub
+                                     (Identifier ("p"),
+                                      FieldAccess
+                                      (Identifier ("triangle"),
+                                       Identifier ("c"))))))]))
+    }
+  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : false; parent_key : Visitor} 
   ]]

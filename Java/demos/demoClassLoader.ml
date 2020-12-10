@@ -58,65 +58,123 @@ let test_value =
   Option.get
     (apply parser
        {| 
-public class Main
-{
-	public static void main(String[] args) {
-		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-	    
-	}
+public class Main {
+
+    public static void main(String[] args) {
+        Figure[] list = new Figure[] {new Circle(5), new Rectangle(2,4), new Triangle()};
+        AreaVisitor areaVisitor = new AreaVisitor();
+        PerimeterVisitor perimeterVisitor = new PerimeterVisitor();
+
+        for (int i = 0; i < list.length; i++) {
+            System.out.println(list[i].accept(areaVisitor));
+        }
+        for(int j = 0; j < list.length; j++) {
+            System.out.println(list[j].accept(perimeterVisitor));
+        }
+    }
 }
 
-class Person {
-    public int weight;
-    public int age;
-    
-    public Person(int w, int a) {
-        this.weight = w;
-        this.age = a;
-    }
-    
-    
-    
-    public int getWeight() {
-        return weight;
-    }
-    
-    public int getAge() {
-        return age;
-    }
-    
-    public void setWeight(int w) {
-        this.weight = w;
-    }
-    public void setAge(int a) {
-        this.age = a;
-    }
-    
+abstract class Figure {
+    abstract int accept(Visitor v);
 }
 
-class Child extends Person{
-    public int cash;
-    
-    public Child(int w, int a) {
-        super(w,a);
-        cash = 0;
+abstract class Visitor {
+    abstract int visit(Circle circle);
+    abstract int visit(Rectangle rectangle);
+    abstract int visit(Triangle triangle);
+}
+
+class AreaVisitor extends Visitor {
+
+    @Override
+    int visit(Circle circle) {
+        return 3 * circle.radius * circle.radius;
     }
-    
-    public int getCash() {
-        return cash;
+
+    @Override
+    int visit(Rectangle rectangle) {
+        return rectangle.a * rectangle.b;
     }
-    
-    public void setCash(int c) {
-        this.cash = c;
+
+    @Override
+    int visit(Triangle triangle) {
+        int p = (triangle.a + triangle.b + triangle.c) / 2;
+        return p * (p - triangle.a) * (p - triangle.b) * (p - triangle.c);
     }
-    
-    public Child (int w, int a, int c) {
-        super(w, a);
-        cash = c;
+}
+
+class PerimeterVisitor extends Visitor {
+
+    @Override
+    int visit(Circle circle) {
+        return 2 * 3 * circle.radius;
     }
-    
-    
+
+    @Override
+    int visit(Rectangle rectangle) {
+        return (rectangle.a + rectangle.b) * 2;
+    }
+
+    @Override
+    int visit(Triangle triangle) {
+        return triangle.a + triangle.b + triangle.c;
+    }
+}
+
+class Circle extends Figure {
+    public int radius;
+
+    public Circle(int radius) {
+        this.radius = radius;
+    }
+
+    public Circle() {
+        this.radius = 1;
+    }
+
+    @Override
+    int accept(Visitor v) {
+        return v.visit(this);
+    }
+}
+
+class Triangle extends Figure {
+    public int a, b, c;
+
+    public Triangle(int a, int b, int c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+    public Triangle() {
+        this.a = 1;
+        this.b = 1;
+        this.c = 1;
+    }
+
+    @Override
+    int accept(Visitor v) {
+        return v.visit(this);
+    }
+}
+
+class Rectangle extends Figure {
+    public int a, b;
+
+    public Rectangle() {
+        this.a = 1;
+        this.b = 1;
+    }
+
+    public Rectangle(int a, int b) {
+        this.a = a;
+        this.b = b;
+    }
+
+    @Override
+    int accept(Visitor v) {
+        return v.visit(this);
+    }
 }
 |})
 

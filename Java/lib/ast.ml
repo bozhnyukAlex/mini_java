@@ -1,5 +1,5 @@
 type modifier = Public | Static | Final | Abstract | Override
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 type type_t =
   | Int
@@ -8,7 +8,7 @@ type type_t =
   | String
   | Array of type_t
   | Object
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 type value =
   | VBool of bool
@@ -20,9 +20,9 @@ type value =
   | VString of string
   | VClassName
   | VObject
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
-type name = Name of string [@@deriving show]
+type name = Name of string [@@deriving show { with_path = false }]
 
 type expr =
   | Add of expr * expr
@@ -55,7 +55,7 @@ type expr =
   | FieldAccess of expr * expr
   | ArrayAccess of expr * expr (*arr_name[index]*)
   | Assign of expr * expr
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 and stmt =
   | If of expr * stmt * stmt option (*cond * thenStat * elseStat*)
@@ -68,7 +68,7 @@ and stmt =
   | VarDec of type_t * (name * expr option) list
   | Expression of expr
   | Throw of expr
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 and field =
   | Method of
@@ -79,7 +79,7 @@ and field =
       * stmt option (*Statement block*)
   | VarField of type_t * (name * expr option) list
   | Constructor of name * (type_t * name) list * stmt
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 and class_dec =
   | Class of
@@ -88,4 +88,4 @@ and class_dec =
       * name option
       (*Parent class_name*)
       * (modifier list * field) list
-(* class body *) [@@deriving show]
+(* class body *) [@@deriving show { with_path = false }]
