@@ -2,6 +2,9 @@ open Parser
 open Parser.Stmt
 open Parser.Expr
 open Opal
+open Interpreter
+
+open Interpreter.ClassLoader (Result)
 
 (* -------------------  EXPRESSIONS ------------------- *)
 
@@ -367,3 +370,30 @@ let%test _ =
                      ( FieldAccess (This, Identifier "wheels"),
                        Identifier "wheels" ));
               ] ) )
+
+(* -------------------  CLASS_LOADER ------------------- *)
+
+let%test _ =
+  check_modifiers_f ([ Abstract; Static ], Method (Void, Name "m", [], None))
+  = Error "Wrong method modifiers"
+
+let%test _ =
+  check_modifiers_f
+    ( [ Public; Static ],
+      Method (Void, Name "main", [ (Array String, Name "args") ], None) )
+  = Ok ()
+
+let%test _ =
+  check_modifiers_f ([ Abstract ], VarField (Int, [ (Name "a", None) ]))
+  = Error "Wrong field modifiers"
+
+let%test _ =
+  check_modifiers_f ([ Final ], VarField (Int, [ (Name "a", None) ])) = Ok ()
+
+let%test _ =
+  check_modifiers_f ([ Final ], Constructor (Name "Car", [], StmtBlock []))
+  = Error "Wrong constructor modifiers"
+
+let%test _ =
+  check_modifiers_c (Class ([ Abstract; Final ], Name "Man", None, []))
+  = Error "Wrong class modifiers"

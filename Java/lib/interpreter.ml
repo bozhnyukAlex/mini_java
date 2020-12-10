@@ -33,7 +33,6 @@ type constructor_r = { args : (type_t * name) list; body : stmt }
 type field_r = {
   f_type : type_t;
   key : key_t;
-  is_abstract : bool;
   is_mutable : bool;
   mutable f_value : value option;
   sub_tree : expr option;
@@ -61,14 +60,11 @@ type class_r = {
 
 let class_table : (key_t, class_r) Hashtbl.t = Hashtbl.create 1024
 
-type record =
-  | FieldR of field_r
-  | MethodR of method_r
-  | ConstructorR of constructor_r
-
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
-module Preparation (M : MONADERROR) = struct
+exception InheritanceException of string
+
+module ClassLoader (M : MONADERROR) = struct
   open M
 
   let is_abstract = List.mem Abstract
@@ -86,11 +82,22 @@ module Preparation (M : MONADERROR) = struct
     match pair with
     | l, f -> (
         match f with
-        | Method (_, Name n, _, _) ->
-            if (not (is_static l)) && n <> "main" then return ()
-            else if is_abstract l && is_final l then
-              error "Wrong method modifiers"
+        (*public static void main (String[] args)*)
+        | Method (Void, Name "main", [ (Array String, Name "args") ], _) ->
+            if
+              is_static l && is_public l
+              && (not (is_abstract l))
+              && (not (is_final l))
+              && not (is_override l)
+            then return ()
             else error "Wrong method modifiers"
+        (*Простые методы - не статичные, не могут быть абстрактными и финальными одновременно*)
+        | Method (_, Name n, _, _) ->
+            if is_abstract l && is_final l then error "Wrong method modifiers"
+            else if is_static l && n <> "main" then
+              error "Wrong method modifiers"
+            else return ()
+        (*Поля - не статичные, не абстрактные, не override*)
         | VarField (_, _) ->
             if
               (not (is_static l))
@@ -98,6 +105,7 @@ module Preparation (M : MONADERROR) = struct
               && not (is_override l)
             then return ()
             else error "Wrong field modifiers"
+        (*Конструкторы - могут быть либо публичными, либо дефолтными*)
         | Constructor (_, _, _) ->
             if
               (not (is_static l))
@@ -110,8 +118,8 @@ module Preparation (M : MONADERROR) = struct
   (*Функция для проверки класса на наличие бредовых модификаторов*)
   let check_modifiers_c = function
     | Class (ml, _, _, _) ->
-        if (not (is_static ml)) && not (is_override ml) then return ()
-        else if is_abstract ml && is_final ml then error "Wrong class modifiers"
+        if is_abstract ml && is_final ml then error "Wrong class modifiers"
+        else if (not (is_static ml)) && not (is_override ml) then return ()
         else error "Wrong class modifiers"
 
   let get_type_list = List.map (function t, _ -> t)
@@ -127,6 +135,7 @@ module Preparation (M : MONADERROR) = struct
   (* Сначала надо просто заполнить таблицу классов *)
   let c_table_add : class_dec list -> unit M.t =
    fun cd_list ->
+    (* По class_dec получить class_r и добавить его в таблицу *)
     let add_to_class_table : class_dec -> unit M.t =
      fun class_d ->
       match class_d with
@@ -137,6 +146,7 @@ module Preparation (M : MONADERROR) = struct
             | [] -> return ()
             | _ -> error "Similar classes"
           in
+          (* Инициализируем таблицы *)
           let m_table = Hashtbl.create 1024 in
           let f_table = Hashtbl.create 1024 in
           let c_table = Hashtbl.create 1024 in
@@ -150,11 +160,11 @@ module Preparation (M : MONADERROR) = struct
                 let rec helper = function
                   | [] -> return ()
                   | (Name f_name, expr_o) :: ps ->
+                      (* В качестве ключа выступает имя поля *)
                       add_with_check f_table f_name
                         {
                           f_type = f_t;
                           key = f_name;
-                          is_abstract = is_abstract f_ms;
                           is_mutable = is_final f_ms;
                           f_value = None;
                           sub_tree = expr_o;
@@ -239,9 +249,6 @@ module Preparation (M : MONADERROR) = struct
     in
     helper_classes_add cd_list
 
-  (* Решил прибегнуть к исключениям, так как сложно нормально итерироваться по таблицам *)
-  exception InheritanceException of string
-
   (* После добавления надо обновить child_keys у каждого класса *)
   let update_child_keys_exn : unit M.t =
     let update key = function
@@ -257,9 +264,8 @@ module Preparation (M : MONADERROR) = struct
           match p_key_o with
           | None -> ()
           | Some p_key ->
-              (*raises exception if not found, needs to be handled*)
               let parent =
-                try Hashtbl.find class_table p_key
+                try get_class_by_key p_key
                 with Not_found ->
                   raise (InheritanceException "No parent class found")
               in
@@ -276,15 +282,19 @@ module Preparation (M : MONADERROR) = struct
         свойства родителя передает ребенку с необходимыми проверками, далее обрабатывает рекурсивно все дерево наследования от родителя *)
   let rec transfert : class_r -> class_r -> unit =
    fun parent child ->
+    (* Обработка поля родителя *)
     let process_field : key_t -> field_r -> unit =
      fun _ cur_field ->
+      (* Смотрим, есть ли такое поле в таблице ребенка*)
       match Hashtbl.find_all child.field_table cur_field.key with
+      (* Нет - просто добавляем в таблицу ребенка *)
       | [] -> Hashtbl.add child.field_table cur_field.key cur_field
+      (* Есть - ну и ладно, пропускаем *)
       | _ -> ()
     in
     let process_fields = Hashtbl.iter process_field parent.field_table in
     (* Конструкторы не переносим, но у конструкторов ребенка первый стейтмент - вызов super(...). Проверяем это *)
-    let check_child_constructors =
+    let check_child_constructors_exn =
       let check_constructor_exn : key_t -> constructor_r -> unit =
        fun _ cur_cr ->
         match cur_cr with
@@ -300,32 +310,33 @@ module Preparation (M : MONADERROR) = struct
       in
       Hashtbl.iter check_constructor_exn child.constructor_table
     in
+    (* Перенос метода. Тут надо много всего проверять на абстрактность *)
     let process_method_exn : key_t -> method_r -> unit =
      fun _ cur_method ->
       match Hashtbl.find_all child.method_table cur_method.key with
       | [] -> (
-          match cur_method.is_abstract with
           (* Не нашли переопределенного метода - смотрим, наш абстрактный? *)
+          match cur_method.is_abstract with
           | true ->
+              (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод, иначе бросаем исключение *)
               if child.is_abstract then
                 Hashtbl.add child.method_table cur_method.key cur_method
-                (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод *)
               else
                 raise (InheritanceException "Abstract method must be overriden")
-                (*Если ребенок не абстрактный - кидаем исключение*)
           | false ->
               if cur_method.is_overridable then
                 Hashtbl.add child.method_table cur_method.key cur_method
                 (*Наш не абстрактный. Если наш не final - переносим в ребенка *)
           )
+      (* Нашли переопредленный метод - ну и ок, проверять тут нечего *)
       | _ -> ()
-     (*Нашли переопредленный метод - ну и ок, проверять тут нечего*)
     in
+
     let process_methods_exn =
       Hashtbl.iter process_method_exn parent.method_table
     in
     (* Проверка на то, что аннотации @Override стоят только у переопределенных методов*)
-    let check_override_annotations =
+    let check_override_annotations_exn =
       let check_override_ann : key_t -> method_r -> unit =
        fun _ ch_mr ->
         match
@@ -340,20 +351,21 @@ module Preparation (M : MONADERROR) = struct
       in
       Hashtbl.iter check_override_ann child.method_table
     in
-    let run_dfs_on_children =
+    let run_transfert_on_children =
       let process_child ch_key =
-        let key_ch = Hashtbl.find class_table ch_key in
         (*Нашли ребенка - он есть, конечно*)
+        let child_by_key = get_class_by_key ch_key in
+        (* Производим запуск transfert между child_by_key и каждым ребенком child_by_key *)
         List.iter
-          (fun ch_ch_key -> transfert key_ch (get_class_by_key ch_ch_key))
-          key_ch.children_keys
+          (fun ch_ch_key -> transfert child_by_key (get_class_by_key ch_ch_key))
+          child_by_key.children_keys
       in
       List.iter process_child child.children_keys
     in
     process_fields |> fun _ ->
     process_methods_exn |> fun _ ->
-    check_override_annotations |> fun _ ->
-    check_child_constructors |> fun _ -> run_dfs_on_children
+    check_override_annotations_exn |> fun _ ->
+    check_child_constructors_exn |> fun _ -> run_transfert_on_children
 
   let do_inheritance =
     let processing _ cur_class =
@@ -376,7 +388,7 @@ module Preparation (M : MONADERROR) = struct
     in
     return (Hashtbl.iter processing class_table)
 
-  let load_classes cd_list =
+  let load cd_list =
     c_table_add cd_list >>= fun _ ->
     ( try update_child_keys_exn
       with InheritanceException message -> error message )

@@ -24,10 +24,6 @@ type value =
 
 type name = Name of string [@@deriving show]
 
-(* type jException = {jName: type_t ; message : string} 
-
-type jVariable = {vModifiers : modifier list; isMutable : bool; varType : type_t; varName : string; value : value option}  *)
-
 type expr =
   | Add of expr * expr
   | Sub of expr * expr
@@ -93,7 +89,3 @@ and class_dec =
       (*Parent class_name*)
       * (modifier list * field) list
 (* class body *) [@@deriving show]
-
-(* type jMethod = {mModifiers: modifier list; mName : string; mRetType : type_t; mArgs : expr list; mBody : stmt list;}  
-
-type jClass = {cModifiers: modifier list; cName : string; cFields : jVariable list; cMethods : jMethod list; cClasses : jClass list; cParent : jClass option}   *)
