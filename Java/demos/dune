@@ -5,8 +5,15 @@
    (-short-paths))))
 
 (executable
- (name demoFirst)
- (modules demoFirst)
+ (name demoParserFirst)
+ (modules demoParserFirst)
+ (libraries Java.Lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show)))
+
+(executable
+ (name demoParserSecond)
+ (modules demoParserSecond)
  (libraries Java.Lib)
  (preprocess
   (pps ppx_expect ppx_deriving.show)))
