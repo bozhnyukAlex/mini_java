@@ -6,8 +6,12 @@ open Java_lib.Interpreter.Result
 
 open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 
-let print_list =
-  Format.pp_print_list Format.pp_print_string Format.std_formatter
+(* let print_list =
+  Format.pp_print_list Format.pp_print_string Format.std_formatter *)
+
+let rec print_list = function
+  | [] -> print_string ""
+  | x :: xs -> print_string (x ^ " ") |> fun _ -> print_list xs
 
 let print_field_table : (key_t, field_r) Hashtbl.t -> unit =
  fun ht ->
@@ -59,46 +63,129 @@ let test_value =
   Option.get
     (apply parser
        {| 
-public class Main
-{
-	public static void main(String[] args) {
-		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
-	}
+public class Main {
+
+    public static void main(String[] args) {
+        Figure[] list = new Figure[] {new Circle(5), new Rectangle(2,4), new Triangle()};
+        AreaVisitor areaVisitor = new AreaVisitor();
+        PerimeterVisitor perimeterVisitor = new PerimeterVisitor();
+
+        for (int i = 0; i < list.length; i++) {
+            System.out.println(list[i].accept(areaVisitor));
+        }
+        for(int j = 0; j < list.length; j++) {
+            System.out.println(list[j].accept(perimeterVisitor));
+        }
+    }
 }
 
+abstract class Figure {
+    abstract int accept(Visitor v);
+}
 
-class Child extends Person{
-    public int cash;
-    
-    public Child(int w, int a) {
-        super(w,a);
-        cash = 0;
-    }
-    
-    public int getCash() {
-        return cash;
-    }
-    
-    public void setCash(int c) {
-        this.cash = c;
-    }
-    
-    public Child (int w, int a, int c) {
-        super(w, a);
-        cash = c;
+abstract class Visitor {
+    abstract int visit(Circle circle);
+    abstract int visit(Rectangle rectangle);
+    abstract int visit(Triangle triangle);
+}
+
+class AreaVisitor extends Visitor {
+
+    @Override
+    int visit(Circle circle) {
+        return 3 * circle.radius * circle.radius;
     }
 
-    
+    @Override
+    int visit(Rectangle rectangle) {
+        return rectangle.a * rectangle.b;
+    }
+
+    @Override
+    int visit(Triangle triangle) {
+        int p = (triangle.a + triangle.b + triangle.c) / 2;
+        return p * (p - triangle.a) * (p - triangle.b) * (p - triangle.c);
+    }
+}
+
+class PerimeterVisitor extends Visitor {
+
+    @Override
+    int visit(Circle circle) {
+        return 2 * 3 * circle.radius;
+    }
+
+    @Override
+    int visit(Rectangle rectangle) {
+        return (rectangle.a + rectangle.b) * 2;
+    }
+
+    @Override
+    int visit(Triangle triangle) {
+        return triangle.a + triangle.b + triangle.c;
+    }
+}
+
+class Circle extends Figure {
+    public int radius;
+
+    public Circle(int radius) {
+        this.radius = radius;
+    }
+
+    public Circle() {
+        this.radius = 1;
+    }
+
+    @Override
+    int accept(Visitor v) {
+        return v.visit(this);
+    }
+}
+
+class Triangle extends Figure {
+    public int a, b, c;
+
+    public Triangle(int a, int b, int c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+    public Triangle() {
+        this.a = 1;
+        this.b = 1;
+        this.c = 1;
+    }
+
+    @Override
+    int accept(Visitor v) {
+        return v.visit(this);
+    }
+}
+
+class Rectangle extends Figure {
+    public int a, b;
+
+    public Rectangle() {
+        this.a = 1;
+        this.b = 1;
+    }
+
+    public Rectangle(int a, int b) {
+        this.a = a;
+        this.b = b;
+    }
+
+    @Override
+    int accept(Visitor v) {
+        return v.visit(this);
+    }
 }
 |})
 
-let loading = c_table_add test_value >>= fun _ -> update_child_keys
+let loading = c_table_add test_value >>= fun _ -> update_child_keys class_table
+
+let cr_list = convert_table_to_list class_table
 
 let test_load =
   match loading with
@@ -111,3 +198,7 @@ let test_load =
           print_class_r elem)
         class_table;
       print_string "]]\n"
+
+let rec print_classes = function
+  | [] -> print_string "\n"
+  | x :: xs -> print_class_r x |> fun _ -> print_classes xs
