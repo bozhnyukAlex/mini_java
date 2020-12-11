@@ -8,7 +8,7 @@
  (name java_lib)
  (public_name Java.Lib)
  (modules Ast Parser Tests Interpreter)
- (libraries opal ppx_show.runtime)
+ (libraries opal ppx_show.runtime iter)
  (inline_tests)
  (preprocess
   (pps ppx_expect ppx_show)))

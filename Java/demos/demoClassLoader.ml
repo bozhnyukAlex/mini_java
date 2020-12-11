@@ -2,8 +2,9 @@ open Java_lib.Parser
 open Opal
 open Java_lib.Ast
 open Java_lib.Interpreter
+open Java_lib.Interpreter.Result
 
-open Java_lib.Interpreter.ClassLoader (Result)
+open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 
 let print_list =
   Format.pp_print_list Format.pp_print_string Format.std_formatter
@@ -49,7 +50,7 @@ let print_class_r : class_r -> unit =
   print_string "; children_keys : ";
   print_list cr.children_keys;
   Printf.printf "; is_abstract : %b; is_inheritable : %b; " cr.is_abstract
-    cr.is_abstract;
+    cr.is_inheritable;
   print_string "parent_key : ";
   print_string_option cr.parent_key;
   print_string "} \n"
@@ -58,133 +59,52 @@ let test_value =
   Option.get
     (apply parser
        {| 
-public class Main {
-
-    public static void main(String[] args) {
-        Figure[] list = new Figure[] {new Circle(5), new Rectangle(2,4), new Triangle()};
-        AreaVisitor areaVisitor = new AreaVisitor();
-        PerimeterVisitor perimeterVisitor = new PerimeterVisitor();
-
-        for (int i = 0; i < list.length; i++) {
-            System.out.println(list[i].accept(areaVisitor));
-        }
-        for(int j = 0; j < list.length; j++) {
-            System.out.println(list[j].accept(perimeterVisitor));
-        }
-    }
+public class Main
+{
+	public static void main(String[] args) {
+		Person p = new Person(80, 45);
+		System.out.println(p.getWeight());
+		
+		Child ch = new Child(66, 20);
+		ch.setCash(50);
+		ch.giveEvenNumbers100();
+	    
+	}
 }
 
-abstract class Figure {
-    abstract int accept(Visitor v);
-}
 
-abstract class Visitor {
-    abstract int visit(Circle circle);
-    abstract int visit(Rectangle rectangle);
-    abstract int visit(Triangle triangle);
-}
-
-class AreaVisitor extends Visitor {
-
-    @Override
-    int visit(Circle circle) {
-        return 3 * circle.radius * circle.radius;
+class Child extends Person{
+    public int cash;
+    
+    public Child(int w, int a) {
+        super(w,a);
+        cash = 0;
+    }
+    
+    public int getCash() {
+        return cash;
+    }
+    
+    public void setCash(int c) {
+        this.cash = c;
+    }
+    
+    public Child (int w, int a, int c) {
+        super(w, a);
+        cash = c;
     }
 
-    @Override
-    int visit(Rectangle rectangle) {
-        return rectangle.a * rectangle.b;
-    }
-
-    @Override
-    int visit(Triangle triangle) {
-        int p = (triangle.a + triangle.b + triangle.c) / 2;
-        return p * (p - triangle.a) * (p - triangle.b) * (p - triangle.c);
-    }
-}
-
-class PerimeterVisitor extends Visitor {
-
-    @Override
-    int visit(Circle circle) {
-        return 2 * 3 * circle.radius;
-    }
-
-    @Override
-    int visit(Rectangle rectangle) {
-        return (rectangle.a + rectangle.b) * 2;
-    }
-
-    @Override
-    int visit(Triangle triangle) {
-        return triangle.a + triangle.b + triangle.c;
-    }
-}
-
-class Circle extends Figure {
-    public int radius;
-
-    public Circle(int radius) {
-        this.radius = radius;
-    }
-
-    public Circle() {
-        this.radius = 1;
-    }
-
-    @Override
-    int accept(Visitor v) {
-        return v.visit(this);
-    }
-}
-
-class Triangle extends Figure {
-    public int a, b, c;
-
-    public Triangle(int a, int b, int c) {
-        this.a = a;
-        this.b = b;
-        this.c = c;
-    }
-    public Triangle() {
-        this.a = 1;
-        this.b = 1;
-        this.c = 1;
-    }
-
-    @Override
-    int accept(Visitor v) {
-        return v.visit(this);
-    }
-}
-
-class Rectangle extends Figure {
-    public int a, b;
-
-    public Rectangle() {
-        this.a = 1;
-        this.b = 1;
-    }
-
-    public Rectangle(int a, int b) {
-        this.a = a;
-        this.b = b;
-    }
-
-    @Override
-    int accept(Visitor v) {
-        return v.visit(this);
-    }
+    
 }
 |})
 
-let loading = load test_value
+let loading = c_table_add test_value >>= fun _ -> update_child_keys
 
-let test =
+let test_load =
   match loading with
   | Error m -> print_string m
   | Ok _ ->
-      print_string "[[";
+      print_string "!!!";
       Hashtbl.iter
         (fun key elem ->
           Printf.printf "%s -> " key;

@@ -66,6 +66,9 @@ let class_table : (key_t, class_r) Hashtbl.t = Hashtbl.create 1024
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
+let convert_table_to_list ht =
+  Iter.of_hashtbl ht |> Iter.map snd |> Iter.to_list
+
 exception InheritanceException of string
 
 module ClassLoader (M : MONADERROR) = struct
@@ -80,6 +83,9 @@ module ClassLoader (M : MONADERROR) = struct
   let is_static = List.mem Static
 
   let is_public = List.mem Public
+
+  let monadic_update_hash_table old_key new_val =
+    return (Hashtbl.replace class_table old_key new_val)
 
   (*Функция для проверки полей, методов и конструкторов на наличие бредовых модификаторов*)
   let check_modifiers_f pair =
@@ -128,7 +134,7 @@ module ClassLoader (M : MONADERROR) = struct
 
   let get_type_list = List.map (function t, _ -> t)
 
-  let get_class_by_key key = Hashtbl.find class_table key
+  let get_class_by_key_o key = Hashtbl.find_opt class_table key
 
   (* Отдельная функция для добавления в таблицу с проверкой на существование *)
   let add_with_check ht key value e_message =
@@ -254,35 +260,43 @@ module ClassLoader (M : MONADERROR) = struct
     in
     helper_classes_add cd_list
 
-  (* После добавления надо обновить child_keys у каждого класса *)
-  let update_child_keys_exn : unit M.t =
-    let update key = function
-      | {
-          this_key = _;
-          field_table = _;
-          method_table = _;
-          constructor_table = _;
-          children_keys = _;
-          is_abstract = _;
-          is_inheritable = _;
-          parent_key = p_key_o;
-        } -> (
-          match p_key_o with
-          | None -> ()
-          | Some p_key ->
-              let parent =
-                try get_class_by_key p_key
-                with Not_found ->
-                  raise (InheritanceException "No parent class found")
-              in
-              let par_ch_keys = parent.children_keys in
+  (* После добавления надо обновить child_keys у каждого класса - С ЭТОГО МОМЕНТА НЕ РАБОТАЕТ*)
+  let update_child_keys =
+    (* cr - потенциальный ребенок *)
+    let update cr =
+      (* получили ключ ребенка *)
+      let key = cr.this_key in
+      (* получили ключ родителя *)
+      let p_key_o = cr.parent_key in
+      match p_key_o with
+      (* Ключа родителя нет - идем дальше *)
+      | None -> return ()
+      (* Есть - пытаемся получить родителя по ключу (или грохаемся с ошибкой), если можно наследоваться - обновляем хеш-таблицу *)
+      | Some p_key -> (
+          let parent_o = get_class_by_key_o p_key in
+          match parent_o with
+          | None -> error "No parent class found"
+          | Some parent ->
               if parent.is_inheritable then
-                (* От final класса наследоваться нельзя, проверяем *)
-                parent.children_keys <- key :: par_ch_keys
-              else
-                raise (InheritanceException "Final class cannot be inherited") )
+                monadic_update_hash_table p_key
+                  {
+                    this_key = parent.this_key;
+                    field_table = parent.field_table;
+                    method_table = parent.method_table;
+                    constructor_table = parent.constructor_table;
+                    children_keys = parent.children_keys @ [ key ];
+                    is_abstract = parent.is_abstract;
+                    is_inheritable = parent.is_inheritable;
+                    parent_key = parent.parent_key;
+                  }
+              else error "Final class cannot be inherited" )
     in
-    return (Hashtbl.iter update class_table)
+    let cr_list = convert_table_to_list class_table in
+    let rec helper_update = function
+      | [] -> return ()
+      | cr :: cr_s -> update cr >>= fun _ -> helper_update cr_s
+    in
+    helper_update cr_list
 
   (* Отдельная функция, которая берет родителя и ребенка,
         свойства родителя передает ребенку с необходимыми проверками, далее обрабатывает рекурсивно все дерево наследования от родителя *)
@@ -361,10 +375,11 @@ module ClassLoader (M : MONADERROR) = struct
     let run_transfert_on_children =
       let process_child ch_key =
         (*Нашли ребенка - он есть, конечно*)
-        let child_by_key = get_class_by_key ch_key in
+        let child_by_key = Option.get (get_class_by_key_o ch_key) in
         (* Производим запуск transfert между child_by_key и каждым ребенком child_by_key *)
         List.iter
-          (fun ch_ch_key -> transfert child_by_key (get_class_by_key ch_ch_key))
+          (fun ch_ch_key ->
+            transfert child_by_key (Option.get (get_class_by_key_o ch_ch_key)))
           child_by_key.children_keys
       in
       List.iter process_child child.children_keys
@@ -391,15 +406,14 @@ module ClassLoader (M : MONADERROR) = struct
           | Some _ -> ()
           | None ->
               List.iter
-                (fun c_key -> transfert cur_class (get_class_by_key c_key))
+                (fun c_key ->
+                  transfert cur_class (Option.get (get_class_by_key_o c_key)))
                 ch_list )
     in
     return (Hashtbl.iter processing class_table)
 
   let load cd_list =
     c_table_add cd_list >>= fun _ ->
-    ( try update_child_keys_exn
-      with InheritanceException message -> error message )
-    >>= fun _ ->
+    update_child_keys >>= fun _ ->
     try do_inheritance with InheritanceException message -> error message
 end
