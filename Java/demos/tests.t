@@ -406,50 +406,53 @@
     sub_tree = None }
   age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
     sub_tree = None }
-  ]]; method_table : [[setWeightInt -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("w"))];
-    key = "setWeightInt";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("weight")),
-                                   Identifier ("w")))]))
-    }
-  getAge -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getAge";
+  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getWeight@@";
+    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getAge@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  toString -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  setCashInt -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("c"))];
-    key = "setCashInt";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("cash")),
-                                   Identifier ("c")))]))
-    }
-  getCash -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getCash";
-    body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
-  equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  setAgeInt -> { m_type = Void; is_abstract = false; is_overridable = true;
+  setAgeInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Int, Name ("a"))];
-    key = "setAgeInt";
+    key = "setAgeInt@@";
     body =
     Some (StmtBlock ([Expression (Assign
                                   (FieldAccess (This, Identifier ("age")),
                                    Identifier ("a")))]))
     }
-  giveEvenNumbers100 -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "giveEvenNumbers100";
+  getCash@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getCash@@";
+    body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
+  setCashInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = [(Int, Name ("c"))];
+    key = "setCashInt@@";
+    body =
+    Some (StmtBlock ([Expression (Assign
+                                  (FieldAccess (This, Identifier ("cash")),
+                                   Identifier ("c")))]))
+    }
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  setWeightInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = [(Int, Name ("w"))];
+    key = "setWeightInt@@";
+    body =
+    Some (StmtBlock ([Expression (Assign
+                                  (FieldAccess (This, Identifier ("weight")),
+                                   Identifier ("w")))]))
+    }
+  giveEvenNumbers100@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "giveEvenNumbers100@@";
     body =
     Some (StmtBlock ([For
                       (Some (VarDec
@@ -474,61 +477,58 @@
                                                               [Identifier ("i")])))]),
                                     Some (StmtBlock ([Continue])))]))]))
     }
-  getWeight -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  ]]; constructor_table : [[ChildIntInt -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
-    body =
-    StmtBlock ([Expression (CallMethod
-                            (Super, [Identifier ("w"); Identifier ("a")]));
-                Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
-    }
-  ChildIntIntInt -> { args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
+  ]]; constructor_table : [[ChildIntIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
     body =
     StmtBlock ([Expression (CallMethod
                             (Super, [Identifier ("w"); Identifier ("a")]));
                 Expression (Assign (Identifier ("cash"), Identifier ("c")))])
+    }
+  ChildIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+    body =
+    StmtBlock ([Expression (CallMethod
+                            (Super, [Identifier ("w"); Identifier ("a")]));
+                Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
     }
   ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person} 
   Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
     sub_tree = None }
   age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
     sub_tree = None }
-  ]]; method_table : [[setWeightInt -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("w"))];
-    key = "setWeightInt";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("weight")),
-                                   Identifier ("w")))]))
-    }
-  getAge -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getAge";
+  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getWeight@@";
+    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getAge@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  toString -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  setAgeInt -> { m_type = Void; is_abstract = false; is_overridable = true;
+  setAgeInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Int, Name ("a"))];
-    key = "setAgeInt";
+    key = "setAgeInt@@";
     body =
     Some (StmtBlock ([Expression (Assign
                                   (FieldAccess (This, Identifier ("age")),
                                    Identifier ("a")))]))
     }
-  getWeight -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  ]]; constructor_table : [[PersonIntInt -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  setWeightInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = [(Int, Name ("w"))];
+    key = "setWeightInt@@";
+    body =
+    Some (StmtBlock ([Expression (Assign
+                                  (FieldAccess (This, Identifier ("weight")),
+                                   Identifier ("w")))]))
+    }
+  ]]; constructor_table : [[PersonIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
     body =
     StmtBlock ([Expression (Assign
                             (FieldAccess (This, Identifier ("weight")),
@@ -538,34 +538,31 @@
                              Identifier ("a")))])
     }
   ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object} 
-  Object -> { this_key : Object; field_table : [[]]; method_table : [[equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  to_string -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
   ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : } 
-  Main -> { this_key : Main; field_table : [[]]; method_table : [[toString -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  mainArray (String) -> { m_type = Void; is_abstract = false; is_overridable = true;
+  mainArray (String)@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Array (String), Name ("args"))];
-    key = "mainArray (String)";
+    key = "mainArray (String)@@";
     body =
     Some (StmtBlock ([VarDec
                       (ClassName ("Person"),
@@ -597,6 +594,9 @@
                                    CallMethod
                                    (Identifier ("giveEvenNumbers100"), [])))]))
     }
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
   ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object} 
   ]]
   -------------------SIMILAR_FIELDS-------------------
@@ -626,68 +626,68 @@
     sub_tree = None }
   age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
     sub_tree = None }
-  ]]; method_table : [[toString -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  setCashInt -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("c"))];
-    key = "setCashInt";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("cash")),
-                                   Identifier ("c")))]))
-    }
-  getCash -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getCash";
-    body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
-  equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getWeight@@";
+    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  getWeight -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  ]]; constructor_table : [[ChildIntInt -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+  getCash@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getCash@@";
+    body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
+  setCashInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = [(Int, Name ("c"))];
+    key = "setCashInt@@";
     body =
-    StmtBlock ([Expression (CallMethod
-                            (Super, [Identifier ("w"); Identifier ("a")]));
-                Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
+    Some (StmtBlock ([Expression (Assign
+                                  (FieldAccess (This, Identifier ("cash")),
+                                   Identifier ("c")))]))
     }
-  ChildIntIntInt -> { args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  ]]; constructor_table : [[ChildIntIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
     body =
     StmtBlock ([Expression (CallMethod
                             (Super, [Identifier ("w"); Identifier ("a")]));
                 Expression (Assign (Identifier ("cash"), Identifier ("c")))])
+    }
+  ChildIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+    body =
+    StmtBlock ([Expression (CallMethod
+                            (Super, [Identifier ("w"); Identifier ("a")]));
+                Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
     }
   ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person} 
   Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
     sub_tree = None }
   age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
     sub_tree = None }
-  ]]; method_table : [[getAge -> { m_type = Int; is_abstract = false; is_overridable = false;
-    has_override_annotation = false; args = []; key = "getAge";
+  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "getWeight@@";
+    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = false;
+    has_override_annotation = false; args = []; key = "getAge@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  toString -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  getWeight -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  ]]; constructor_table : [[PersonIntInt -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  ]]; constructor_table : [[PersonIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
     body =
     StmtBlock ([Expression (Assign
                             (FieldAccess (This, Identifier ("weight")),
@@ -697,34 +697,31 @@
                              Identifier ("a")))])
     }
   ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object} 
-  Object -> { this_key : Object; field_table : [[]]; method_table : [[equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  to_string -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
   ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : } 
-  Main -> { this_key : Main; field_table : [[]]; method_table : [[toString -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equals -> { m_type = Int; is_abstract = false; is_overridable = true;
+  Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals";
+    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  mainArray (String) -> { m_type = Void; is_abstract = false; is_overridable = true;
+  mainArray (String)@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Array (String), Name ("args"))];
-    key = "mainArray (String)";
+    key = "mainArray (String)@@";
     body =
     Some (StmtBlock ([VarDec
                       (ClassName ("Person"),
@@ -756,6 +753,9 @@
                                    CallMethod
                                    (Identifier ("giveEvenNumbers100"), [])))]))
     }
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
   ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object} 
   ]]
   -------------------@OVERRIDE_ERRORS-------------------

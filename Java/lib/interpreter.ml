@@ -101,7 +101,7 @@ module ClassLoader (M : MONADERROR) = struct
         is_overridable = true;
         has_override_annotation = false;
         args = [ (ClassName "Object", Name "obj") ];
-        key = "equals";
+        key = "equals@@";
         body =
           Some
             (StmtBlock
@@ -120,13 +120,13 @@ module ClassLoader (M : MONADERROR) = struct
         is_overridable = true;
         has_override_annotation = false;
         args = [];
-        key = "toString";
+        key = "toString@@";
         body = Some (StmtBlock [ Return (Some (Const (VString "Object"))) ]);
       }
     in
     return
-      ( Hashtbl.add m_table "equals" equals;
-        Hashtbl.add m_table "to_string" to_string;
+      ( Hashtbl.add m_table "equals@@" equals;
+        Hashtbl.add m_table "toString@@" to_string;
         Hashtbl.add ht "Object"
           {
             this_key = "Object";
@@ -240,6 +240,7 @@ module ClassLoader (M : MONADERROR) = struct
                 let method_key =
                   String.concat ""
                     (name :: List.map show_type_t (get_type_list args_list))
+                  ^ "@@"
                 in
                 let is_class_abstract = is_abstract ml in
                 let is_method_abstract = is_abstract m_ms in
@@ -276,6 +277,7 @@ module ClassLoader (M : MONADERROR) = struct
                 let constr_key =
                   String.concat ""
                     (name :: List.map show_type_t (get_type_list args_list))
+                  ^ "$$"
                 in
                 (*Смотрим, чтобы имя конструктора совпадало с классом*)
                 let check_names_match =
