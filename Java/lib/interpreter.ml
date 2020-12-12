@@ -69,8 +69,6 @@ let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 let convert_table_to_list ht =
   Iter.of_hashtbl ht |> Iter.map snd |> Iter.to_list
 
-exception InheritanceException of string
-
 module ClassLoader (M : MONADERROR) = struct
   open M
 
@@ -86,6 +84,60 @@ module ClassLoader (M : MONADERROR) = struct
 
   let monadic_update_hash_table ht old_key new_val =
     return (Hashtbl.replace ht old_key new_val)
+
+  let rec monadic_list_iter list action =
+    match list with
+    | [] -> return ()
+    | x :: xs -> action x >>= fun _ -> monadic_list_iter xs action
+
+  let prepare_object ht =
+    let c_table = Hashtbl.create 20 in
+    let f_table = Hashtbl.create 20 in
+    let m_table = Hashtbl.create 20 in
+    let equals : method_r =
+      {
+        m_type = Int;
+        is_abstract = false;
+        is_overridable = true;
+        has_override_annotation = false;
+        args = [ (ClassName "Object", Name "obj") ];
+        key = "equals";
+        body =
+          Some
+            (StmtBlock
+               [
+                 If
+                   ( Equal (This, Identifier "obj"),
+                     Return (Some (Const (VInt 1))),
+                     Some (Return (Some (Const (VInt 0)))) );
+               ]);
+      }
+    in
+    let to_string : method_r =
+      {
+        m_type = String;
+        is_abstract = false;
+        is_overridable = true;
+        has_override_annotation = false;
+        args = [];
+        key = "toString";
+        body = Some (StmtBlock [ Return (Some (Const (VString "Object"))) ]);
+      }
+    in
+    return
+      ( Hashtbl.add m_table "equals" equals;
+        Hashtbl.add m_table "to_string" to_string;
+        Hashtbl.add ht "Object"
+          {
+            this_key = "Object";
+            field_table = f_table;
+            method_table = m_table;
+            constructor_table = c_table;
+            children_keys = [];
+            is_abstract = false;
+            is_inheritable = true;
+            parent_key = None;
+          } )
 
   (*Функция для проверки полей, методов и конструкторов на наличие бредовых модификаторов*)
   let check_modifiers_f pair =
@@ -236,11 +288,10 @@ module ClassLoader (M : MONADERROR) = struct
                   { args = args_list; body = c_body }
                   "Constructor with this type exists"
           in
-          let rec helper_add = function
-            | [] -> return ()
-            | f :: fs -> add_field f >>= fun _ -> helper_add fs
+          let add_parent p =
+            match p with None -> Some "Object" | _ -> convert_name_to_key p
           in
-          helper_add fields >>= fun _ ->
+          monadic_list_iter fields add_field >>= fun _ ->
           return
             (Hashtbl.add class_table cl_n
                {
@@ -251,14 +302,10 @@ module ClassLoader (M : MONADERROR) = struct
                  children_keys = [];
                  is_abstract = is_abstract ml;
                  is_inheritable = not (is_final ml);
-                 parent_key = convert_name_to_key parent_o;
+                 parent_key = add_parent parent_o;
                })
     in
-    let rec helper_classes_add = function
-      | [] -> return ()
-      | c :: cs -> add_to_class_table c >>= fun _ -> helper_classes_add cs
-    in
-    helper_classes_add cd_list
+    monadic_list_iter cd_list add_to_class_table
 
   (* После добавления надо обновить child_keys у каждого класса - С ЭТОГО МОМЕНТА НЕ РАБОТАЕТ*)
   let update_child_keys ht =
@@ -292,130 +339,115 @@ module ClassLoader (M : MONADERROR) = struct
               else error "Final class cannot be inherited" )
     in
     let cr_list = convert_table_to_list ht in
-    let rec helper_update = function
-      | [] -> return ()
-      | cr :: cr_s -> update cr >>= fun _ -> helper_update cr_s
-    in
-    helper_update cr_list
+    monadic_list_iter cr_list update
 
   (* Отдельная функция, которая берет родителя и ребенка,
         свойства родителя передает ребенку с необходимыми проверками, далее обрабатывает рекурсивно все дерево наследования от родителя *)
-  let rec transfert : class_r -> class_r -> unit =
+  let rec transfert : class_r -> class_r -> unit t =
    fun parent child ->
     (* Обработка поля родителя *)
-    let process_field : key_t -> field_r -> unit =
-     fun _ cur_field ->
+    let process_field : class_r -> field_r -> unit t =
+     fun ch cur_field ->
       (* Смотрим, есть ли такое поле в таблице ребенка*)
-      match Hashtbl.find_all child.field_table cur_field.key with
+      match Hashtbl.find_all ch.field_table cur_field.key with
       (* Нет - просто добавляем в таблицу ребенка *)
-      | [] -> Hashtbl.add child.field_table cur_field.key cur_field
+      | [] -> return (Hashtbl.add ch.field_table cur_field.key cur_field)
       (* Есть - ну и ладно, пропускаем *)
-      | _ -> ()
+      | _ -> return ()
     in
-    let process_fields = Hashtbl.iter process_field parent.field_table in
+    (* let process_fields = Hashtbl.iter process_field parent.field_table in *)
+    let process_fields par ch =
+      monadic_list_iter
+        (convert_table_to_list par.field_table)
+        (process_field ch)
+    in
     (* Конструкторы не переносим, но у конструкторов ребенка первый стейтмент - вызов super(...). Проверяем это *)
-    let check_child_constructors_exn =
-      let check_constructor_exn : key_t -> constructor_r -> unit =
-       fun _ cur_cr ->
+    let check_child_constructors par ch =
+      let check_constructor_exn : constructor_r -> unit t =
+       fun cur_cr ->
         match cur_cr with
         | {
          args = _;
          body = StmtBlock (Expression (CallMethod (Super, _)) :: _);
         } ->
-            ()
-        | _ ->
-            raise
-              (InheritanceException
-                 "No super headed statement in inherited constructor")
+            return ()
+        | _ -> error "No super headed statement in inherited constructor"
       in
-      if Hashtbl.length parent.constructor_table > 0 then
-        Hashtbl.iter check_constructor_exn child.constructor_table
+      if Hashtbl.length par.constructor_table > 0 then
+        monadic_list_iter
+          (convert_table_to_list ch.constructor_table)
+          check_constructor_exn
+      else return ()
     in
     (* Перенос метода. Тут надо много всего проверять на абстрактность *)
-    let process_method_exn : key_t -> method_r -> unit =
-     fun _ cur_method ->
-      match Hashtbl.find_all child.method_table cur_method.key with
+    let process_method : class_r -> method_r -> unit t =
+     fun ch cur_method ->
+      match Hashtbl.find_all ch.method_table cur_method.key with
       | [] -> (
           (* Не нашли переопределенного метода - смотрим, наш абстрактный? *)
           match cur_method.is_abstract with
           | true ->
               (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод, иначе бросаем исключение *)
-              if child.is_abstract then
-                Hashtbl.add child.method_table cur_method.key cur_method
-              else
-                raise (InheritanceException "Abstract method must be overriden")
+              if ch.is_abstract then
+                return (Hashtbl.add ch.method_table cur_method.key cur_method)
+              else error "Abstract method must be overriden"
           | false ->
               if cur_method.is_overridable then
-                Hashtbl.add child.method_table cur_method.key cur_method
+                return (Hashtbl.add ch.method_table cur_method.key cur_method)
                 (*Наш не абстрактный. Если наш не final - переносим в ребенка *)
-          )
+              else return () )
       (* Нашли переопредленный метод - ну и ок, проверять тут нечего *)
-      | _ -> ()
+      | _ -> return ()
     in
 
-    let process_methods_exn =
-      Hashtbl.iter process_method_exn parent.method_table
+    let process_methods par ch =
+      (* Hashtbl.iter process_method_exn parent.method_table *)
+      monadic_list_iter
+        (convert_table_to_list par.method_table)
+        (process_method ch)
     in
-    (* Проверка на то, что аннотации @Override стоят только у переопределенных методов*)
-    let check_override_annotations_exn =
-      let check_override_ann : key_t -> method_r -> unit =
-       fun _ ch_mr ->
-        match
-          ch_mr.has_override_annotation
-          && Hashtbl.find_all parent.method_table ch_mr.key = []
-        with
-        | true -> ()
-        | false ->
-            raise
-              (InheritanceException
-                 "@Override annotation on not overriden method")
+    (* Проверка на то, что аннотации @Override у ребенка стоят только у переопределенных методов*)
+    let check_override_annotations par ch =
+      let check_override_ann : class_r -> method_r -> unit t =
+       fun par ch_mr ->
+        match ch_mr.has_override_annotation with
+        (* Нет аннотации - пропускаем *)
+        | false -> return ()
+        (* Есть - смотрим, есть ли такой метод в родителе, если есть - все ок, если нет - ошибка*)
+        | true -> (
+            match Hashtbl.find_all par.method_table ch_mr.key with
+            | [] -> error "@Override annotation on not overriden method"
+            | _ -> return () )
       in
-      Hashtbl.iter check_override_ann child.method_table
+      (* Hashtbl.iter check_override_ann child.method_table *)
+      monadic_list_iter
+        (convert_table_to_list ch.method_table)
+        (check_override_ann par)
     in
-    let run_transfert_on_children =
-      let process_child ch_key =
-        (*Нашли ребенка - он есть, конечно*)
-        let child_by_key = Option.get (get_class_by_key_o class_table ch_key) in
-        (* Производим запуск transfert между child_by_key и каждым ребенком child_by_key *)
-        List.iter
-          (fun ch_ch_key ->
-            transfert child_by_key
-              (Option.get (get_class_by_key_o class_table ch_ch_key)))
-          child_by_key.children_keys
-      in
-      List.iter process_child child.children_keys
+    (* Запуск transfert на ребенке и детях ребенка *)
+    let run_transfert_on_children ht ch =
+      let childs_of_child = ch.children_keys in
+      monadic_list_iter childs_of_child (fun ch_ch_key ->
+          transfert ch (Option.get (get_class_by_key_o ht ch_ch_key)))
     in
-    process_fields |> fun _ ->
-    process_methods_exn |> fun _ ->
-    check_override_annotations_exn |> fun _ ->
-    check_child_constructors_exn |> fun _ -> run_transfert_on_children
+    process_fields parent child >>= fun _ ->
+    process_methods parent child >>= fun _ ->
+    check_override_annotations parent child >>= fun _ ->
+    check_child_constructors parent child >>= fun _ ->
+    run_transfert_on_children class_table child
 
-  let do_inheritance =
-    let processing _ cur_class =
-      match cur_class with
-      | {
-       this_key = _;
-       field_table = _;
-       method_table = _;
-       constructor_table = _;
-       children_keys = ch_list;
-       is_abstract = _;
-       is_inheritable = _;
-       parent_key = p_key_o;
-      } -> (
-          match p_key_o with
-          | Some _ -> ()
-          | None ->
-              List.iter
-                (fun c_key ->
-                  transfert cur_class
-                    (Option.get (get_class_by_key_o class_table c_key)))
-                ch_list )
+  let do_inheritance ht =
+    let obj_r = Option.get (get_class_by_key_o ht "Object") in
+    let processing ch_key =
+      transfert obj_r (Option.get (get_class_by_key_o ht ch_key))
     in
-    return (Hashtbl.iter processing class_table)
+    monadic_list_iter obj_r.children_keys processing
 
   let load cd_list =
-    c_table_add cd_list >>= fun _ ->
-    update_child_keys class_table >>= fun _ ->
-    try do_inheritance with InheritanceException message -> error message
+    match cd_list with
+    | [] -> error "Syntax error or empty file"
+    | _ ->
+        prepare_object class_table >>= fun _ ->
+        c_table_add cd_list >>= fun _ ->
+        update_child_keys class_table >>= fun _ -> do_inheritance class_table
 end
