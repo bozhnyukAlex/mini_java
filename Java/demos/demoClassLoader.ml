@@ -6,62 +6,40 @@ open Java_lib.Interpreter.Result
 
 open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 
-(* let print_list =
-  Format.pp_print_list Format.pp_print_string Format.std_formatter *)
+let show_keys_list list = List.fold_left (fun s acc -> acc ^ " " ^ s) "" list
 
-let rec print_list = function
-  | [] -> print_string ""
-  | x :: xs -> print_string (x ^ " ") |> fun _ -> print_list xs
+let show_hashtbl ht show =
+  match Hashtbl.length ht with
+  | 0 -> "[[]]"
+  | _ ->
+      Hashtbl.fold (fun k v acc -> acc ^ k ^ " -> " ^ show v ^ "\n") ht "[["
+      ^ "]]"
 
-let print_field_table : (key_t, field_r) Hashtbl.t -> unit =
- fun ht ->
-  print_string "[[";
-  Hashtbl.iter
-    (fun key elem -> Printf.printf "%s -> %s\n" key (show_field_r elem))
-    ht;
-  print_string "]]"
+let show_field_table ht = show_hashtbl ht show_field_r
 
-let print_method_table : (key_t, method_r) Hashtbl.t -> unit =
- fun ht ->
-  print_string "[[";
-  Hashtbl.iter
-    (fun key elem -> Printf.printf "%s -> %s\n" key (show_method_r elem))
-    ht;
-  print_string "]]"
+let show_method_table ht = show_hashtbl ht show_method_r
 
-let print_constructor_table : (key_t, constructor_r) Hashtbl.t -> unit =
- fun ht ->
-  print_string "[[";
-  Hashtbl.iter
-    (fun key elem -> Printf.printf "%s -> %s\n" key (show_constructor_r elem))
-    ht;
-  print_string "]]"
+let show_constructor_table ht = show_hashtbl ht show_constructor_r
 
-let print_string_option = function
-  | Some s -> print_string s
-  | None -> print_string ""
+let show_string_option = function Some s -> s | None -> "None"
 
-(* Скорее всего, вы скажете, что это плохо, но пока так... *)
-let print_class_r : class_r -> unit =
- fun cr ->
-  Printf.printf "{ this_key : %s; " cr.this_key;
-  print_string "field_table : ";
-  print_field_table cr.field_table;
-  print_string "; method_table : ";
-  print_method_table cr.method_table;
-  print_string "; constructor_table : ";
-  print_constructor_table cr.constructor_table;
-  print_string "; children_keys : ";
-  print_list cr.children_keys;
-  Printf.printf "; is_abstract : %b; is_inheritable : %b; " cr.is_abstract
-    cr.is_inheritable;
-  print_string "parent_key : ";
-  print_string_option cr.parent_key;
-  print_string "} \n"
+let show_class_r cr =
+  let th_key = "{ this_key : " ^ cr.this_key ^ "; " in
+  let f_table = "field_table : " ^ show_field_table cr.field_table ^ "; " in
+  let m_table = "method_table : " ^ show_method_table cr.method_table ^ "; " in
+  let c_table =
+    "constructor_table : " ^ show_constructor_table cr.constructor_table ^ "; "
+  in
+  let ch_keys = "children_keys : " ^ show_keys_list cr.children_keys ^ "; " in
+  let is_abstr = "is_abstract : " ^ Bool.to_string cr.is_abstract ^ "; " in
+  let is_inh = "is_inheritable : " ^ Bool.to_string cr.is_inheritable ^ "; " in
+  let par_key_o = "parent_key : " ^ show_string_option cr.parent_key ^ "}" in
+  String.concat ""
+    [ th_key; f_table; m_table; c_table; ch_keys; is_abstr; is_inh; par_key_o ]
 
-let rec print_classes = function
-  | [] -> print_string "\n"
-  | x :: xs -> print_class_r x |> fun _ -> print_classes xs
+let show_class_table ht =
+  Hashtbl.fold (fun k v acc -> acc ^ k ^ " -> " ^ show_class_r v ^ "\n") ht "[["
+  ^ "]]"
 
 let test_load t_val =
   match load t_val with
@@ -69,13 +47,7 @@ let test_load t_val =
       print_string (m ^ "\n");
       Hashtbl.clear class_table
   | Ok _ ->
-      print_string "[[";
-      Hashtbl.iter
-        (fun key elem ->
-          Printf.printf "%s -> " key;
-          print_class_r elem)
-        class_table;
-      print_string "]]\n";
+      print_string (show_class_table class_table ^ "\n");
       Hashtbl.clear class_table
 
 let () =

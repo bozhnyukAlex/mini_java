@@ -66,8 +66,7 @@ let class_table : (key_t, class_r) Hashtbl.t = Hashtbl.create 1024
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
-let convert_table_to_list ht =
-  Iter.of_hashtbl ht |> Iter.map snd |> Iter.to_list
+let convert_table_to_list ht = Hashtbl.fold (fun _ v acc -> v :: acc) ht []
 
 module ClassLoader (M : MONADERROR) = struct
   open M

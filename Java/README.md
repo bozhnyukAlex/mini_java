@@ -8,7 +8,7 @@ Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
 
 Зам. Ключевые слова не могут являться именами классов. 
 
-На данном этапе я стараюсь сделать загрузку классов. 
+На данном этапе я сделал загрузку классов + класс Object. 
 
 Features done:
 
@@ -16,7 +16,10 @@ Features done:
 - 2 Подготовлен тест про паттерн Visitor
 - 3 Больше тестов на все
 - 4 Класс Object
+- 5 Функции печати с более лучшей сигнатурой
 
+Класс Object: 
+```
 public class Object {
     public int equals(Object obj) {
         if (this == obj) return 1;
@@ -27,10 +30,11 @@ public class Object {
     	return "Object";
     }
 }
+```
 
 Features in progress:
 
-- 1 Переход к другим ключам в таблицах
+- 1 Интерпретация выражений, стейтментов и т д
 - 2 
 - 3 
 

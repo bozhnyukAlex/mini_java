@@ -489,7 +489,7 @@
                             (Super, [Identifier ("w"); Identifier ("a")]));
                 Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
     }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person} 
+  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person}
   Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
     sub_tree = None }
   age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
@@ -537,7 +537,7 @@
                             (FieldAccess (This, Identifier ("age")),
                              Identifier ("a")))])
     }
-  ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object} 
+  ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object}
   Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
@@ -550,7 +550,7 @@
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : } 
+  ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
   Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
     args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
@@ -597,7 +597,7 @@
   toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object} 
+  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------SIMILAR_FIELDS-------------------
   
@@ -664,7 +664,7 @@
                             (Super, [Identifier ("w"); Identifier ("a")]));
                 Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
     }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person} 
+  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person}
   Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
     sub_tree = None }
   age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
@@ -696,7 +696,7 @@
                             (FieldAccess (This, Identifier ("age")),
                              Identifier ("a")))])
     }
-  ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object} 
+  ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object}
   Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
@@ -709,7 +709,7 @@
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : } 
+  ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
   Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
     args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
@@ -756,7 +756,7 @@
   toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object} 
+  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------@OVERRIDE_ERRORS-------------------
   
