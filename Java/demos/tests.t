@@ -569,30 +569,7 @@
                        [(Name ("p"),
                          Some (ClassCreate
                                (Name ("Person"),
-                                [Const (VInt (80)); Const (VInt (45))])))]);
-                      Expression (FieldAccess
-                                  (FieldAccess
-                                   (Identifier ("System"), Identifier ("out")),
-                                   CallMethod
-                                   (Identifier ("println"),
-                                    [FieldAccess
-                                     (Identifier ("p"),
-                                      CallMethod (Identifier ("getWeight"), []))])));
-                      VarDec
-                      (ClassName ("Child"),
-                       [(Name ("ch"),
-                         Some (ClassCreate
-                               (Name ("Child"),
-                                [Const (VInt (66)); Const (VInt (20))])))]);
-                      Expression (FieldAccess
-                                  (Identifier ("ch"),
-                                   CallMethod
-                                   (Identifier ("setCash"),
-                                    [Const (VInt (50))])));
-                      Expression (FieldAccess
-                                  (Identifier ("ch"),
-                                   CallMethod
-                                   (Identifier ("giveEvenNumbers100"), [])))]))
+                                [Const (VInt (80)); Const (VInt (45))])))])]))
     }
   toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
@@ -728,30 +705,7 @@
                        [(Name ("p"),
                          Some (ClassCreate
                                (Name ("Person"),
-                                [Const (VInt (80)); Const (VInt (45))])))]);
-                      Expression (FieldAccess
-                                  (FieldAccess
-                                   (Identifier ("System"), Identifier ("out")),
-                                   CallMethod
-                                   (Identifier ("println"),
-                                    [FieldAccess
-                                     (Identifier ("p"),
-                                      CallMethod (Identifier ("getWeight"), []))])));
-                      VarDec
-                      (ClassName ("Child"),
-                       [(Name ("ch"),
-                         Some (ClassCreate
-                               (Name ("Child"),
-                                [Const (VInt (66)); Const (VInt (20))])))]);
-                      Expression (FieldAccess
-                                  (Identifier ("ch"),
-                                   CallMethod
-                                   (Identifier ("setCash"),
-                                    [Const (VInt (50))])));
-                      Expression (FieldAccess
-                                  (Identifier ("ch"),
-                                   CallMethod
-                                   (Identifier ("giveEvenNumbers100"), [])))]))
+                                [Const (VInt (80)); Const (VInt (45))])))])]))
     }
   toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";

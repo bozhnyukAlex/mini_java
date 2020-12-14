@@ -8,6 +8,9 @@ open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 
 let show_keys_list list = List.fold_left (fun s acc -> acc ^ " " ^ s) "" list
 
+(* TODO: Это всё неплохо, но такое сложение строк будет тормозить независимо от того, OCaml это или С#. 
+Тут надо какое-то буферизиванное печатанье в строку, возможно, 
+с использование модуля Buffer (а может до кучи и модуля Format тоже)*)
 let show_hashtbl ht show =
   match Hashtbl.length ht with
   | 0 -> "[[]]"
@@ -23,6 +26,8 @@ let show_constructor_table ht = show_hashtbl ht show_constructor_r
 
 let show_string_option = function Some s -> s | None -> "None"
 
+(* TODO: Ну здесь чуть меньше гавнокода, потому что concat вроде умеет заранее буффер выделять адекватной длины, 
+но всё равно могло быть лучше. В конце исправите.*)
 let show_class_r cr =
   let th_key = "{ this_key : " ^ cr.this_key ^ "; " in
   let f_table = "field_table : " ^ show_field_table cr.field_table ^ "; " in
@@ -37,9 +42,7 @@ let show_class_r cr =
   String.concat ""
     [ th_key; f_table; m_table; c_table; ch_keys; is_abstr; is_inh; par_key_o ]
 
-let show_class_table ht =
-  Hashtbl.fold (fun k v acc -> acc ^ k ^ " -> " ^ show_class_r v ^ "\n") ht "[["
-  ^ "]]"
+let show_class_table ht = show_hashtbl ht show_class_r
 
 let test_load t_val =
   match load t_val with
@@ -60,13 +63,7 @@ let test_value =
 public class Main
 {
 	public static void main(String[] args) {
-		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
+	    Person p = new Person(80, 45);
 	}
 }
 
@@ -144,12 +141,6 @@ public class Main
 {
 	public static void main(String[] args) {
 		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
 	}
 }
 
@@ -229,12 +220,6 @@ public class Main
 {
 	public static void main(String[] args) {
 		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
 	}
 }
 
@@ -294,12 +279,6 @@ public class Main
 {
 	public static void main(String[] args) {
 		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
 	}
 }
 
@@ -356,12 +335,6 @@ public class Main
 {
 	public static void main(String[] args) {
 		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
 	}
 }
 
@@ -446,7 +419,6 @@ let test_value =
 public class Main
 {
 	public static void main(String[] args) {
-	    
 	}
 }
 
@@ -481,7 +453,6 @@ let test_value =
 public class Main
 {
 	public static void main(String[] args) {
-	    
 	}
 }
 
@@ -518,7 +489,6 @@ let test_value =
 public class Main
 {
 	public static void main(String[] args) {
-	    
 	}
 }
 
@@ -553,13 +523,7 @@ let test_value =
 public class Main
 {
 	public static void main(String[] args) {
-		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
+		Person p = new Person(80, 45); 
 	}
 }
 
@@ -608,12 +572,6 @@ public class Main
 {
 	public static void main(String[] args) {
 		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
 	}
 }
 
@@ -673,12 +631,6 @@ public class Main
 {
 	public static void main(String[] args) {
 		Person p = new Person(80, 45);
-		System.out.println(p.getWeight());
-		
-		Child ch = new Child(66, 20);
-		ch.setCash(50);
-		ch.giveEvenNumbers100();
-	    
 	}
 }
 

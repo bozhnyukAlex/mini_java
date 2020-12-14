@@ -53,9 +53,9 @@ type method_r = {
 
 type class_r = {
   this_key : key_t;
-  mutable field_table : (key_t, field_r) Hashtbl.t;
-  mutable method_table : (key_t, method_r) Hashtbl.t;
-  mutable constructor_table : (key_t, constructor_r) Hashtbl.t;
+  field_table : (key_t, field_r) Hashtbl.t;
+  method_table : (key_t, method_r) Hashtbl.t;
+  constructor_table : (key_t, constructor_r) Hashtbl.t;
   mutable children_keys : key_t list;
   is_abstract : bool;
   is_inheritable : bool;
@@ -66,6 +66,7 @@ let class_table : (key_t, class_r) Hashtbl.t = Hashtbl.create 1024
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
+(* Не уверен, что стоит жрать память для списка, если там есть Hashtbl.to_seq_values. Потом исправите, если что *)
 let convert_table_to_list ht = Hashtbl.fold (fun _ v acc -> v :: acc) ht []
 
 module ClassLoader (M : MONADERROR) = struct
@@ -102,14 +103,13 @@ module ClassLoader (M : MONADERROR) = struct
         args = [ (ClassName "Object", Name "obj") ];
         key = "equals@@";
         body =
-          Some
-            (StmtBlock
-               [
-                 If
-                   ( Equal (This, Identifier "obj"),
-                     Return (Some (Const (VInt 1))),
-                     Some (Return (Some (Const (VInt 0)))) );
-               ]);
+          apply Stmt.stat_block
+            {| 
+          {
+              if (this == obj) return 1;
+              else return 0;
+          }
+    |};
       }
     in
     let to_string : method_r =
@@ -120,7 +120,13 @@ module ClassLoader (M : MONADERROR) = struct
         has_override_annotation = false;
         args = [];
         key = "toString@@";
-        body = Some (StmtBlock [ Return (Some (Const (VString "Object"))) ]);
+        body =
+          apply Stmt.stat_block
+            {|
+          {
+            return "Object";
+          }
+        |};
       }
     in
     return
@@ -144,46 +150,42 @@ module ClassLoader (M : MONADERROR) = struct
     | l, f -> (
         match f with
         (*public static void main (String[] args)*)
-        | Method (Void, Name "main", [ (Array String, Name "args") ], _) ->
-            if
-              is_static l && is_public l
-              && (not (is_abstract l))
-              && (not (is_final l))
-              && not (is_override l)
-            then return ()
-            else error "Wrong method modifiers"
+        | Method (Void, Name "main", [ (Array String, Name "args") ], _) -> (
+            match
+              ( is_static l,
+                is_public l,
+                is_abstract l,
+                is_final l,
+                is_override l )
+            with
+            | true, true, false, false, false -> return ()
+            | _ -> error "Wrong method modifiers" )
         (*Простые методы - не статичные, не могут быть абстрактными и финальными одновременно*)
-        | Method (_, Name n, _, _) ->
-            if is_abstract l && is_final l then error "Wrong method modifiers"
-            else if is_static l && n <> "main" then
-              error "Wrong method modifiers"
-            else return ()
+        | Method (_, _, _, _) -> (
+            match (is_abstract l, is_final l, is_static l) with
+            | true, true, _ -> error "Wrong method modifiers"
+            | _, _, true -> error "Wrong method modifiers"
+            | _ -> return () )
         (*Поля - не статичные, не абстрактные, не override*)
-        | VarField (_, _) ->
-            if
-              (not (is_static l))
-              && (not (is_abstract l))
-              && not (is_override l)
-            then return ()
-            else error "Wrong field modifiers"
+        | VarField (_, _) -> (
+            match (is_static l, is_abstract l, is_override l) with
+            | false, false, false -> return ()
+            | _ -> error "Wrong field modifiers" )
         (*Конструкторы - могут быть либо публичными, либо дефолтными*)
-        | Constructor (_, _, _) ->
-            if
-              (not (is_static l))
-              && (not (is_abstract l))
-              && (not (is_final l))
-              && not (is_override l)
-            then return ()
-            else error "Wrong constructor modifiers" )
+        | Constructor (_, _, _) -> (
+            match (is_static l, is_abstract l, is_final l, is_override l) with
+            | false, false, false, false -> return ()
+            | _ -> error "Wrong constructor modifiers" ) )
 
   (*Функция для проверки класса на наличие бредовых модификаторов*)
   let check_modifiers_c = function
-    | Class (ml, _, _, _) ->
-        if is_abstract ml && is_final ml then error "Wrong class modifiers"
-        else if (not (is_static ml)) && not (is_override ml) then return ()
-        else error "Wrong class modifiers"
+    | Class (ml, _, _, _) -> (
+        match (is_abstract ml, is_final ml, is_static ml, is_override ml) with
+        | true, true, _, _ -> error "Wrong class modifiers"
+        | _, _, false, false -> return ()
+        | _ -> error "Wrong class modifiers" )
 
-  let get_type_list = List.map (function t, _ -> t)
+  let get_type_list = List.map fst
 
   let get_class_by_key_o ht key = Hashtbl.find_opt ht key
 
@@ -308,7 +310,7 @@ module ClassLoader (M : MONADERROR) = struct
     in
     monadic_list_iter cd_list add_to_class_table
 
-  (* После добавления надо обновить child_keys у каждого класса - С ЭТОГО МОМЕНТА НЕ РАБОТАЕТ*)
+  (* После добавления надо обновить child_keys у каждого класса *)
   let update_child_keys ht =
     (* cr - потенциальный ребенок *)
     let update cr =
