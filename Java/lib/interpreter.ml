@@ -8,6 +8,8 @@ module type MONAD = sig
   val return : 'a -> 'a t
 
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+
+  val ( >> ) : 'a t -> 'b t -> 'b t
 end
 
 module type MONADERROR = sig
@@ -24,6 +26,8 @@ module Result = struct
   let return = Result.ok
 
   let error = Result.error
+
+  let ( >> ) x f = x >>= fun _ -> f
 end
 
 type key_t = string [@@deriving show]
@@ -83,12 +87,14 @@ module ClassLoader (M : MONADERROR) = struct
   let is_public = List.mem Public
 
   let monadic_update_hash_table ht old_key new_val =
-    return (Hashtbl.replace ht old_key new_val |> fun _ -> ht)
+    return
+      ( Hashtbl.replace ht old_key new_val;
+        ht )
 
   let rec monadic_list_iter list action base =
     match list with
     | [] -> return base
-    | x :: xs -> action x >>= fun _ -> monadic_list_iter xs action base
+    | x :: xs -> action x >> monadic_list_iter xs action base
 
   let prepare_object ht =
     let constructor_table = Hashtbl.create 20 in
@@ -195,7 +201,10 @@ module ClassLoader (M : MONADERROR) = struct
   (* Отдельная функция для добавления в таблицу с проверкой на существование *)
   let add_with_check ht key value e_message =
     match get_elem_if_present ht key with
-    | None -> return (Hashtbl.add ht key value |> fun _ -> ht)
+    | None ->
+        return
+          ( Hashtbl.add ht key value;
+            ht )
     | _ -> error e_message
 
   (* Сначала надо просто заполнить таблицу классов *)
@@ -206,7 +215,8 @@ module ClassLoader (M : MONADERROR) = struct
         let method_table = Hashtbl.create 1024 in
         let field_table = Hashtbl.create 1024 in
         let constructor_table = Hashtbl.create 1024 in
-        check_modifiers_c class_d >>= fun _ ->
+        check_modifiers_c class_d
+        >>
         (* Функция добавления элемента класса в соответствующую таблицу *)
         let add_field : modifier list * field -> unit M.t =
          fun field_elem ->
@@ -221,9 +231,9 @@ module ClassLoader (M : MONADERROR) = struct
                     add_with_check field_table key
                       { f_type; key; is_mutable; f_value; sub_tree }
                       "Similar fields"
-                    >>= fun _ -> helper ps
+                    >> helper ps
               in
-              check_modifiers_f field_elem >>= fun _ -> helper pairs
+              check_modifiers_f field_elem >> helper pairs
           | m_ms, Method (m_type, Name name, args, body) ->
               (* Формирование ключа: method_key = name ++ type1 ++ type2 ++ ... ++ typen *)
               let key =
@@ -252,20 +262,20 @@ module ClassLoader (M : MONADERROR) = struct
               in
               let is_overridable = not (is_final m_ms) in
               let has_override_annotation = is_override m_ms in
-              check_modifiers_f field_elem >>= fun _ ->
-              check_abstract_body_syntax >>= fun _ ->
-              add_with_check method_table key
-                {
-                  m_type;
-                  is_abstract;
-                  is_overridable;
-                  has_override_annotation;
-                  args;
-                  key;
-                  body;
-                }
-                "Method with this type exists"
-              >>= fun _ -> return ()
+              check_modifiers_f field_elem
+              >> check_abstract_body_syntax
+              >> add_with_check method_table key
+                   {
+                     m_type;
+                     is_abstract;
+                     is_overridable;
+                     has_override_annotation;
+                     args;
+                     key;
+                     body;
+                   }
+                   "Method with this type exists"
+              >> return ()
           | _, Constructor (Name name, args, body) ->
               let constr_key =
                 String.concat ""
@@ -277,11 +287,11 @@ module ClassLoader (M : MONADERROR) = struct
                 if name = this_key then return ()
                 else error "Constructor name error"
               in
-              check_names_match >>= fun _ ->
-              check_modifiers_f field_elem >>= fun _ ->
-              add_with_check constructor_table constr_key { args; body }
-                "Constructor with this type exists"
-              >>= fun _ -> return ()
+              check_names_match
+              >> check_modifiers_f field_elem
+              >> add_with_check constructor_table constr_key { args; body }
+                   "Constructor with this type exists"
+              >> return ()
         in
         let add_parent p =
           match p with None -> Some "Object" | _ -> convert_name_to_key p
@@ -290,19 +300,19 @@ module ClassLoader (M : MONADERROR) = struct
         let is_abstract = is_abstract ml in
         let is_inheritable = not (is_final ml) in
         let parent_key = add_parent parent_o in
-        monadic_list_iter fields add_field () >>= fun _ ->
-        add_with_check class_ht this_key
-          {
-            this_key;
-            field_table;
-            method_table;
-            constructor_table;
-            children_keys;
-            is_abstract;
-            is_inheritable;
-            parent_key;
-          }
-          "Similar Classes"
+        monadic_list_iter fields add_field ()
+        >> add_with_check class_ht this_key
+             {
+               this_key;
+               field_table;
+               method_table;
+               constructor_table;
+               children_keys;
+               is_abstract;
+               is_inheritable;
+               parent_key;
+             }
+             "Similar Classes"
 
   let c_table_add cd_list cl_ht =
     monadic_list_iter cd_list (add_to_class_table cl_ht) cl_ht
@@ -318,17 +328,15 @@ module ClassLoader (M : MONADERROR) = struct
           let parent_o = get_elem_if_present ht p_key in
           match parent_o with
           | None -> error "No parent class found"
-          | Some parent ->
-              if parent.is_inheritable then
-                let new_val =
-                  {
-                    parent with
-                    children_keys = parent.children_keys @ [ cr.this_key ];
-                  }
-                in
-                monadic_update_hash_table ht p_key new_val >>= fun _ ->
-                return new_val
-              else error "Final class cannot be inherited" )
+          | Some parent when parent.is_inheritable ->
+              let new_val =
+                {
+                  parent with
+                  children_keys = cr.this_key :: parent.children_keys;
+                }
+              in
+              monadic_update_hash_table ht p_key new_val >> return new_val
+          | Some _ -> error "Final class cannot be inherited" )
     in
     monadic_list_iter (convert_table_to_list ht) update ht
 
@@ -367,20 +375,16 @@ module ClassLoader (M : MONADERROR) = struct
   let process_method : class_r -> method_r -> unit t =
    fun ch cur_method ->
     match get_elem_if_present ch.method_table cur_method.key with
-    | None -> (
-        (* Не нашли переопределенного метода - смотрим, наш абстрактный? *)
-        match cur_method.is_abstract with
-        | true ->
-            (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод, иначе бросаем исключение *)
-            if ch.is_abstract then
-              return (Hashtbl.add ch.method_table cur_method.key cur_method)
-            else error "Abstract method must be overriden"
-        | false ->
-            if cur_method.is_overridable then
-              return (Hashtbl.add ch.method_table cur_method.key cur_method)
-              (*Наш не абстрактный. Если наш не final - переносим в ребенка *)
-            else return () )
-    (* Нашли переопредленный метод - ну и ок, проверять тут нечего *)
+    | None when cur_method.is_abstract ->
+        (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод, иначе бросаем исключение *)
+        if ch.is_abstract then
+          return (Hashtbl.add ch.method_table cur_method.key cur_method)
+        else error "Abstract method must be overriden"
+    | None when not cur_method.is_abstract ->
+        (*Наш не абстрактный. Если наш не final - переносим в ребенка *)
+        if cur_method.is_overridable then
+          return (Hashtbl.add ch.method_table cur_method.key cur_method)
+        else return ()
     | _ -> return ()
 
   let process_methods par ch =
@@ -409,11 +413,11 @@ module ClassLoader (M : MONADERROR) = struct
         свойства родителя передает ребенку с необходимыми проверками, далее обрабатывает рекурсивно все дерево наследования от родителя *)
   let rec transfert : class_r -> class_r -> unit t =
    fun parent child ->
-    process_fields parent child >>= fun _ ->
-    process_methods parent child >>= fun _ ->
-    check_override_annotations parent child >>= fun _ ->
-    check_child_constructors parent child >>= fun _ ->
-    run_transfert_on_children class_table child
+    process_fields parent child
+    >> process_methods parent child
+    >> check_override_annotations parent child
+    >> check_child_constructors parent child
+    >>= fun _ -> run_transfert_on_children class_table child
 
   (* Запуск transfert на ребенке и детях ребенка *)
   and run_transfert_on_children ht ch =
