@@ -296,7 +296,6 @@ module ClassLoader (M : MONADERROR) = struct
         let add_parent p =
           match p with None -> Some "Object" | _ -> convert_name_to_key p
         in
-        let children_keys = [] in
         let is_abstract = is_abstract ml in
         let is_inheritable = not (is_final ml) in
         let parent_key = add_parent parent_o in
@@ -307,7 +306,7 @@ module ClassLoader (M : MONADERROR) = struct
                field_table;
                method_table;
                constructor_table;
-               children_keys;
+               children_keys = [];
                is_abstract;
                is_inheritable;
                parent_key;
