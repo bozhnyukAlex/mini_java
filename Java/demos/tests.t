@@ -3,7 +3,7 @@
   ([Public], Name ("Main"), None,
    [([Public; Static],
      Method
-     (Void, Name ("main"), [(Array (String), Name ("args"))],
+     (Void, Name ("main"), [],
       Some (StmtBlock ([VarDec
                         (ClassName ("Person"),
                          [(Name ("p"),
@@ -126,7 +126,7 @@
   ([Public], Name ("Main"), None,
    [([Public; Static],
      Method
-     (Void, Name ("main"), [(Array (String), Name ("args"))],
+     (Void, Name ("main"), [],
       Some (StmtBlock ([VarDec
                         (Array (ClassName ("Figure")),
                          [(Name ("list"),
@@ -560,9 +560,11 @@
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  mainArray (String)@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Array (String), Name ("args"))];
-    key = "mainArray (String)@@";
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  main@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "main@@";
     body =
     Some (StmtBlock ([VarDec
                       (ClassName ("Person"),
@@ -571,9 +573,6 @@
                                (Name ("Person"),
                                 [Const (VInt (80)); Const (VInt (45))])))])]))
     }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
   ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------SIMILAR_FIELDS-------------------
@@ -696,9 +695,11 @@
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  mainArray (String)@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Array (String), Name ("args"))];
-    key = "mainArray (String)@@";
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  main@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "main@@";
     body =
     Some (StmtBlock ([VarDec
                       (ClassName ("Person"),
@@ -707,9 +708,6 @@
                                (Name ("Person"),
                                 [Const (VInt (80)); Const (VInt (45))])))])]))
     }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
   ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------@OVERRIDE_ERRORS-------------------

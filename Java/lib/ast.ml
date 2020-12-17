@@ -7,20 +7,25 @@ type type_t =
   | ClassName of string
   | String
   | Array of type_t
-  | Object
+  | Bool
 [@@deriving show { with_path = false }]
 
 type value =
   | VBool of bool
   | VInt of int
-  | VNull
-  | VChar of char
   | VArray of value list
   | VVoid
   | VString of string
-  | VClassName
-  | VObject
+  | VObjectRef of obj_ref
 [@@deriving show { with_path = false }]
+
+(* Поле внутри созданного объекта *)
+and field_ref = { key : string; f_type : type_t; f_value : value }
+
+(* Ссылка на объект - может быть null или запись именем класса (он же ключ) и ссылкой на поля *)
+and obj_ref =
+  | RNull
+  | RObj of { class_key : string; field_ref_list : field_ref list }
 
 type name = Name of string [@@deriving show { with_path = false }]
 

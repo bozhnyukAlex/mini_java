@@ -10,6 +10,8 @@ module type MONAD = sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
   val ( >> ) : 'a t -> 'b t -> 'b t
+
+  val get : 'a t -> 'a
 end
 
 module type MONADERROR = sig
@@ -28,6 +30,8 @@ module Result = struct
   let error = Result.error
 
   let ( >> ) x f = x >>= fun _ -> f
+
+  let get = Result.get_ok
 end
 
 type key_t = string [@@deriving show]
@@ -70,8 +74,10 @@ let class_table : (key_t, class_r) Hashtbl.t = Hashtbl.create 1024
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
-(* Не уверен, что стоит жрать память для списка, если там есть Hashtbl.to_seq_values. Потом исправите, если что *)
+(* TODO: Не уверен, что стоит жрать память для списка, если там есть Hashtbl.to_seq_values. Потом исправите, если что *)
 let convert_table_to_list ht = Hashtbl.fold (fun _ v acc -> v :: acc) ht []
+
+let get_elem_if_present ht key = Hashtbl.find_opt ht key
 
 module ClassLoader (M : MONADERROR) = struct
   open M
@@ -158,13 +164,15 @@ module ClassLoader (M : MONADERROR) = struct
     match pair with
     | l, f -> (
         match f with
-        (*public static void main (String[] args)*)
-        | Method (Void, Name "main", [ (Array String, Name "args") ], _)
+        (*public static void main ()*)
+        | Method (Void, Name "main", [], _)
           when is_static l && is_public l
                && (not (is_abstract l))
                && (not (is_final l))
                && not (is_override l) ->
             return ()
+        | Method (_, Name "main", _, _) ->
+            error "Only one main method can be in program!"
         (*Простые методы - не статичные, не могут быть абстрактными и финальными одновременно*)
         | Method (_, _, _, _) when is_abstract l && is_final l ->
             error "Wrong method modifiers"
@@ -195,8 +203,6 @@ module ClassLoader (M : MONADERROR) = struct
     | Class (_, _, _, _) -> error "Wrong class modifiers"
 
   let get_type_list = List.map fst
-
-  let get_elem_if_present ht key = Hashtbl.find_opt ht key
 
   (* Отдельная функция для добавления в таблицу с проверкой на существование *)
   let add_with_check ht key value e_message =
@@ -442,4 +448,267 @@ module ClassLoader (M : MONADERROR) = struct
         >>= fun table_with_added_classes ->
         update_child_keys table_with_added_classes >>= fun updated_table ->
         do_inheritance updated_table
+end
+
+module Main (M : MONADERROR) = struct
+  open M
+
+  type variable = {
+    v_type : type_t;
+    v_key : key_t;
+    is_mutable : bool;
+    v_value : value;
+  }
+
+  type context = {
+    cur_object : obj_ref;
+    var_table : (key_t, variable) Hashtbl.t;
+  }
+
+  let make_context cur_object var_table = return { cur_object; var_table }
+
+  let find_class_with_main ht =
+    return
+      (List.find
+         (fun c -> Hashtbl.mem c.method_table "main@@")
+         (convert_table_to_list ht))
+
+  let rec expr_type_check : expr -> context -> type_t M.t =
+   fun t_expr ctx ->
+    match t_expr with
+    | Add (left, right) -> (
+        expr_type_check left ctx >>= fun lt ->
+        match lt with
+        | Int -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Int -> return Int
+            | String -> return String
+            | _ -> error "Wrong type: must be Int or String" )
+        | String -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Int | String -> return String
+            | _ -> error "Wrong type: must be Int or String" )
+        | _ -> error "Wrong type: must be Int or String" )
+    | Sub (left, right) | Div (left, right) | Mod (left, right) -> (
+        expr_type_check left ctx >>= fun lt ->
+        match lt with
+        | Int -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Int -> return Int
+            | _ -> error "Wrong type: must be Int" )
+        | _ -> error "Wrong type: must be Int" )
+    | PostDec value | PostInc value | PrefDec value | PrefInc value -> (
+        expr_type_check value ctx >>= fun vt ->
+        match vt with Int -> return Int | _ -> error "Wrong type: must be Int" )
+    | And (left, right) | Or (left, right) -> (
+        expr_type_check left ctx >>= fun lt ->
+        match lt with
+        | Bool -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Bool -> return Bool
+            | _ -> error "Wrong type: must be Bool" )
+        | _ -> error "Wrong type: must be Bool" )
+    | Not value -> (
+        expr_type_check value ctx >>= fun vt ->
+        match vt with
+        | Bool -> return Bool
+        | _ -> error "Wrong type: must be Bool" )
+    | Less (left, right)
+    | More (left, right)
+    | LessOrEqual (left, right)
+    | MoreOrEqual (left, right) -> (
+        expr_type_check left ctx >>= fun lt ->
+        match lt with
+        | Int -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Int -> return Bool
+            | _ -> error "Wrong type: must be Int" )
+        | _ -> error "Wrong type: must be Int" )
+    | Equal (left, right) | NotEqual (left, right) -> (
+        expr_type_check left ctx >>= fun lt ->
+        match lt with
+        | Int -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Int -> return Bool
+            | _ -> error "Wrong type: must be Int" )
+        | String -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | String -> return Bool
+            | _ -> error "Wrong type: must be String" )
+        | Bool -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Bool -> return Bool
+            | _ -> error "Wrong type: must be Bool" )
+        | Array arr_lt -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Array arr_rt when arr_lt = arr_rt -> return Bool
+            | _ -> error "Wrong type: must be Array with right type!" )
+        | ClassName ls -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | ClassName rs when ls = rs -> return Bool
+            | ClassName "null" -> return Bool
+            | ClassName "this" -> return Bool
+            | _ -> error "Wrong class type!" )
+        | _ -> error "Wrong type in equal-expression!" )
+    | Null -> return (ClassName "null")
+    | This -> (
+        match ctx.cur_object with
+        | RObj { class_key = k; _ } -> return (ClassName k)
+        | RNull -> error "Null object in context!" )
+    | Super -> (
+        match ctx.cur_object with
+        | RObj { class_key = k; _ } ->
+            let par_k =
+              Option.get
+                (Option.get (get_elem_if_present class_table k)).parent_key
+            in
+            return (ClassName par_k)
+        | RNull -> error "Null object in context!" )
+    | CallMethod (Super, _) -> return Void
+    | CallMethod (This, _) -> return Void
+    | FieldAccess (obj_expr, Identifier f_key) -> (
+        expr_type_check obj_expr ctx >>= fun obj_c ->
+        match obj_c with
+        | ClassName obj_key -> (
+            let obj_class =
+              Option.get (get_elem_if_present class_table obj_key)
+            in
+            let var_field_o = get_elem_if_present obj_class.field_table f_key in
+            match var_field_o with
+            | None -> error "No such field in class!"
+            | Some var_field -> return var_field.f_type )
+        | _ -> error "Wrong type: must be object reference" )
+    | FieldAccess (obj_expr, CallMethod (Identifier m_ident, args)) -> (
+        (* Чекаем то, что перед точкой - это должен быть объект *)
+        expr_type_check obj_expr ctx
+        >>= fun obj_c ->
+        match obj_c with
+        | ClassName obj_key -> (
+            let m_key = m_ident ^ make_type_string args ctx ^ "@@" in
+            let obj_class =
+              Option.get (get_elem_if_present class_table obj_key)
+            in
+            let method_o = get_elem_if_present obj_class.method_table m_key in
+            match method_o with
+            | None -> error "No such method with this name and types!"
+            | Some meth_r -> return meth_r.m_type )
+        | _ -> error "Wrong type: must be object reference" )
+    | ArrayAccess (arr_expr, index_expr) -> (
+        expr_type_check index_expr ctx >>= fun ind_t ->
+        match ind_t with
+        | Int -> expr_type_check arr_expr ctx >>= fun arr_t -> return arr_t
+        | _ -> error "Wrong type: must be Int" )
+    | ArrayCreateSized (arr_type, size) -> (
+        expr_type_check size ctx >>= fun size_t ->
+        match size_t with
+        | Int -> (
+            match arr_type with
+            | Void -> error "Wrong type of array"
+            | Array _ -> error "Wrong type of Array"
+            | _ -> return arr_type )
+        | _ -> error "Wrong type: size must be Int" )
+    | ArrayCreateElements (arr_type, elems) ->
+        let rec process_list_el = function
+          | [] -> return arr_type
+          | el :: els ->
+              expr_type_check el ctx >>= fun el_type ->
+              if arr_type = el_type then process_list_el els
+              else error "Wrong type of array element"
+        in
+        process_list_el elems
+    | ClassCreate (Name class_name, args) -> (
+        match get_elem_if_present class_table class_name with
+        | None -> error "No such class!"
+        | Some cl_elem -> (
+            (* Если аргументов у конструктора нет - все норм, пустой конструктор всегда имеется *)
+            match args with
+            | [] -> return (ClassName class_name)
+            | _ -> (
+                let args_string = make_type_string args ctx in
+                let constr_key = class_name ^ args_string ^ "$$" in
+                let consrt_o =
+                  get_elem_if_present cl_elem.constructor_table constr_key
+                in
+                match consrt_o with
+                | None -> error "No such constructor with this types!"
+                | _ -> return (ClassName class_name) ) ) )
+    | Identifier key -> (
+        let var_o = get_elem_if_present ctx.var_table key in
+        match var_o with
+        | None -> error "No such variable!"
+        | Some v -> return v.v_type )
+    | Const value -> (
+        match value with
+        | VBool _ -> return Bool
+        | VInt _ -> return Int
+        | VString _ -> return String
+        | VObjectRef RNull -> return (ClassName "null")
+        | VObjectRef (RObj { class_key = ck; field_ref_list = _ }) ->
+            return (ClassName ck)
+        | _ -> error "Wrong value" )
+    | Assign (left, right) -> (
+        expr_type_check left ctx >>= fun lt ->
+        match lt with
+        | Void -> error "Wrong assign type"
+        | ClassName cleft_key -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | ClassName cright_key ->
+                let rec check_parent_tree key =
+                  let clr_by_key =
+                    Option.get (get_elem_if_present class_table key)
+                  in
+                  if clr_by_key.this_key = cright_key then
+                    return (ClassName cright_key)
+                  else
+                    match clr_by_key.parent_key with
+                    | None -> error "Wrong assign type!"
+                    | Some par_k -> check_parent_tree par_k
+                in
+                check_parent_tree cleft_key
+            | _ -> error "Wrong assign types!" )
+        | _ ->
+            expr_type_check right ctx >>= fun rt ->
+            if lt = rt then return rt else error "Wrong assign types!" )
+    | _ -> error "Wrong_expression"
+
+  and make_type_string : expr list -> context -> key_t =
+   fun elist ctx ->
+    let rec helper_type lst acc =
+      match lst with
+      | [] -> return acc
+      | e :: es ->
+          expr_type_check e ctx >>= fun cur_t ->
+          helper_type es (acc ^ show_type_t cur_t)
+    in
+    helper_type elist "" |> fun res_str -> get res_str
+
+  (* Not implemented *)
+  let interp_stmt : stmt -> context -> context M.t = fun s c -> return c
+
+  (*Not implemented *)
+  and interp_expr (* Должна быть инфа о inc и dec *) :
+      expr -> context -> context M.t =
+   fun e c -> return c
+
+  let execute : (key_t, class_r) Hashtbl.t -> context M.t =
+   fun ht ->
+    find_class_with_main ht >>= fun cl ->
+    make_context
+      (RObj { class_key = cl.this_key; field_ref_list = [] })
+      (Hashtbl.create 10)
+    >>= fun ctx ->
+    let main = Hashtbl.find cl.method_table "main@@" in
+    let body_main = Option.get main.body in
+    interp_stmt body_main ctx
 end

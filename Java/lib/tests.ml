@@ -398,9 +398,7 @@ let%test _ =
   = Error "Wrong method modifiers"
 
 let%test _ =
-  check_modifiers_f
-    ( [ Public; Static ],
-      Method (Void, Name "main", [ (Array String, Name "args") ], None) )
+  check_modifiers_f ([ Public; Static ], Method (Void, Name "main", [], None))
   = Ok ()
 
 let%test _ =

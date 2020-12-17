@@ -62,7 +62,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 	    Person p = new Person(80, 45);
 	}
 }
@@ -139,7 +139,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 		Person p = new Person(80, 45);
 	}
 }
@@ -218,7 +218,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 		Person p = new Person(80, 45);
 	}
 }
@@ -277,7 +277,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 		Person p = new Person(80, 45);
 	}
 }
@@ -333,7 +333,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 		Person p = new Person(80, 45);
 	}
 }
@@ -383,7 +383,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 	    
 	}
 }
@@ -418,7 +418,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 	}
 }
 
@@ -452,7 +452,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 	}
 }
 
@@ -488,7 +488,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 	}
 }
 
@@ -522,7 +522,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 		Person p = new Person(80, 45); 
 	}
 }
@@ -570,7 +570,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 		Person p = new Person(80, 45);
 	}
 }
@@ -629,7 +629,7 @@ let test_value =
        {| 
 public class Main
 {
-	public static void main(String[] args) {
+	public static void main() {
 		Person p = new Person(80, 45);
 	}
 }

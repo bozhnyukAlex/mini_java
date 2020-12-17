@@ -11,7 +11,7 @@ let test_value =
        {| 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main() {
         Figure[] list = new Figure[] {new Circle(5), new Rectangle(2,4), new Triangle()};
         AreaVisitor areaVisitor = new AreaVisitor();
         PerimeterVisitor perimeterVisitor = new PerimeterVisitor();

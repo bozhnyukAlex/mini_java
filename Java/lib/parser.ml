@@ -224,8 +224,7 @@ module Expr = struct
       | other -> FieldAccess (acc, other)
     in
     let f_parse =
-      this <|> super <|> parens create_obj <|> arr_access <|> method_call
-      <|> identifier
+      this <|> parens create_obj <|> arr_access <|> method_call <|> identifier
     in
     ( f_parse >>= fun head ->
       many1 (token "." >> f_parse) => fun tl ->
