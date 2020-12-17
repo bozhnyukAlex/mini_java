@@ -491,7 +491,10 @@ module Main (M : MONADERROR) = struct
             | Int | String -> return String
             | _ -> error "Wrong type: must be Int or String" )
         | _ -> error "Wrong type: must be Int or String" )
-    | Sub (left, right) | Div (left, right) | Mod (left, right) -> (
+    | Sub (left, right)
+    | Div (left, right)
+    | Mod (left, right)
+    | Mult (left, right) -> (
         expr_type_check left ctx >>= fun lt ->
         match lt with
         | Int -> (
