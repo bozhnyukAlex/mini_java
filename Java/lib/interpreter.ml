@@ -362,19 +362,62 @@ module ClassLoader (M : MONADERROR) = struct
       (convert_table_to_list par.field_table)
       (process_field ch) ()
 
+  let is_super : stmt -> bool = function
+    | Expression (CallMethod (Super, _)) -> true
+    | _ -> false
+
+  let body_starts_with_super : constructor_r -> bool = function
+    | { args = _; body = StmtBlock (Expression (CallMethod (Super, _)) :: _) }
+      ->
+        true
+    | _ -> false
+
   (* Конструкторы не переносим, но у конструкторов ребенка первый стейтмент - вызов super(...). Проверяем это *)
   let check_child_constructors par ch =
-    let check_constructor : constructor_r -> unit t = function
-      | { args = _; body = StmtBlock (Expression (CallMethod (Super, _)) :: _) }
-        ->
-          return ()
-      | _ -> error "No super headed statement in inherited constructor"
+    let check_constructor : constructor_r -> unit t =
+     fun constr_r ->
+      match constr_r with
+      | { args = _; body = StmtBlock stlist } -> (
+          match List.filter is_super stlist with
+          | [] -> error "No super statement in inherited constructor"
+          | [ _ ] ->
+              if body_starts_with_super constr_r then return ()
+              else error "Super statement must br first in constructor"
+          | _ -> error "Only one super statement must be in constructor" )
+      | _ -> error "Constructor body must be in block!"
     in
     if Hashtbl.length par.constructor_table > 0 then
       monadic_list_iter
         (convert_table_to_list ch.constructor_table)
         check_constructor ()
     else return ()
+
+  let is_this : stmt -> bool = function
+    | Expression (CallMethod (This, _)) -> true
+    | _ -> false
+
+  let body_starts_with_this : constructor_r -> bool = function
+    | { args = _; body = StmtBlock (Expression (CallMethod (This, _)) :: _) } ->
+        true
+    | _ -> false
+
+  (* Надо у текущего класса проверять, чтобы если в его конструкторах есть вызов this(...), то он должен быть первым и единственным *)
+  let check_cur_constructors cur =
+    let check_constructor : constructor_r -> unit t =
+     fun constr_r ->
+      match constr_r.body with
+      | StmtBlock stlist -> (
+          match List.filter is_this stlist with
+          | [] -> return ()
+          | [ _ ] ->
+              if body_starts_with_this constr_r then return ()
+              else error "This constructor call must be in the beginning"
+          | _ -> error "More then one constructor calls!" )
+      | _ -> error "Constructor body must be in block!"
+    in
+    monadic_list_iter
+      (convert_table_to_list cur.constructor_table)
+      check_constructor ()
 
   (* Перенос метода. Тут надо много всего проверять на абстрактность *)
   let process_method : class_r -> method_r -> unit t =
@@ -421,6 +464,7 @@ module ClassLoader (M : MONADERROR) = struct
     process_fields parent child
     >> process_methods parent child
     >> check_override_annotations parent child
+    >> check_cur_constructors parent
     >> check_child_constructors parent child
     >>= fun _ -> run_transfert_on_children class_table child
 

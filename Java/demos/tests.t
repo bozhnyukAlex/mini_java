@@ -586,7 +586,7 @@
   Constructor with this type exists
   -------------------LACK_OF_SUPER_ERROR-------------------
   
-  No super headed statement in inherited constructor
+  No super statement in inherited constructor
   -------------------ABSTRACTNESS_ERRORS-------------------
   
   Abstract method in non-abstract class
