@@ -10,12 +10,12 @@ module type MONAD = sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
   val ( >> ) : 'a t -> 'b t -> 'b t
-
-  val get : 'a t -> 'a
 end
 
 module type MONADERROR = sig
   include MONAD
+
+  val get : 'a t -> 'a
 
   val error : string -> 'a t
 end
@@ -43,7 +43,6 @@ type field_r = {
   f_type : type_t;
   key : key_t;
   is_mutable : bool;
-  mutable f_value : value option;
   sub_tree : expr option;
 }
 [@@deriving show { with_path = false }]
@@ -64,7 +63,7 @@ type class_r = {
   field_table : (key_t, field_r) Hashtbl.t;
   method_table : (key_t, method_r) Hashtbl.t;
   constructor_table : (key_t, constructor_r) Hashtbl.t;
-  mutable children_keys : key_t list;
+  children_keys : key_t list;
   is_abstract : bool;
   is_inheritable : bool;
   parent_key : key_t option;
@@ -232,10 +231,9 @@ module ClassLoader (M : MONADERROR) = struct
                 | [] -> return ()
                 | (Name key, sub_tree) :: ps ->
                     let is_mutable = is_final f_ms in
-                    let f_value = None in
                     (* В качестве ключа выступает имя поля *)
                     add_with_check field_table key
-                      { f_type; key; is_mutable; f_value; sub_tree }
+                      { f_type; key; is_mutable; sub_tree }
                       "Similar fields"
                     >> helper ps
               in
@@ -506,10 +504,23 @@ module Main (M : MONADERROR) = struct
 
   type context = {
     cur_object : obj_ref;
+    prev_object : obj_ref option;
     var_table : (key_t, variable) Hashtbl.t;
+    last_expr_result : value option;
+    incremented : key_t list;
+    decremented : key_t list;
   }
 
-  let make_context cur_object var_table = return { cur_object; var_table }
+  let make_context cur_object var_table =
+    return
+      {
+        cur_object;
+        prev_object = None;
+        var_table;
+        last_expr_result = None;
+        incremented = [];
+        decremented = [];
+      }
 
   let find_class_with_main ht =
     return
@@ -623,9 +634,25 @@ module Main (M : MONADERROR) = struct
         | RNull -> error "Null object in context!" )
     | CallMethod (Super, _) -> return Void
     | CallMethod (This, _) -> return Void
+    (* По нашей модели такой вызов мог произойти только внутри какого-то объекта *)
+    | CallMethod (Identifier m_ident, args) -> (
+        let curr_obj_key =
+          match ctx.cur_object with
+          | RNull -> "null"
+          | RObj { class_key = key; field_ref_table = _ } -> key
+        in
+
+        let curr_class =
+          Option.get (get_elem_if_present class_table curr_obj_key)
+        in
+        let m_key = m_ident ^ make_type_string args ctx ^ "@@" in
+        match get_elem_if_present curr_class.method_table m_key with
+        | None -> error "No such method in class!"
+        | Some mr -> return mr.m_type )
     | FieldAccess (obj_expr, Identifier f_key) -> (
         expr_type_check obj_expr ctx >>= fun obj_c ->
         match obj_c with
+        | ClassName "null" -> error "NullPointerException"
         | ClassName obj_key -> (
             let obj_class =
               Option.get (get_elem_if_present class_table obj_key)
@@ -640,6 +667,7 @@ module Main (M : MONADERROR) = struct
         expr_type_check obj_expr ctx
         >>= fun obj_c ->
         match obj_c with
+        | ClassName "null" -> error "NullPointerException"
         | ClassName obj_key -> (
             let m_key = m_ident ^ make_type_string args ctx ^ "@@" in
             let obj_class =
@@ -653,7 +681,11 @@ module Main (M : MONADERROR) = struct
     | ArrayAccess (arr_expr, index_expr) -> (
         expr_type_check index_expr ctx >>= fun ind_t ->
         match ind_t with
-        | Int -> expr_type_check arr_expr ctx >>= fun arr_t -> return arr_t
+        | Int -> (
+            expr_type_check arr_expr ctx >>= fun arr_t ->
+            match arr_t with
+            | Array t -> return t
+            | _ -> error "Wrong type, must be Array!" )
         | _ -> error "Wrong type: must be Int" )
     | ArrayCreateSized (arr_type, size) -> (
         expr_type_check size ctx >>= fun size_t ->
@@ -700,7 +732,7 @@ module Main (M : MONADERROR) = struct
         | VInt _ -> return Int
         | VString _ -> return String
         | VObjectRef RNull -> return (ClassName "null")
-        | VObjectRef (RObj { class_key = ck; field_ref_list = _ }) ->
+        | VObjectRef (RObj { class_key = ck; field_ref_table = _ }) ->
             return (ClassName ck)
         | _ -> error "Wrong value" )
     | Assign (left, right) -> (
@@ -740,22 +772,161 @@ module Main (M : MONADERROR) = struct
     in
     helper_type elist "" |> fun res_str -> get res_str
 
+  (*
+     let mutate_field_value : field_ref -> value -> field_ref =
+      fun old_f value -> { old_f with f_value = value }
+
+     let mutate_field_ref_in_list :
+         field_ref list -> key_t -> value -> field_ref list =
+      fun fr_list old_key new_value ->
+       let rec helper_mutate : field_ref list -> field_ref list -> field_ref list =
+        fun list acc ->
+         match list with
+         | [] -> acc
+         | fr :: _ when fr.key = old_key ->
+             helper_mutate list (mutate_field_value fr new_value :: acc)
+         | fr :: _ -> helper_mutate list (fr :: acc)
+       in
+       helper_mutate fr_list []
+
+     let mutate_object_field : obj_ref -> key_t -> value -> obj_ref =
+      fun obj_ref key value ->
+       match obj_ref with
+       | RNull -> RNull
+       | RObj { class_key = k; field_ref_list = frlist } ->
+           RObj
+             {
+               class_key = k;
+               field_ref_list = mutate_field_ref_in_list frlist key value;
+             } *)
+
+  let get_int_value = function VInt x -> x | _ -> 0
+
+  let get_string_value = function VString s -> s | _ -> ""
+
+  let get_bool_value = function VBool b -> b | _ -> false
+
+  let get_obj_value = function VObjectRef o -> o | _ -> RNull
+
+  let get_arr_value = function VArray l -> l | _ -> []
+
+  let make_list_of_elem el size =
+    let rec helper acc curr =
+      match curr with 0 -> acc | x -> helper (el :: acc) (x - 1)
+    in
+    helper [] size
+
   (* Not implemented *)
-  let interp_stmt : stmt -> context -> context M.t = fun s c -> return c
+  let rec eval_stmt : stmt -> context -> context M.t = fun s c -> return c
 
   (*Not implemented *)
-  and interp_expr (* Должна быть инфа о inc и dec *) :
-      expr -> context -> context M.t =
-   fun e c -> return c
+  and eval_expr : expr -> context -> context M.t =
+   fun expr ctx ->
+    let rec eval_e (* TODO: СДЕЛАТЬ ФУНКЦИЕЙ *) =
+      let eval_op left right op =
+        eval_expr left ctx >>= fun lctx ->
+        eval_expr right lctx >>= fun rctx ->
+        let l_value = Option.get lctx.last_expr_result in
+        let r_value = Option.get rctx.last_expr_result in
+        let new_value = op l_value r_value in
+        try return { rctx with last_expr_result = Some new_value } with
+        | Invalid_argument m -> error m
+        | Division_by_zero -> error "Division by zero!"
+      in
+      let eval_un v_expr op =
+        eval_expr v_expr ctx >>= fun vctx ->
+        let v = Option.get vctx.last_expr_result in
+        let new_v = op v in
+        try return { vctx with last_expr_result = Some new_v }
+        with Invalid_argument m -> error m
+      in
 
-  let execute : (key_t, class_r) Hashtbl.t -> context M.t =
-   fun ht ->
-    find_class_with_main ht >>= fun cl ->
-    make_context
-      (RObj { class_key = cl.this_key; field_ref_list = [] })
-      (Hashtbl.create 10)
-    >>= fun ctx ->
-    let main = Hashtbl.find cl.method_table "main@@" in
-    let body_main = Option.get main.body in
-    interp_stmt body_main ctx
+      match expr with
+      | Add (left, right) -> eval_op left right ( ++ )
+      | Sub (left, right) -> eval_op left right ( -- )
+      | Div (left, right) -> eval_op left right ( // )
+      | Mod (left, right) -> eval_op left right ( %% )
+      | And (left, right) -> eval_op left right ( &&& )
+      | Or (left, right) -> eval_op left right ( ||| )
+      | Not bexp -> eval_un bexp not_v
+      | Less (left, right) -> eval_op left right ( <<< )
+      | More (left, right) -> eval_op left right ( >>> )
+      | LessOrEqual (left, right) -> eval_op left right ( <<== )
+      | MoreOrEqual (left, right) -> eval_op left right ( >>== )
+      | Equal (left, right) -> eval_op left right ( === )
+      | NotEqual (left, right) -> eval_op left right ( !=! )
+      | Const v -> return { ctx with last_expr_result = Some v }
+      | Identifier id ->
+          let var_by_id = Option.get (get_elem_if_present ctx.var_table id) in
+          return { ctx with last_expr_result = Some var_by_id.v_value }
+      | Null -> return { ctx with last_expr_result = Some (VObjectRef RNull) }
+      (*Должен быть после CallMethod (This, ...)!!!!*)
+      | This ->
+          return
+            { ctx with last_expr_result = Some (VObjectRef ctx.cur_object) }
+      | FieldAccess (obj_expr, Identifier f_key) -> (
+          eval_expr obj_expr ctx >>= fun octx ->
+          let obj = Option.get octx.last_expr_result in
+          match obj with
+          | VObjectRef (RObj { class_key = k; field_ref_table = frt }) ->
+              let fld = Option.get (Base.Hashtbl.find frt f_key) in
+              return { octx with last_expr_result = Some fld.f_value }
+          | _ -> error "Must be object!" )
+      | ArrayAccess (arr_expr, index_expr) -> (
+          eval_expr arr_expr ctx >>= fun arrctx ->
+          eval_expr index_expr ctx >>= fun indctx ->
+          let arr_v = Option.get arrctx.last_expr_result in
+          let ind_v = Option.get indctx.last_expr_result in
+          match arr_v with
+          | VArray values -> (
+              match ind_v with
+              | VInt i when i < 0 || i > List.length values ->
+                  error "ArrayOutOfBoundsException"
+              | VInt i ->
+                  return
+                    { indctx with last_expr_result = Some (List.nth values i) }
+              | _ -> error "Index must be int!" )
+          | _ -> error "Must be array!" )
+      | ArrayCreateSized (arr_type, size_expr) -> (
+          eval_expr size_expr ctx >>= fun szctx ->
+          let size_v = Option.get szctx.last_expr_result in
+          let init_v = get_init_value_of_type arr_type in
+          match size_v with
+          | VInt size ->
+              return
+                {
+                  szctx with
+                  last_expr_result =
+                    Some (VArray (make_list_of_elem init_v size));
+                }
+          | _ -> error "Size must be int!" )
+      | ArrayCreateElements (_, expr_list) ->
+          let make_val_list ex_list fctx =
+            let rec helper acc e_lst hctx =
+              match e_lst with
+              | [] -> return acc
+              | e :: es ->
+                  eval_expr e hctx >>= fun ectx ->
+                  let head_val = Option.get ectx.last_expr_result in
+                  helper (head_val :: acc) es ectx
+            in
+            helper [] ex_list fctx
+          in
+          let new_v_list = get (make_val_list expr_list ctx) in
+          return { ctx with last_expr_result = Some (VArray new_v_list) }
+      | _ -> return ctx
+    in
+
+    return ctx
+
+  (* let execute : (key_t, class_r) Hashtbl.t -> context M.t =
+     fun ht ->
+      find_class_with_main ht >>= fun cl ->
+      make_context
+        (RObj { class_key = cl.this_key; field_ref_list = [] })
+        (Hashtbl.create 10)
+      >>= fun ctx ->
+      let main = Hashtbl.find cl.method_table "main@@" in
+      let body_main = Option.get main.body in
+      eval_stmt body_main ctx *)
 end

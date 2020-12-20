@@ -226,8 +226,11 @@ module Expr = struct
     let f_parse =
       this <|> parens create_obj <|> arr_access <|> method_call <|> identifier
     in
+    let n_parse =
+      parens create_obj <|> arr_access <|> method_call <|> identifier
+    in
     ( f_parse >>= fun head ->
-      many1 (token "." >> f_parse) => fun tl ->
+      many1 (token "." >> n_parse) => fun tl ->
       List.fold_left fold_arr_field head tl )
       input
 

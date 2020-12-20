@@ -160,12 +160,11 @@ let%test _ =
            CallMethod (Identifier "scream", []) ))
 
 let%test _ =
-  apply expression "--(obj.f + (x + y)++)"
+  apply expression "obj.f++ + --x"
   = Some
-      (PrefDec
-         (Add
-            ( FieldAccess (Identifier "obj", Identifier "f"),
-              PostInc (Add (Identifier "x", Identifier "y")) )))
+      (Add
+         ( PostInc (FieldAccess (Identifier "obj", Identifier "f")),
+           PrefDec (Identifier "x") ))
 
 (* -------------------  STATEMENTS ---------------------*)
 
