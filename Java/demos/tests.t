@@ -400,12 +400,9 @@
   $ (cd ../../../../default && demos/demoClassLoader.exe)
   -------------------TESTING_INHERITANCE-------------------
   
-  [[Child -> { this_key : Child; field_table : [[cash -> { f_type = Int; key = "cash"; is_mutable = false; f_value = None;
-    sub_tree = None }
-  weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
-    sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
-    sub_tree = None }
+  [[Child -> { this_key : Child; field_table : [[cash -> { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
+  weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
   ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getWeight@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
@@ -490,10 +487,8 @@
                 Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
     }
   ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person}
-  Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
-    sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
-    sub_tree = None }
+  Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
   ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getWeight@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
@@ -596,12 +591,9 @@
   -------------------FINAL_MODIFIERS_ERRORS-------------------
   
   Final class cannot be inherited
-  [[Child -> { this_key : Child; field_table : [[cash -> { f_type = Int; key = "cash"; is_mutable = false; f_value = None;
-    sub_tree = None }
-  weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
-    sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
-    sub_tree = None }
+  [[Child -> { this_key : Child; field_table : [[cash -> { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
+  weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
   ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getWeight@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
@@ -641,10 +633,8 @@
                 Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
     }
   ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person}
-  Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; f_value = None;
-    sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; f_value = None;
-    sub_tree = None }
+  Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
   ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getWeight@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
