@@ -355,7 +355,7 @@ module Stmt = struct
     ( token "for" >> token "("
     >> choice
          [
-           (statement >>= fun stat -> return (Some stat));
+           (var_declaration >>= fun stat -> return (Some stat));
            token ";" >> return None;
          ]
     >>= fun dec ->

@@ -500,15 +500,25 @@ module Main (M : MONADERROR) = struct
     v_key : key_t;
     is_mutable : bool;
     v_value : value;
+    scope_level : int;
   }
 
   type context = {
     cur_object : obj_ref;
     prev_object : obj_ref option;
-    var_table : (key_t, variable) Hashtbl.t;
+    var_table : (key_t, variable) Hashtbl_p.t;
     last_expr_result : value option;
     incremented : key_t list;
     decremented : key_t list;
+    was_break : bool;
+    was_continue : bool;
+    was_return : bool;
+    curr_method_type : type_t;
+    (* Посмотрим, мб не надо *)
+    is_main : bool;
+    (* Считаем вложенные циклы *)
+    cycle_cnt : int;
+    scope_level : int;
   }
 
   let make_context cur_object var_table =
@@ -520,6 +530,13 @@ module Main (M : MONADERROR) = struct
         last_expr_result = None;
         incremented = [];
         decremented = [];
+        was_break = false;
+        was_continue = false;
+        was_return = false;
+        curr_method_type = Void;
+        is_main = true;
+        cycle_cnt = 0;
+        scope_level = 0;
       }
 
   let find_class_with_main ht =
@@ -722,7 +739,7 @@ module Main (M : MONADERROR) = struct
                 | None -> error "No such constructor with this types!"
                 | _ -> return (ClassName class_name) ) ) )
     | Identifier key -> (
-        let var_o = get_elem_if_present ctx.var_table key in
+        let var_o = Hashtbl_p.get_elem_if_present ctx.var_table key in
         match var_o with
         | None -> error "No such variable!"
         | Some v -> return v.v_type )
@@ -816,8 +833,144 @@ module Main (M : MONADERROR) = struct
     in
     helper [] size
 
+  let inc_scope_level ctx = { ctx with scope_level = ctx.scope_level + 1 }
+
+  let dec_scope_level ctx = { ctx with scope_level = ctx.scope_level - 1 }
+
   (* Not implemented *)
-  let rec eval_stmt : stmt -> context -> context M.t = fun s c -> return c
+  let rec eval_stmt : stmt -> context -> context M.t =
+   fun stmt sctx ->
+    match stmt with
+    | StmtBlock st_list ->
+        let rec helper_eval : stmt list -> context -> context M.t =
+         fun stl hctx ->
+          match stl with
+          | [] -> return hctx
+          | st :: sts -> (
+              match st with
+              | (Break | Continue | Return _) when sts <> [] ->
+                  error "There are unreachable statements"
+              | _ when hctx.was_continue || hctx.was_return ->
+                  return hctx (*ОБРУБИ СЧЕТСЧИКИ*)
+              | _ ->
+                  eval_stmt st hctx >>= fun head_ctx -> helper_eval sts head_ctx
+              )
+        in
+        let delete_scope_var : context -> context M.t =
+         fun ctx ->
+          let new_table =
+            Base.Hashtbl.filter ctx.var_table ~f:(fun el ->
+                el.scope_level <> ctx.scope_level)
+          in
+          return { ctx with var_table = new_table }
+        in
+        helper_eval st_list sctx >>= fun sbctx -> delete_scope_var sbctx
+    | While (bexpr, lstmt) -> (
+        let rec loop s ctx =
+          if ctx.was_break then
+            match s with
+            | StmtBlock _ ->
+                return
+                  (dec_scope_level
+                     {
+                       ctx with
+                       was_break = false;
+                       cycle_cnt = ctx.cycle_cnt - 1;
+                     })
+            | _ ->
+                return
+                  { ctx with was_break = false; cycle_cnt = ctx.cycle_cnt - 1 }
+          else
+            eval_expr bexpr ctx >>= fun bectx ->
+            match bectx.last_expr_result with
+            | Some (VBool false) -> (
+                match s with
+                | StmtBlock _ ->
+                    return
+                      (dec_scope_level
+                         { bectx with cycle_cnt = ctx.cycle_cnt - 1 })
+                | _ -> return { bectx with cycle_cnt = ctx.cycle_cnt - 1 } )
+            | Some (VBool true) -> eval_stmt s bectx >>= fun lctx -> loop s lctx
+            | _ -> error "Wrong expression type for while stametent"
+        in
+        match lstmt with
+        | StmtBlock _ ->
+            loop lstmt
+              (inc_scope_level { sctx with cycle_cnt = sctx.cycle_cnt + 1 })
+        | _ -> loop lstmt { sctx with cycle_cnt = sctx.cycle_cnt + 1 } )
+    | Break ->
+        if sctx.cycle_cnt <= 0 then error "No loop for break"
+        else return { sctx with was_break = true }
+    | Continue ->
+        if sctx.cycle_cnt <= 0 then error "No loop for continue"
+        else return { sctx with was_continue = true }
+    | If (bexpr, then_stmt, else_stmt_o) -> (
+        eval_expr bexpr sctx >>= fun bectx ->
+        match bectx.last_expr_result with
+        | Some (VBool true) -> (
+            match then_stmt with
+            | StmtBlock _ ->
+                eval_stmt then_stmt (inc_scope_level bectx) >>= fun tctx ->
+                return (dec_scope_level tctx)
+            | _ -> eval_stmt then_stmt bectx )
+        | Some (VBool false) -> (
+            match else_stmt_o with
+            | Some else_stmt -> (
+                match else_stmt with
+                | StmtBlock _ ->
+                    eval_stmt else_stmt (inc_scope_level bectx) >>= fun ectx ->
+                    return (dec_scope_level ectx)
+                | _ -> eval_stmt else_stmt bectx )
+            | None -> return sctx )
+        | _ -> error "Wrong type for condition statement" )
+    | For (dec_stmt_o, bexpr_o, after_expr_list, body_stmt) ->
+        ( match dec_stmt_o with
+        | None -> return (inc_scope_level sctx)
+        | Some dec_stmt -> eval_stmt dec_stmt (inc_scope_level sctx) )
+        >>= fun dec_ctx ->
+        let rec loop bs afs ctx =
+          if ctx.was_break then
+            return
+              {
+                ctx with
+                was_break = false;
+                cycle_cnt = ctx.cycle_cnt - 1;
+                scope_level = ctx.scope_level - 1;
+              }
+          else
+            ( match bexpr_o with
+            | None -> return { ctx with last_expr_result = Some (VBool true) }
+            | Some bexpr -> eval_expr bexpr ctx )
+            >>= fun bectx ->
+            match bectx.last_expr_result with
+            | Some (VBool false) ->
+                return
+                  {
+                    bectx with
+                    cycle_cnt = bectx.cycle_cnt - 1;
+                    scope_level = bectx.scope_level - 1;
+                  }
+            | Some (VBool true) ->
+                let rec eval_inc_expr_list e_list c =
+                  match e_list with
+                  | [] -> return c
+                  | e :: es -> (
+                      match e with
+                      | PostDec _ | PostInc _ | PrefDec _ | PrefInc _
+                      | Assign (_, _)
+                      | CallMethod (_, _)
+                      | FieldAccess (_, CallMethod (_, _)) ->
+                          eval_expr e c >>= fun ehctx ->
+                          eval_inc_expr_list es ehctx
+                      | _ -> error "Wrong expression for after body list" )
+                in
+                eval_stmt bs bectx >>= fun bdctx ->
+                eval_inc_expr_list afs bdctx >>= fun after_ctx ->
+                loop bs afs after_ctx
+            | _ -> error "Wrong condition type in for statement"
+        in
+        loop body_stmt after_expr_list dec_ctx
+    | _ -> return sctx
 
   (*Not implemented *)
   and eval_expr : expr -> context -> context M.t =
@@ -857,7 +1010,9 @@ module Main (M : MONADERROR) = struct
       | NotEqual (left, right) -> eval_op left right ( !=! )
       | Const v -> return { ctx with last_expr_result = Some v }
       | Identifier id ->
-          let var_by_id = Option.get (get_elem_if_present ctx.var_table id) in
+          let var_by_id =
+            Option.get (Hashtbl_p.get_elem_if_present ctx.var_table id)
+          in
           return { ctx with last_expr_result = Some var_by_id.v_value }
       | Null -> return { ctx with last_expr_result = Some (VObjectRef RNull) }
       (*Должен быть после CallMethod (This, ...)!!!!*)
