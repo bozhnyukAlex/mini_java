@@ -313,7 +313,6 @@ module Stmt = struct
         if_stat;
         while_stat;
         for_stat;
-        throw_stat;
         expr_stat;
         stat_block;
       ]
@@ -369,9 +368,6 @@ module Stmt = struct
       token ")" >> statement >>= fun body ->
       return (For (dec, cond, after, body)) )
       input
-
-  and throw_stat =
-    token "throw" >> expression >>= fun expr -> token ";" >> return (Throw expr)
 end
 
 let method_declaration =

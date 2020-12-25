@@ -298,14 +298,6 @@ let%test _ =
                         (Identifier "println", [ Const (VString "test") ]) ));
              ] ))
 
-let%test _ =
-  apply statement "if (somethingWrong()) throw new Exception();"
-  = Some
-      (If
-         ( CallMethod (Identifier "somethingWrong", []),
-           Throw (ClassCreate (Name "Exception", [])),
-           None ))
-
 let%test _ = apply statement "for(public int i = 0;;) {i++;}" = None
 
 let%test _ =

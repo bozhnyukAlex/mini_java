@@ -176,7 +176,6 @@ and stmt =
   | StmtBlock of stmt list
   | VarDec of type_t * (name * expr option) list
   | Expression of expr
-  | Throw of expr
 [@@deriving show { with_path = false }]
 
 and field =

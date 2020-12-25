@@ -837,7 +837,6 @@ module Main (M : MONADERROR) = struct
 
   let dec_scope_level ctx = { ctx with scope_level = ctx.scope_level - 1 }
 
-  (* Not implemented *)
   let rec eval_stmt : stmt -> context -> context M.t =
    fun stmt sctx ->
     match stmt with
@@ -850,7 +849,10 @@ module Main (M : MONADERROR) = struct
               match st with
               | (Break | Continue | Return _) when sts <> [] ->
                   error "There are unreachable statements"
-              | _ when hctx.was_continue || hctx.was_return ->
+              | _ when hctx.cycle_cnt >= 1 && hctx.was_break -> return hctx
+              | _ when hctx.cycle_cnt >= 1 && hctx.was_continue ->
+                  return hctx (* ПОДУМАЙ *)
+              | _ when hctx.was_return ->
                   return hctx (*ОБРУБИ СЧЕТСЧИКИ*)
               | _ ->
                   eval_stmt st hctx >>= fun head_ctx -> helper_eval sts head_ctx
@@ -890,7 +892,12 @@ module Main (M : MONADERROR) = struct
                       (dec_scope_level
                          { bectx with cycle_cnt = ctx.cycle_cnt - 1 })
                 | _ -> return { bectx with cycle_cnt = ctx.cycle_cnt - 1 } )
-            | Some (VBool true) -> eval_stmt s bectx >>= fun lctx -> loop s lctx
+            | Some (VBool true) ->
+                eval_stmt s bectx >>= fun lctx ->
+                if lctx.was_return then return lctx
+                else if lctx.was_continue then
+                  loop s { lctx with was_continue = false }
+                else loop s lctx
             | _ -> error "Wrong expression type for while stametent"
         in
         match lstmt with
@@ -965,12 +972,74 @@ module Main (M : MONADERROR) = struct
                       | _ -> error "Wrong expression for after body list" )
                 in
                 eval_stmt bs bectx >>= fun bdctx ->
-                eval_inc_expr_list afs bdctx >>= fun after_ctx ->
-                loop bs afs after_ctx
+                if bdctx.was_return then return bdctx
+                else if bdctx.was_continue then
+                  loop bs afs { bdctx with was_continue = false }
+                else
+                  eval_inc_expr_list afs bdctx >>= fun after_ctx ->
+                  loop bs afs after_ctx
             | _ -> error "Wrong condition type in for statement"
         in
         loop body_stmt after_expr_list dec_ctx
-    | _ -> return sctx
+    | Return rexpr_o -> (
+        match rexpr_o with
+        | None when sctx.curr_method_type = Void ->
+            return { sctx with last_expr_result = Some VVoid }
+        | None -> error "Return value type mismatch!"
+        | Some rexpr ->
+            expr_type_check rexpr sctx >>= fun rexpr_type ->
+            if rexpr_type <> sctx.curr_method_type then
+              error "Return value type mismatch!"
+            else
+              eval_expr rexpr sctx >>= fun rectx ->
+              return { rectx with was_return = true } )
+    | Expression sexpr -> (
+        match sexpr with
+        | PostDec _ | PostInc _ | PrefDec _ | PrefInc _
+        | CallMethod (_, _)
+        | FieldAccess (_, CallMethod (_, _))
+        | Assign (_, _) ->
+            eval_expr sexpr sctx >>= fun ectx -> return ectx
+        | _ -> error "Wrong expression for statement" )
+    | VarDec (vars_type, var_list) ->
+        let rec helper_vardec v_list vctx =
+          match v_list with
+          | [] -> return vctx
+          | (Name name, var_expr_o) :: vs ->
+              ( if Base.Hashtbl.mem vctx.var_table name then
+                error "Variable with this name is already defined"
+              else
+                match var_expr_o with
+                | None ->
+                    Base.Hashtbl.add_exn vctx.var_table ~key:name
+                      ~data:
+                        {
+                          v_type = vars_type;
+                          v_key = name;
+                          is_mutable = false;
+                          v_value = get_init_value_of_type vars_type;
+                          scope_level = vctx.scope_level;
+                        };
+                    return vctx
+                | Some var_expr ->
+                    expr_type_check var_expr vctx >>= fun var_expr_type ->
+                    if var_expr_type <> vars_type then
+                      error "Wrong value type for variable declared!"
+                    else
+                      eval_expr var_expr vctx >>= fun vare_ctx ->
+                      Base.Hashtbl.add_exn vare_ctx.var_table ~key:name
+                        ~data:
+                          {
+                            v_type = var_expr_type;
+                            v_key = name;
+                            is_mutable = false;
+                            v_value = Option.get vare_ctx.last_expr_result;
+                            scope_level = vare_ctx.scope_level;
+                          };
+                      return vare_ctx )
+              >>= fun head_ctx -> helper_vardec vs head_ctx
+        in
+        helper_vardec var_list sctx
 
   (*Not implemented *)
   and eval_expr : expr -> context -> context M.t =
@@ -993,7 +1062,6 @@ module Main (M : MONADERROR) = struct
         try return { vctx with last_expr_result = Some new_v }
         with Invalid_argument m -> error m
       in
-
       match expr with
       | Add (left, right) -> eval_op left right ( ++ )
       | Sub (left, right) -> eval_op left right ( -- )
@@ -1071,7 +1139,6 @@ module Main (M : MONADERROR) = struct
           return { ctx with last_expr_result = Some (VArray new_v_list) }
       | _ -> return ctx
     in
-
     return ctx
 
   (* let execute : (key_t, class_r) Hashtbl.t -> context M.t =
