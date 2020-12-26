@@ -5,7 +5,7 @@
      Method
      (Void, Name ("main"), [],
       Some (StmtBlock ([VarDec
-                        (ClassName ("Person"),
+                        (None, ClassName ("Person"),
                          [(Name ("p"),
                            Some (ClassCreate
                                  (Name ("Person"),
@@ -21,7 +21,7 @@
                                         CallMethod
                                         (Identifier ("getWeight"), []))])));
                         VarDec
-                        (ClassName ("Child"),
+                        (None, ClassName ("Child"),
                          [(Name ("ch"),
                            Some (ClassCreate
                                  (Name ("Child"),
@@ -99,7 +99,8 @@
      (Void, Name ("giveEvenNumbers100"), [],
       Some (StmtBlock ([For
                         (Some (VarDec
-                               (Int, [(Name ("i"), Some (Const (VInt (0))))])),
+                               (None, Int,
+                                [(Name ("i"), Some (Const (VInt (0))))])),
                          Some (Less (Identifier ("i"), Const (VInt (100)))),
                          [PostInc (Identifier ("i"))],
                          StmtBlock ([If
@@ -128,7 +129,7 @@
      Method
      (Void, Name ("main"), [],
       Some (StmtBlock ([VarDec
-                        (Array (ClassName ("Figure")),
+                        (None, Array (ClassName ("Figure")),
                          [(Name ("list"),
                            Some (ArrayCreateElements
                                  (ClassName ("Figure"),
@@ -139,16 +140,17 @@
                                     [Const (VInt (2)); Const (VInt (4))]);
                                    ClassCreate (Name ("Triangle"), [])])))]);
                         VarDec
-                        (ClassName ("AreaVisitor"),
+                        (None, ClassName ("AreaVisitor"),
                          [(Name ("areaVisitor"),
                            Some (ClassCreate (Name ("AreaVisitor"), [])))]);
                         VarDec
-                        (ClassName ("PerimeterVisitor"),
+                        (None, ClassName ("PerimeterVisitor"),
                          [(Name ("perimeterVisitor"),
                            Some (ClassCreate (Name ("PerimeterVisitor"), [])))]);
                         For
                         (Some (VarDec
-                               (Int, [(Name ("i"), Some (Const (VInt (0))))])),
+                               (None, Int,
+                                [(Name ("i"), Some (Const (VInt (0))))])),
                          Some (Less
                                (Identifier ("i"),
                                 FieldAccess
@@ -169,7 +171,8 @@
                                                       [Identifier ("areaVisitor")]))])))]));
                         For
                         (Some (VarDec
-                               (Int, [(Name ("j"), Some (Const (VInt (0))))])),
+                               (None, Int,
+                                [(Name ("j"), Some (Const (VInt (0))))])),
                          Some (Less
                                (Identifier ("j"),
                                 FieldAccess
@@ -232,7 +235,7 @@
      Method
      (Int, Name ("visit"), [(ClassName ("Triangle"), Name ("triangle"))],
       Some (StmtBlock ([VarDec
-                        (Int,
+                        (None, Int,
                          [(Name ("p"),
                            Some (Div
                                  (Add
@@ -453,7 +456,8 @@
     body =
     Some (StmtBlock ([For
                       (Some (VarDec
-                             (Int, [(Name ("i"), Some (Const (VInt (0))))])),
+                             (None, Int,
+                              [(Name ("i"), Some (Const (VInt (0))))])),
                        Some (Less (Identifier ("i"), Const (VInt (100)))),
                        [PostInc (Identifier ("i"))],
                        StmtBlock ([If
@@ -562,7 +566,7 @@
     has_override_annotation = false; args = []; key = "main@@";
     body =
     Some (StmtBlock ([VarDec
-                      (ClassName ("Person"),
+                      (None, ClassName ("Person"),
                        [(Name ("p"),
                          Some (ClassCreate
                                (Name ("Person"),
@@ -692,7 +696,7 @@
     has_override_annotation = false; args = []; key = "main@@";
     body =
     Some (StmtBlock ([VarDec
-                      (ClassName ("Person"),
+                      (None, ClassName ("Person"),
                        [(Name ("p"),
                          Some (ClassCreate
                                (Name ("Person"),
