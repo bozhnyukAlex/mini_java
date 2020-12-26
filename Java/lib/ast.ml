@@ -174,7 +174,7 @@ and stmt =
   | Continue
   | Return of expr option (* result *)
   | StmtBlock of stmt list
-  | VarDec of type_t * (name * expr option) list
+  | VarDec of modifier option * type_t * (name * expr option) list
   | Expression of expr
 [@@deriving show { with_path = false }]
 

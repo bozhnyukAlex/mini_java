@@ -169,10 +169,11 @@ let%test _ =
 (* -------------------  STATEMENTS ---------------------*)
 
 let%test _ =
-  apply statement "int a = 0, b, c, d = 5;"
+  apply statement "final int a = 0, b, c, d = 5;"
   = Some
       (VarDec
-         ( Int,
+         ( Some Final,
+           Int,
            [
              (Name "a", Some (Const (VInt 0)));
              (Name "b", None);
@@ -184,14 +185,16 @@ let%test _ =
   apply statement "int[] a = new int[6];"
   = Some
       (VarDec
-         ( Array Int,
+         ( None,
+           Array Int,
            [ (Name "a", Some (ArrayCreateSized (Int, Const (VInt 6)))) ] ))
 
 let%test _ =
   apply statement "int a = 0, b = 1, c = 2;"
   = Some
       (VarDec
-         ( Int,
+         ( None,
+           Int,
            [
              (Name "a", Some (Const (VInt 0)));
              (Name "b", Some (Const (VInt 1)));
@@ -282,7 +285,8 @@ let%test _ =
       (For
          ( Some
              (VarDec
-                ( Int,
+                ( None,
+                  Int,
                   [
                     (Name "i", Some (Const (VInt 0)));
                     (Name "j", Some (Sub (Identifier "n", Const (VInt 1))));
@@ -306,7 +310,8 @@ let%test _ =
      Triangle()};"
   = Some
       (VarDec
-         ( Array (ClassName "Figure"),
+         ( None,
+           Array (ClassName "Figure"),
            [
              ( Name "list",
                Some
@@ -339,9 +344,11 @@ let%test _ =
             Some
               (StmtBlock
                  [
-                   VarDec (Int, [ (Name "sum", Some (Const (VInt 0))) ]);
+                   VarDec (None, Int, [ (Name "sum", Some (Const (VInt 0))) ]);
                    For
-                     ( Some (VarDec (Int, [ (Name "i", Some (Const (VInt 0))) ])),
+                     ( Some
+                         (VarDec
+                            (None, Int, [ (Name "i", Some (Const (VInt 0))) ])),
                        Some
                          (Less
                             ( Identifier "i",

@@ -985,11 +985,11 @@ module Main (M : MONADERROR) = struct
         match rexpr_o with
         | None when sctx.curr_method_type = Void ->
             return { sctx with last_expr_result = Some VVoid }
-        | None -> error "Return value type mismatch!"
+        | None -> error "Return value type mismatch"
         | Some rexpr ->
             expr_type_check rexpr sctx >>= fun rexpr_type ->
             if rexpr_type <> sctx.curr_method_type then
-              error "Return value type mismatch!"
+              error "Return value type mismatch"
             else
               eval_expr rexpr sctx >>= fun rectx ->
               return { rectx with was_return = true } )
@@ -1001,7 +1001,11 @@ module Main (M : MONADERROR) = struct
         | Assign (_, _) ->
             eval_expr sexpr sctx >>= fun ectx -> return ectx
         | _ -> error "Wrong expression for statement" )
-    | VarDec (vars_type, var_list) ->
+    | VarDec (final_mod_o, vars_type, var_list) ->
+        let is_final : modifier option -> bool = function
+          | Some Final -> true
+          | _ -> false
+        in
         let rec helper_vardec v_list vctx =
           match v_list with
           | [] -> return vctx
@@ -1016,7 +1020,7 @@ module Main (M : MONADERROR) = struct
                         {
                           v_type = vars_type;
                           v_key = name;
-                          is_mutable = false;
+                          is_mutable = is_final final_mod_o;
                           v_value = get_init_value_of_type vars_type;
                           scope_level = vctx.scope_level;
                         };
@@ -1032,7 +1036,7 @@ module Main (M : MONADERROR) = struct
                           {
                             v_type = var_expr_type;
                             v_key = name;
-                            is_mutable = false;
+                            is_mutable = is_final final_mod_o;
                             v_value = Option.get vare_ctx.last_expr_result;
                             scope_level = vare_ctx.scope_level;
                           };

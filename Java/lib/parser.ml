@@ -49,6 +49,8 @@ let modifier input =
     ]
     input
 
+let final = token "final" >> return Final
+
 let ident =
   spaces >> letter <~> many alpha_num => implode >>= function
   | s when List.mem s reserved -> mzero
@@ -346,10 +348,20 @@ module Stmt = struct
       >>= (fun value -> return (v_name, Some value))
       <|> return (v_name, None)
     in
-    type_spec_array >>= fun type_specifier ->
-    sep_by1 var_declarator (token ",") >>= fun dec_pairs ->
-    token ";" >> return (VarDec (type_specifier, dec_pairs))
+    choice
+      [
+        ( final >>= fun f ->
+          type_spec_array >>= fun type_specifier ->
+          sep_by1 var_declarator (token ",") >>= fun dec_pairs ->
+          token ";" >> return (VarDec (Some f, type_specifier, dec_pairs)) );
+        ( type_spec_array >>= fun type_specifier ->
+          sep_by1 var_declarator (token ",") >>= fun dec_pairs ->
+          token ";" >> return (VarDec (None, type_specifier, dec_pairs)) );
+      ]
 
+  (* type_spec_array >>= fun type_specifier ->
+     sep_by1 var_declarator (token ",") >>= fun dec_pairs ->
+     token ";" >> return (VarDec (type_specifier, dec_pairs)) *)
   and for_stat input =
     ( token "for" >> token "("
     >> choice
