@@ -502,6 +502,7 @@ module Main (M : MONADERROR) = struct
     v_value : value;
     scope_level : int;
   }
+  [@@deriving show { with_path = false }]
 
   type context = {
     cur_object : obj_ref;
@@ -520,6 +521,7 @@ module Main (M : MONADERROR) = struct
     cycle_cnt : int;
     scope_level : int;
   }
+  [@@deriving show { with_path = false }]
 
   let make_context cur_object var_table =
     return
@@ -789,34 +791,6 @@ module Main (M : MONADERROR) = struct
     in
     helper_type elist "" |> fun res_str -> get res_str
 
-  (*
-     let mutate_field_value : field_ref -> value -> field_ref =
-      fun old_f value -> { old_f with f_value = value }
-
-     let mutate_field_ref_in_list :
-         field_ref list -> key_t -> value -> field_ref list =
-      fun fr_list old_key new_value ->
-       let rec helper_mutate : field_ref list -> field_ref list -> field_ref list =
-        fun list acc ->
-         match list with
-         | [] -> acc
-         | fr :: _ when fr.key = old_key ->
-             helper_mutate list (mutate_field_value fr new_value :: acc)
-         | fr :: _ -> helper_mutate list (fr :: acc)
-       in
-       helper_mutate fr_list []
-
-     let mutate_object_field : obj_ref -> key_t -> value -> obj_ref =
-      fun obj_ref key value ->
-       match obj_ref with
-       | RNull -> RNull
-       | RObj { class_key = k; field_ref_list = frlist } ->
-           RObj
-             {
-               class_key = k;
-               field_ref_list = mutate_field_ref_in_list frlist key value;
-             } *)
-
   let get_int_value = function VInt x -> x | _ -> 0
 
   let get_string_value = function VString s -> s | _ -> ""
@@ -860,11 +834,13 @@ module Main (M : MONADERROR) = struct
         in
         let delete_scope_var : context -> context M.t =
          fun ctx ->
-          let new_table =
-            Base.Hashtbl.filter ctx.var_table ~f:(fun el ->
-                el.scope_level <> ctx.scope_level)
+          let delete : key_t -> variable -> unit =
+           fun key el ->
+            if el.scope_level <> ctx.scope_level then
+              Hashtbl.remove ctx.var_table key
           in
-          return { ctx with var_table = new_table }
+          Hashtbl.iter delete ctx.var_table;
+          return ctx
         in
         helper_eval st_list sctx >>= fun sbctx -> delete_scope_var sbctx
     | While (bexpr, lstmt) -> (
@@ -1010,20 +986,19 @@ module Main (M : MONADERROR) = struct
           match v_list with
           | [] -> return vctx
           | (Name name, var_expr_o) :: vs ->
-              ( if Base.Hashtbl.mem vctx.var_table name then
+              ( if Hashtbl.mem vctx.var_table name then
                 error "Variable with this name is already defined"
               else
                 match var_expr_o with
                 | None ->
-                    Base.Hashtbl.add_exn vctx.var_table ~key:name
-                      ~data:
-                        {
-                          v_type = vars_type;
-                          v_key = name;
-                          is_mutable = is_final final_mod_o;
-                          v_value = get_init_value_of_type vars_type;
-                          scope_level = vctx.scope_level;
-                        };
+                    Hashtbl.add vctx.var_table name
+                      {
+                        v_type = vars_type;
+                        v_key = name;
+                        is_mutable = is_final final_mod_o;
+                        v_value = get_init_value_of_type vars_type;
+                        scope_level = vctx.scope_level;
+                      };
                     return vctx
                 | Some var_expr ->
                     expr_type_check var_expr vctx >>= fun var_expr_type ->
@@ -1031,15 +1006,14 @@ module Main (M : MONADERROR) = struct
                       error "Wrong value type for variable declared!"
                     else
                       eval_expr var_expr vctx >>= fun vare_ctx ->
-                      Base.Hashtbl.add_exn vare_ctx.var_table ~key:name
-                        ~data:
-                          {
-                            v_type = var_expr_type;
-                            v_key = name;
-                            is_mutable = is_final final_mod_o;
-                            v_value = Option.get vare_ctx.last_expr_result;
-                            scope_level = vare_ctx.scope_level;
-                          };
+                      Hashtbl.add vare_ctx.var_table name
+                        {
+                          v_type = var_expr_type;
+                          v_key = name;
+                          is_mutable = is_final final_mod_o;
+                          v_value = Option.get vare_ctx.last_expr_result;
+                          scope_level = vare_ctx.scope_level;
+                        };
                       return vare_ctx )
               >>= fun head_ctx -> helper_vardec vs head_ctx
         in
@@ -1096,7 +1070,7 @@ module Main (M : MONADERROR) = struct
           let obj = Option.get octx.last_expr_result in
           match obj with
           | VObjectRef (RObj { class_key = k; field_ref_table = frt }) ->
-              let fld = Option.get (Base.Hashtbl.find frt f_key) in
+              let fld = Option.get (Hashtbl.find_opt frt f_key) in
               return { octx with last_expr_result = Some fld.f_value }
           | _ -> error "Must be object!" )
       | ArrayAccess (arr_expr, index_expr) -> (
@@ -1145,14 +1119,14 @@ module Main (M : MONADERROR) = struct
     in
     return ctx
 
-  (* let execute : (key_t, class_r) Hashtbl.t -> context M.t =
-     fun ht ->
-      find_class_with_main ht >>= fun cl ->
-      make_context
-        (RObj { class_key = cl.this_key; field_ref_list = [] })
-        (Hashtbl.create 10)
-      >>= fun ctx ->
-      let main = Hashtbl.find cl.method_table "main@@" in
-      let body_main = Option.get main.body in
-      eval_stmt body_main ctx *)
+  let execute : (key_t, class_r) Hashtbl.t -> context M.t =
+   fun ht ->
+    find_class_with_main ht >>= fun cl ->
+    make_context
+      (RObj { class_key = cl.this_key; field_ref_table = Hashtbl.create 10 })
+      (Hashtbl.create 10)
+    >>= fun ctx ->
+    let main = Hashtbl.find cl.method_table "main@@" in
+    let body_main = Option.get main.body in
+    eval_stmt body_main ctx
 end

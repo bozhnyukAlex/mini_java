@@ -1,10 +1,13 @@
 (* Апдейтнутая хеш-таблица для работы с deriving*)
-open Base.Hashtbl
 
-type ('a, 'b) t = ('a, 'b) Base.Hashtbl.t
+type ('a, 'b) t = ('a, 'b) Hashtbl.t
+
+let create = Hashtbl.create
 
 let pp pp_key pp_value ppf values =
-  iteri values ~f:(fun ~key ~data ->
+  Hashtbl.iter
+    (fun key data ->
       Format.fprintf ppf "@[<1>%a@ ->@ %a@]@\n@." pp_key key pp_value data)
+    values
 
-let get_elem_if_present key = Base.Hashtbl.find key
+let get_elem_if_present key = Hashtbl.find_opt key
