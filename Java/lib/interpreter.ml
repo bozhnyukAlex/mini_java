@@ -634,7 +634,6 @@ module Main (M : MONADERROR) = struct
             match rt with
             | ClassName rs when ls = rs -> return Bool
             | ClassName "null" -> return Bool
-            | ClassName "this" -> return Bool
             | _ -> error "Wrong class type!" )
         | _ -> error "Wrong type in equal-expression!" )
     | Null -> return (ClassName "null")
@@ -664,7 +663,8 @@ module Main (M : MONADERROR) = struct
         let curr_class =
           Option.get (get_elem_if_present class_table curr_obj_key)
         in
-        let m_key = m_ident ^ make_type_string args ctx ^ "@@" in
+        make_type_string args ctx >>= fun args_string ->
+        let m_key = m_ident ^ args_string ^ "@@" in
         match get_elem_if_present curr_class.method_table m_key with
         | None -> error "No such method in class!"
         | Some mr -> return mr.m_type )
@@ -688,7 +688,8 @@ module Main (M : MONADERROR) = struct
         match obj_c with
         | ClassName "null" -> error "NullPointerException"
         | ClassName obj_key -> (
-            let m_key = m_ident ^ make_type_string args ctx ^ "@@" in
+            make_type_string args ctx >>= fun args_string ->
+            let m_key = m_ident ^ args_string ^ "@@" in
             let obj_class =
               Option.get (get_elem_if_present class_table obj_key)
             in
@@ -732,7 +733,7 @@ module Main (M : MONADERROR) = struct
             match args with
             | [] -> return (ClassName class_name)
             | _ -> (
-                let args_string = make_type_string args ctx in
+                make_type_string args ctx >>= fun args_string ->
                 let constr_key = class_name ^ args_string ^ "$$" in
                 let consrt_o =
                   get_elem_if_present cl_elem.constructor_table constr_key
@@ -741,9 +742,19 @@ module Main (M : MONADERROR) = struct
                 | None -> error "No such constructor with this types!"
                 | _ -> return (ClassName class_name) ) ) )
     | Identifier key -> (
-        let var_o = Hashtbl_p.get_elem_if_present ctx.var_table key in
+        (* Смотрим среди локальных переменных контекста *)
+        let var_o = get_elem_if_present ctx.var_table key in
         match var_o with
-        | None -> error "No such variable!"
+        (* Нет, а вдруг есть среди полей объекта текущего класса? *)
+        | None -> (
+            match ctx.cur_object with
+            | RObj { class_key = _; field_ref_table = ft } -> (
+                (* Смотрим в таблице полей конкретного объекта *)
+                match get_elem_if_present ft key with
+                | None -> error "No such variable or field with this name!"
+                | Some fr -> return fr.f_type )
+            | _ -> error "Current object must not be null!" )
+        (* Нашли в таблице локальных переменных - возвращаем его тип *)
         | Some v -> return v.v_type )
     | Const value -> (
         match value with
@@ -761,15 +772,17 @@ module Main (M : MONADERROR) = struct
         | ClassName cleft_key -> (
             expr_type_check right ctx >>= fun rt ->
             match rt with
+            (* Null можно присвоить объекту любого класса *)
+            | ClassName "null" -> return (ClassName cleft_key)
             | ClassName cright_key ->
-                (* Среди родителей правого надо найти левый*)
+                (* Среди родителей правого надо найти левый *)
                 check_classname_assign cleft_key cright_key
             | _ -> error "Wrong assign types!" )
         | Array (ClassName cleft_key) -> (
             expr_type_check right ctx >>= fun rt ->
             match rt with
             | Array (ClassName cright_key) ->
-                (* Массивы ковариантны, значит с ними надо проверять деревбя родителей также, как и в предыдущем случае *)
+                (* Массивы ковариантны, значит с ними надо проверять деревья родителей также, как и в предыдущем случае *)
                 check_classname_assign cleft_key cright_key
             | _ -> error "Wrong assign types" )
         | _ ->
@@ -791,7 +804,7 @@ module Main (M : MONADERROR) = struct
     (* Иерархию перебираем у правого *)
     check_parent_tree cright_key
 
-  and make_type_string : expr list -> context -> key_t =
+  and make_type_string : expr list -> context -> key_t M.t =
    fun elist ctx ->
     let rec helper_type lst acc =
       match lst with
@@ -800,7 +813,9 @@ module Main (M : MONADERROR) = struct
           expr_type_check e ctx >>= fun cur_t ->
           helper_type es (acc ^ show_type_t cur_t)
     in
-    helper_type elist "" |> fun res_str -> get res_str
+    helper_type elist ""
+
+  (* |> fun res_str -> get res_str  *)
 
   let get_int_value = function VInt x -> x | _ -> 0
 
@@ -835,10 +850,10 @@ module Main (M : MONADERROR) = struct
               | (Break | Continue | Return _) when sts <> [] ->
                   error "There are unreachable statements"
               | _ when hctx.cycle_cnt >= 1 && hctx.was_break -> return hctx
-              | _ when hctx.cycle_cnt >= 1 && hctx.was_continue ->
-                  return hctx (* ПОДУМАЙ *)
+              | _ when hctx.cycle_cnt >= 1 && hctx.was_continue -> return hctx
               | _ when hctx.was_return ->
-                  return hctx (*ОБРУБИ СЧЕТСЧИКИ*)
+                  return hctx
+                  (*Счетчик return обновляется после выхода из метода*)
               | _ ->
                   eval_stmt st hctx >>= fun head_ctx -> helper_eval sts head_ctx
               )
@@ -856,8 +871,10 @@ module Main (M : MONADERROR) = struct
         helper_eval st_list sctx >>= fun sbctx -> delete_scope_var sbctx
     | While (bexpr, lstmt) -> (
         let rec loop s ctx =
+          (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
             match s with
+            (* Если был блок - то еще надо уровень видимости понизить *)
             | StmtBlock _ ->
                 return
                   (dec_scope_level
@@ -881,7 +898,9 @@ module Main (M : MONADERROR) = struct
                 | _ -> return { bectx with cycle_cnt = ctx.cycle_cnt - 1 } )
             | Some (VBool true) ->
                 eval_stmt s bectx >>= fun lctx ->
+                (* Вылетел return - все прерываем, возвращаем контекст *)
                 if lctx.was_return then return lctx
+                  (*Может вылететь continue - значит циклимся заново*)
                 else if lctx.was_continue then
                   loop s { lctx with was_continue = false }
                 else loop s lctx
@@ -893,9 +912,11 @@ module Main (M : MONADERROR) = struct
               (inc_scope_level { sctx with cycle_cnt = sctx.cycle_cnt + 1 })
         | _ -> loop lstmt { sctx with cycle_cnt = sctx.cycle_cnt + 1 } )
     | Break ->
+        (* Break не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
         if sctx.cycle_cnt <= 0 then error "No loop for break"
         else return { sctx with was_break = true }
     | Continue ->
+        (* Continue не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
         if sctx.cycle_cnt <= 0 then error "No loop for continue"
         else return { sctx with was_continue = true }
     | If (bexpr, then_stmt, else_stmt_o) -> (
@@ -918,11 +939,13 @@ module Main (M : MONADERROR) = struct
             | None -> return sctx )
         | _ -> error "Wrong type for condition statement" )
     | For (dec_stmt_o, bexpr_o, after_expr_list, body_stmt) ->
+        (* С циклом for scope_level всегда увеличивается, не смотря на наличие/отсутствие блока тела *)
         ( match dec_stmt_o with
         | None -> return (inc_scope_level sctx)
         | Some dec_stmt -> eval_stmt dec_stmt (inc_scope_level sctx) )
         >>= fun dec_ctx ->
         let rec loop bs afs ctx =
+          (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
             return
               {
@@ -932,11 +955,13 @@ module Main (M : MONADERROR) = struct
                 scope_level = ctx.scope_level - 1;
               }
           else
+            (*Стандартно: смотрим результат бул-выражения, если true - вычислить тело и инкременты после*)
             ( match bexpr_o with
             | None -> return { ctx with last_expr_result = Some (VBool true) }
             | Some bexpr -> eval_expr bexpr ctx )
             >>= fun bectx ->
             match bectx.last_expr_result with
+            (* Увидели false - значит уже не циклимся, возвращаем контекст с уменьшенным счетчиком вложенных циклов и scope*)
             | Some (VBool false) ->
                 return
                   {
@@ -949,6 +974,7 @@ module Main (M : MONADERROR) = struct
                   match e_list with
                   | [] -> return c
                   | e :: es -> (
+                      (* Только таких типов могут быть выражения в части, выполняющейся после тела *)
                       match e with
                       | PostDec _ | PostInc _ | PrefDec _ | PrefInc _
                       | Assign (_, _)
@@ -959,10 +985,13 @@ module Main (M : MONADERROR) = struct
                       | _ -> error "Wrong expression for after body list" )
                 in
                 eval_stmt bs bectx >>= fun bdctx ->
+                (* Вылетел return - все прерываем, возвращаем контекст *)
                 if bdctx.was_return then return bdctx
+                  (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
                 else if bdctx.was_continue then
                   loop bs afs { bdctx with was_continue = false }
                 else
+                  (* Иначе можем просто вычислить инкременты после и сделать цикл *)
                   eval_inc_expr_list afs bdctx >>= fun after_ctx ->
                   loop bs afs after_ctx
             | _ -> error "Wrong condition type in for statement"
@@ -970,14 +999,19 @@ module Main (M : MONADERROR) = struct
         loop body_stmt after_expr_list dec_ctx
     | Return rexpr_o -> (
         match rexpr_o with
+        (* Если нет никакого выражения - метод, в котором мы исполняемся, должен иметь тип Void *)
         | None when sctx.curr_method_type = Void ->
-            return { sctx with last_expr_result = Some VVoid }
+            (* Если тип Void - выходим со значением VVoid поставленным флагом, что был return *)
+            return
+              { sctx with last_expr_result = Some VVoid; was_return = true }
         | None -> error "Return value type mismatch"
+        (* Если есть выражение - смотрим, чтобы тип совпадал с типом, возвращаемым методом *)
         | Some rexpr ->
             expr_type_check rexpr sctx >>= fun rexpr_type ->
             if rexpr_type <> sctx.curr_method_type then
               error "Return value type mismatch"
             else
+              (* Возвращаем контекст, в котором есть результат выражения, но не забываем поставить флаг, что был return *)
               eval_expr rexpr sctx >>= fun rectx ->
               return { rectx with was_return = true } )
     | Expression sexpr -> (
@@ -997,56 +1031,67 @@ module Main (M : MONADERROR) = struct
           match v_list with
           | [] -> return vctx
           | (Name name, var_expr_o) :: vs -> (
-              if Hashtbl.mem vctx.var_table name then
-                error "Variable with this name is already defined"
-              else
-                match var_expr_o with
-                (* Если ничего нет - инициализируем базвым значением *)
-                | None ->
-                    Hashtbl.add vctx.var_table name
-                      {
-                        v_type = vars_type;
-                        v_key = name;
-                        is_mutable = is_final final_mod_o;
-                        v_value = get_init_value_of_type vars_type;
-                        scope_level = vctx.scope_level;
-                      };
-                    return vctx
-                    (* Если что-то есть - присваиваем значение, вычисленное справа *)
-                | Some var_expr -> (
-                    expr_type_check var_expr vctx >>= fun var_expr_type ->
-                    (* Добавить в таблицу переменных контекста то, что в выражении переменной справа *)
-                    let add_var ve =
-                      eval_expr ve vctx >>= fun vare_ctx ->
-                      Hashtbl.add vare_ctx.var_table name
-                        {
-                          v_type = var_expr_type;
-                          v_key = name;
-                          is_mutable = is_final final_mod_o;
-                          v_value = Option.get vare_ctx.last_expr_result;
-                          scope_level = vare_ctx.scope_level;
-                        };
-                      return vare_ctx
-                    in
-                    match var_expr_type with
-                    (* Если тип справа - класс, то надо аккуратно проверить тип, соблюдая наследование *)
-                    | ClassName cright -> (
-                        match vars_type with
-                        | ClassName cleft ->
-                            check_classname_assign cleft cright
-                            >> add_var var_expr
-                        | _ -> error "Wrong assign type in declaration" )
-                    (* Если тип справа - массив объектов класса, то тоже надо проверять наследование, т.к. есть ковариантность *)
-                    | Array (ClassName cright) -> (
-                        match vars_type with
-                        | Array (ClassName cleft) ->
-                            check_classname_assign cleft cright
-                            >> add_var var_expr
-                        | _ -> error "Wrong assign type in declaration" )
-                    | _ when var_expr_type = vars_type -> add_var var_expr
-                    | _ ->
-                        error "Wrong value type for variable declared!"
-                        >>= fun head_ctx -> helper_vardec vs head_ctx ) )
+              match vctx.cur_object with
+              | RNull -> error "Must be non-null object!"
+              | RObj { class_key = _; field_ref_table = frt } -> (
+                  if
+                    (* Смотрим, чтобы подобного имени не было ни среди локальных переменных, ни среди полей класса *)
+                    Hashtbl.mem vctx.var_table name || Hashtbl.mem frt name
+                  then error "Variable with this name is already defined"
+                  else
+                    match var_expr_o with
+                    (* Если ничего нет - инициализируем базовым значением *)
+                    | None ->
+                        Hashtbl.add vctx.var_table name
+                          {
+                            v_type = vars_type;
+                            v_key = name;
+                            is_mutable = is_final final_mod_o;
+                            v_value = get_init_value_of_type vars_type;
+                            scope_level = vctx.scope_level;
+                          };
+                        return vctx
+                        (* Если что-то есть - присваиваем значение, вычисленное справа *)
+                    | Some var_expr -> (
+                        expr_type_check var_expr vctx >>= fun var_expr_type ->
+                        (* Добавить в таблицу переменных контекста то, что в выражении переменной справа *)
+                        let add_var ve =
+                          eval_expr ve vctx >>= fun vare_ctx ->
+                          Hashtbl.add vare_ctx.var_table name
+                            {
+                              v_type = var_expr_type;
+                              v_key = name;
+                              is_mutable = is_final final_mod_o;
+                              v_value = Option.get vare_ctx.last_expr_result;
+                              scope_level = vare_ctx.scope_level;
+                            };
+                          return vare_ctx
+                        in
+                        match var_expr_type with
+                        (* Null можно присвоить любому объекту *)
+                        | ClassName "null" -> (
+                            match vars_type with
+                            | ClassName _ -> add_var var_expr
+                            | _ -> error "Wrong assign type in declaration" )
+                        (* Если тип справа - класс, то надо аккуратно проверить тип, соблюдая наследование *)
+                        | ClassName cright -> (
+                            match vars_type with
+                            | ClassName cleft ->
+                                check_classname_assign cleft cright
+                                (* Тип проверится нормально - тогда просто добавим *)
+                                >> add_var var_expr
+                            | _ -> error "Wrong assign type in declaration" )
+                        (* Если тип справа - массив объектов класса, то тоже надо проверять наследование, т.к. есть ковариантность *)
+                        | Array (ClassName cright) -> (
+                            match vars_type with
+                            | Array (ClassName cleft) ->
+                                check_classname_assign cleft cright
+                                >> add_var var_expr
+                            | _ -> error "Wrong assign type in declaration" )
+                        | _ when var_expr_type = vars_type -> add_var var_expr
+                        | _ ->
+                            error "Wrong value type for variable declared!"
+                            >>= fun head_ctx -> helper_vardec vs head_ctx ) ) )
         in
         helper_vardec var_list sctx
 
@@ -1100,10 +1145,100 @@ module Main (M : MONADERROR) = struct
           eval_expr obj_expr ctx >>= fun octx ->
           let obj = Option.get octx.last_expr_result in
           match obj with
-          | VObjectRef (RObj { class_key = k; field_ref_table = frt }) ->
+          | VObjectRef (RObj { class_key = _; field_ref_table = frt }) ->
+              (* Смело пользуемся Option.get, потому что перед этим была проверка типов, в ней проверяется наличие этого поля у класса*)
               let fld = Option.get (Hashtbl.find_opt frt f_key) in
               return { octx with last_expr_result = Some fld.f_value }
-          | _ -> error "Must be object!" )
+          | _ -> error "Must be non-null object!" )
+      | FieldAccess (obj_expr, CallMethod (Identifier m_name, args)) -> (
+          eval_expr obj_expr ctx >>= fun octx ->
+          let obj = Option.get octx.last_expr_result in
+          match obj with
+          | VObjectRef obj_ref -> (
+              match obj_ref with
+              | RNull -> error "NullPointerException"
+              | RObj { class_key = cl_k; field_ref_table = _ } -> (
+                  make_type_string args octx >>= fun args_string ->
+                  let method_key = m_name ^ args_string ^ "@@" in
+                  (* Смотрим класс, к которому принадлежит объект, с проверкой на существование *)
+                  match get_elem_if_present class_table cl_k with
+                  | None -> error "No such object in class!"
+                  | Some obj_class -> (
+                      (* Смотрим метод у этого класса, опять с проверкой на существование *)
+                      match
+                        get_elem_if_present obj_class.method_table method_key
+                      with
+                      | None -> error "No such method in class!"
+                      | Some mr ->
+                          (* Смотреть тело на None не нужно, это только если метод абстрактный,
+                             а проверка на то, чтобы нельзя было создать абстрактный класс - в вычислении ClassCreate *)
+                          let m_body = Option.get mr.body in
+                          let m_arg_list = mr.args in
+                          let new_var_table : (key_t, variable) Hashtbl_p.t =
+                            Hashtbl.create 100
+                          in
+                          let prepare_table_with_args :
+                              (key_t, variable) Hashtbl_p.t ->
+                              expr list ->
+                              ((key_t, variable) Hashtbl_p.t * context) M.t =
+                           fun ht args_l ->
+                            let rec helper_add h_ht arg_expr_list arg_mr_list
+                                help_ctx =
+                              match (arg_expr_list, arg_mr_list) with
+                              (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
+                                 Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
+                              | [], [] -> return (h_ht, help_ctx)
+                              | ( arg :: args,
+                                  (head_type, Name head_name) :: pairs ) ->
+                                  eval_expr arg help_ctx >>= fun he_ctx ->
+                                  Hashtbl.add h_ht head_name
+                                    {
+                                      v_type = head_type;
+                                      v_key = head_name;
+                                      is_mutable = true;
+                                      v_value =
+                                        Option.get he_ctx.last_expr_result;
+                                      scope_level = 0;
+                                    };
+                                  helper_add h_ht args pairs he_ctx
+                              | _ -> error "No such method in class!"
+                            in
+                            helper_add ht args_l m_arg_list octx
+                          in
+                          prepare_table_with_args new_var_table args
+                          >>= fun (new_vt, new_ctx) ->
+                          (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
+                          eval_stmt m_body
+                            {
+                              cur_object = obj_ref;
+                              prev_object = Some octx.cur_object;
+                              var_table = new_vt;
+                              last_expr_result = None;
+                              incremented = [];
+                              decremented = [];
+                              was_break = false;
+                              was_continue = false;
+                              was_return = false;
+                              curr_method_type = mr.m_type;
+                              is_main = false;
+                              cycle_cnt = 0;
+                              scope_level = 0;
+                            }
+                          (* От контекста нас интересует только результат работы метода *)
+                          >>=
+                          fun m_res_ctx ->
+                          (* После отработки метода возвращаем контекст с результатом работы метода
+                             Если внутри метода менялись какие-то состояния объектов -
+                             они должны поменяться исходя из мутабельности хеш-таблиц в результате присваиваний *)
+                          return
+                            {
+                              new_ctx with
+                              last_expr_result = m_res_ctx.last_expr_result;
+                            } ) ) )
+          | _ -> error "Must be non-null object!" )
+      (* Это в случае, если вызываем внутри какого-то объекта. This нам вернет этот объект при вычислении *)
+      | CallMethod (Identifier m, args) ->
+          eval_expr (FieldAccess (This, CallMethod (Identifier m, args))) ctx
       | ArrayAccess (arr_expr, index_expr) -> (
           eval_expr arr_expr ctx >>= fun arrctx ->
           eval_expr index_expr ctx >>= fun indctx ->
