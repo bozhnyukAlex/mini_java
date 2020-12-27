@@ -753,7 +753,7 @@ module Main (M : MONADERROR) = struct
         | VObjectRef RNull -> return (ClassName "null")
         | VObjectRef (RObj { class_key = ck; field_ref_table = _ }) ->
             return (ClassName ck)
-        | _ -> error "Wrong value" )
+        | _ -> error "Wrong const value" )
     | Assign (left, right) -> (
         expr_type_check left ctx >>= fun lt ->
         match lt with
@@ -762,23 +762,34 @@ module Main (M : MONADERROR) = struct
             expr_type_check right ctx >>= fun rt ->
             match rt with
             | ClassName cright_key ->
-                let rec check_parent_tree key =
-                  let clr_by_key =
-                    Option.get (get_elem_if_present class_table key)
-                  in
-                  if clr_by_key.this_key = cright_key then
-                    return (ClassName cright_key)
-                  else
-                    match clr_by_key.parent_key with
-                    | None -> error "Wrong assign type!"
-                    | Some par_k -> check_parent_tree par_k
-                in
-                check_parent_tree cleft_key
+                (* Среди родителей правого надо найти левый*)
+                check_classname_assign cleft_key cright_key
             | _ -> error "Wrong assign types!" )
+        | Array (ClassName cleft_key) -> (
+            expr_type_check right ctx >>= fun rt ->
+            match rt with
+            | Array (ClassName cright_key) ->
+                (* Массивы ковариантны, значит с ними надо проверять деревбя родителей также, как и в предыдущем случае *)
+                check_classname_assign cleft_key cright_key
+            | _ -> error "Wrong assign types" )
         | _ ->
             expr_type_check right ctx >>= fun rt ->
             if lt = rt then return rt else error "Wrong assign types!" )
     | _ -> error "Wrong_expression"
+
+  and check_classname_assign cleft_key cright_key =
+    (* Среди родителей правого надо найти левый. key - текущий ключ правого *)
+    let rec check_parent_tree key =
+      let clr_by_key = Option.get (get_elem_if_present class_table key) in
+      (* Смотрим, чтобы было совпадение: смотрим текущий ключ с левым *)
+      if clr_by_key.this_key = cleft_key then return (ClassName cright_key)
+      else
+        match clr_by_key.parent_key with
+        | None -> error "Wrong assign type!"
+        | Some par_k -> check_parent_tree par_k
+    in
+    (* Иерархию перебираем у правого *)
+    check_parent_tree cright_key
 
   and make_type_string : expr list -> context -> key_t =
    fun elist ctx ->
@@ -985,11 +996,12 @@ module Main (M : MONADERROR) = struct
         let rec helper_vardec v_list vctx =
           match v_list with
           | [] -> return vctx
-          | (Name name, var_expr_o) :: vs ->
-              ( if Hashtbl.mem vctx.var_table name then
+          | (Name name, var_expr_o) :: vs -> (
+              if Hashtbl.mem vctx.var_table name then
                 error "Variable with this name is already defined"
               else
                 match var_expr_o with
+                (* Если ничего нет - инициализируем базвым значением *)
                 | None ->
                     Hashtbl.add vctx.var_table name
                       {
@@ -1000,12 +1012,12 @@ module Main (M : MONADERROR) = struct
                         scope_level = vctx.scope_level;
                       };
                     return vctx
-                | Some var_expr ->
+                    (* Если что-то есть - присваиваем значение, вычисленное справа *)
+                | Some var_expr -> (
                     expr_type_check var_expr vctx >>= fun var_expr_type ->
-                    if var_expr_type <> vars_type then
-                      error "Wrong value type for variable declared!"
-                    else
-                      eval_expr var_expr vctx >>= fun vare_ctx ->
+                    (* Добавить в таблицу переменных контекста то, что в выражении переменной справа *)
+                    let add_var ve =
+                      eval_expr ve vctx >>= fun vare_ctx ->
                       Hashtbl.add vare_ctx.var_table name
                         {
                           v_type = var_expr_type;
@@ -1014,8 +1026,27 @@ module Main (M : MONADERROR) = struct
                           v_value = Option.get vare_ctx.last_expr_result;
                           scope_level = vare_ctx.scope_level;
                         };
-                      return vare_ctx )
-              >>= fun head_ctx -> helper_vardec vs head_ctx
+                      return vare_ctx
+                    in
+                    match var_expr_type with
+                    (* Если тип справа - класс, то надо аккуратно проверить тип, соблюдая наследование *)
+                    | ClassName cright -> (
+                        match vars_type with
+                        | ClassName cleft ->
+                            check_classname_assign cleft cright
+                            >> add_var var_expr
+                        | _ -> error "Wrong assign type in declaration" )
+                    (* Если тип справа - массив объектов класса, то тоже надо проверять наследование, т.к. есть ковариантность *)
+                    | Array (ClassName cright) -> (
+                        match vars_type with
+                        | Array (ClassName cleft) ->
+                            check_classname_assign cleft cright
+                            >> add_var var_expr
+                        | _ -> error "Wrong assign type in declaration" )
+                    | _ when var_expr_type = vars_type -> add_var var_expr
+                    | _ ->
+                        error "Wrong value type for variable declared!"
+                        >>= fun head_ctx -> helper_vardec vs head_ctx ) )
         in
         helper_vardec var_list sctx
 
