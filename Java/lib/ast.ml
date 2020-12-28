@@ -197,3 +197,18 @@ and class_dec =
       (*Parent class_name*)
       * (modifier list * field) list
 (* class body *) [@@deriving show { with_path = false }]
+
+let get_field_list = function Class (_, _, _, f_list) -> List.map snd f_list
+
+let convert_elem_pair_list = function
+  | t, p_list -> List.map (fun p -> match p with s, f -> (t, s, f)) p_list
+
+let get_var_field_pairs_list_typed cd =
+  List.concat
+    (List.map convert_elem_pair_list
+       (List.filter_map
+          (fun f ->
+            match f with
+            | VarField (t, pair_list) -> Some (t, pair_list)
+            | _ -> None)
+          (get_field_list cd)))

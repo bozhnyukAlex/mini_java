@@ -67,6 +67,7 @@ type class_r = {
   is_abstract : bool;
   is_inheritable : bool;
   parent_key : key_t option;
+  dec_tree : class_dec;
 }
 
 let class_table : (key_t, class_r) Hashtbl.t = Hashtbl.create 1024
@@ -153,10 +154,22 @@ module ClassLoader (M : MONADERROR) = struct
             is_abstract = false;
             is_inheritable = true;
             parent_key = None;
+            dec_tree =
+              Option.get
+                (apply class_declaration
+                   {|public class Object {
+                        public int equals(Object obj) {
+                            if (this == obj) return 1;
+                            else return 0;
+                        }
+                        
+                        public String toString() {
+                          return "Object";
+                        }
+                    }
+|});
           };
         ht )
-
-  (*Функция для проверки полей, методов и конструкторов на наличие бредовых модификаторов*)
 
   (*Функция для проверки полей, методов и конструкторов на наличие бредовых модификаторов*)
   let check_modifiers_f pair =
@@ -314,6 +327,7 @@ module ClassLoader (M : MONADERROR) = struct
                is_abstract;
                is_inheritable;
                parent_key;
+               dec_tree = class_d;
              }
              "Similar Classes"
 
@@ -531,7 +545,6 @@ module Main (M : MONADERROR) = struct
 
   type context = {
     cur_object : obj_ref;
-    prev_object : obj_ref option;
     var_table : (key_t, variable) Hashtbl_p.t;
     last_expr_result : value option;
     incremented : key_t list;
@@ -552,7 +565,6 @@ module Main (M : MONADERROR) = struct
     return
       {
         cur_object;
-        prev_object = None;
         var_table;
         last_expr_result = None;
         incremented = [];
@@ -1123,8 +1135,8 @@ module Main (M : MONADERROR) = struct
           | (Name name, var_expr_o) :: vs -> (
               match vctx.cur_object with
               | RNull -> error "Must be non-null object!"
-              | RObj { class_key = _; field_ref_table = frt } -> (
-                  if
+              | RObj { class_key = _; field_ref_table = frt } ->
+                  ( if
                     (* Смотрим, чтобы подобного имени не было ни среди локальных переменных, ни среди полей класса *)
                     Hashtbl.mem vctx.var_table name || Hashtbl.mem frt name
                   then error "Variable with this name is already defined"
@@ -1179,9 +1191,9 @@ module Main (M : MONADERROR) = struct
                                 >> add_var var_expr
                             | _ -> error "Wrong assign type in declaration" )
                         | _ when var_expr_type = vars_type -> add_var var_expr
-                        | _ ->
-                            error "Wrong value type for variable declared!"
-                            >>= fun head_ctx -> helper_vardec vs head_ctx ) ) )
+                        | _ -> error "Wrong value type for declared variable!" )
+                  )
+                  >>= fun head_ctx -> helper_vardec vs head_ctx )
         in
         helper_vardec var_list sctx
 
@@ -1257,45 +1269,17 @@ module Main (M : MONADERROR) = struct
                       (* Смотрим метод у этого класса, опять с проверкой на существование *)
                       check_method obj_class m_name args octx >>= fun mr ->
                       (* Смотреть тело на None не нужно, это только если метод абстрактный,
-                         а проверка на то, чтобы нельзя было создать абстрактный класс - в TODO: вычислении ClassCreate *)
+                         а проверка на то, чтобы нельзя было создать абстрактный класс - в вычислении ClassCreate *)
                       let m_body = Option.get mr.body in
-                      let m_arg_list = mr.args in
                       let new_var_table : (key_t, variable) Hashtbl_p.t =
                         Hashtbl.create 100
                       in
-                      let prepare_table_with_args :
-                          (key_t, variable) Hashtbl_p.t ->
-                          expr list ->
-                          ((key_t, variable) Hashtbl_p.t * context) M.t =
-                       fun ht args_l ->
-                        let rec helper_add h_ht arg_expr_list arg_mr_list
-                            help_ctx =
-                          match (arg_expr_list, arg_mr_list) with
-                          (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
-                             Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
-                          | [], [] -> return (h_ht, help_ctx)
-                          | arg :: args, (head_type, Name head_name) :: pairs ->
-                              eval_expr arg help_ctx >>= fun he_ctx ->
-                              Hashtbl.add h_ht head_name
-                                {
-                                  v_type = head_type;
-                                  v_key = head_name;
-                                  is_mutable = true;
-                                  v_value = Option.get he_ctx.last_expr_result;
-                                  scope_level = 0;
-                                };
-                              helper_add h_ht args pairs he_ctx
-                          | _ -> error "No such method in class!"
-                        in
-                        helper_add ht args_l m_arg_list octx
-                      in
-                      prepare_table_with_args new_var_table args
+                      prepare_table_with_args new_var_table args mr.args octx
                       >>= fun (new_vt, new_ctx) ->
                       (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
                       eval_stmt m_body
                         {
                           cur_object = obj_ref;
-                          prev_object = Some octx.cur_object;
                           var_table = new_vt;
                           last_expr_result = None;
                           incremented = [];
@@ -1365,9 +1349,161 @@ module Main (M : MONADERROR) = struct
           in
           let new_v_list = get (make_val_list expr_list ctx) in
           return { ctx with last_expr_result = Some (VArray new_v_list) }
+      | ClassCreate (Name class_name, c_args) ->
+          (* В проверке типов наличие уже проверялось, можем смело использовать Option.get *)
+          let obj_class =
+            Option.get (get_elem_if_present class_table class_name)
+          in
+          if obj_class.is_abstract then
+            error "This class is abstract! No object creation allowed"
+          else
+            (* Проверяем конструктор, чтобы был *)
+            check_constructor obj_class c_args ctx >>= fun constr_r ->
+            let new_field_table : (key_t, field_ref) Hashtbl_p.t =
+              Hashtbl.create 1020
+            in
+            (* В контексте этой функции должен быть пустой объект с пустой таблицей *)
+            let init_object cl_r init_ctx =
+              let field_tuples = get_var_field_pairs_list_typed cl_r.dec_tree in
+              let rec helper_init (*acc_ht*) acc_ht help_ctx = function
+                | [] -> return help_ctx
+                | (curr_f_type, Name f_name, f_expr_o) :: tps ->
+                    let is_mutable_field f_key =
+                      let test_field =
+                        Option.get
+                          (get_elem_if_present obj_class.field_table f_key)
+                      in
+                      test_field.is_mutable
+                    in
+                    ( match f_expr_o with
+                    (* Сверяем, если есть выражение - сверяем типы, вычисляем, если нет, берем значение по умолчанию *)
+                    | Some f_expr -> (
+                        expr_type_check f_expr help_ctx >>= fun expr_type ->
+                        let add_field fe =
+                          eval_expr fe help_ctx >>= fun fe_ctx ->
+                          Hashtbl.add acc_ht f_name
+                            {
+                              key = f_name;
+                              f_type = curr_f_type;
+                              f_value = Option.get fe_ctx.last_expr_result;
+                              is_mutable = is_mutable_field f_name;
+                            };
+                          return (fe_ctx, acc_ht)
+                        in
+                        match expr_type with
+                        | ClassName "null" -> (
+                            match curr_f_type with
+                            | ClassName _ -> add_field f_expr
+                            | _ ->
+                                error "Wrong assign type in field declaration" )
+                        | ClassName cright -> (
+                            match curr_f_type with
+                            | ClassName cleft ->
+                                check_classname_assign cleft cright
+                                >> add_field f_expr
+                            | _ ->
+                                error "Wrong assign type in field declaration" )
+                        | Array (ClassName cright) -> (
+                            match curr_f_type with
+                            | Array (ClassName cleft) ->
+                                check_classname_assign cleft cright
+                                >> add_field f_expr
+                            | _ -> error "Wrong assign type in declaration" )
+                        | _ when expr_type = curr_f_type -> add_field f_expr
+                        | _ -> error "Wrong assign type in declaration" )
+                    | None ->
+                        Hashtbl.add acc_ht f_name
+                          {
+                            key = f_name;
+                            f_type = curr_f_type;
+                            f_value = get_init_value_of_type curr_f_type;
+                            is_mutable = is_mutable_field f_name;
+                          };
+                        return (help_ctx, acc_ht) )
+                    >>= fun (head_ctx, head_ht) ->
+                    (* Обрабатывать хвост идем уже с контекстом, в котором лежит обновленный объект *)
+                    helper_init head_ht
+                      {
+                        head_ctx with
+                        cur_object =
+                          RObj
+                            {
+                              class_key = class_name;
+                              field_ref_table = head_ht;
+                            };
+                      }
+                      tps
+              in
+              helper_init (Hashtbl.create 100) init_ctx field_tuples
+              (* Инициализация переменных, которая происходит до конструктора - в пустом контексте *)
+            in
+            let new_object =
+              RObj
+                { class_key = class_name; field_ref_table = Hashtbl.create 100 }
+            in
+            init_object obj_class
+              {
+                cur_object = new_object;
+                var_table = Hashtbl.create 100;
+                last_expr_result = None;
+                incremented = [];
+                decremented = [];
+                was_break = false;
+                was_continue = false;
+                was_return = false;
+                curr_method_type = Void;
+                is_main = false;
+                cycle_cnt = 0;
+                scope_level = 0;
+              }
+            (* Внутри initres_ctx лежит объект с проинициализированными полями, готовый к обработке конструктором *)
+            >>=
+            fun initres_ctx ->
+            (* Контекст, в котором исполняется блок - получившийся объект + таблица переменных - аргументы конструктора *)
+            let get_new_var_table =
+              prepare_table_with_args (Hashtbl.create 100) c_args constr_r.args
+                initres_ctx
+            in
+            get_new_var_table >>= fun (vt, vctx) ->
+            eval_stmt constr_r.body { vctx with var_table = vt }
+            >>= fun c_ctx ->
+            (* В итоге возвращем тот же контекст, что и был, с получившимся объектом посе исполнения конструктора *)
+            return
+              {
+                ctx with
+                last_expr_result = Some (VObjectRef c_ctx.cur_object);
+                was_return = false;
+              }
       | _ -> return ctx
     in
     return ctx
+
+  and prepare_table_with_args :
+      (key_t, variable) Hashtbl_p.t ->
+      expr list ->
+      (type_t * name) list ->
+      context ->
+      ((key_t, variable) Hashtbl_p.t * context) M.t =
+   fun ht args_l m_arg_list pr_ctx ->
+    let rec helper_add h_ht arg_expr_list arg_mr_list help_ctx =
+      match (arg_expr_list, arg_mr_list) with
+      (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
+         Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
+      | [], [] -> return (h_ht, help_ctx)
+      | arg :: args, (head_type, Name head_name) :: pairs ->
+          eval_expr arg help_ctx >>= fun he_ctx ->
+          Hashtbl.add h_ht head_name
+            {
+              v_type = head_type;
+              v_key = head_name;
+              is_mutable = true;
+              v_value = Option.get he_ctx.last_expr_result;
+              scope_level = 0;
+            };
+          helper_add h_ht args pairs he_ctx
+      | _ -> error "No such instance in class!"
+    in
+    helper_add ht args_l m_arg_list pr_ctx
 
   let execute : (key_t, class_r) Hashtbl.t -> context M.t =
    fun ht ->
