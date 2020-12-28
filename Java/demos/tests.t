@@ -549,7 +549,8 @@
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
+  ]]; constructor_table : [[Object$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
   Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
     args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
@@ -572,7 +573,8 @@
                                (Name ("Person"),
                                 [Const (VInt (80)); Const (VInt (45))])))])]))
     }
-  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
+  ]]; constructor_table : [[Main$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------SIMILAR_FIELDS-------------------
   
@@ -679,7 +681,8 @@
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  ]]; constructor_table : [[]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
+  ]]; constructor_table : [[Object$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
   Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
     args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
@@ -702,7 +705,8 @@
                                (Name ("Person"),
                                 [Const (VInt (80)); Const (VInt (45))])))])]))
     }
-  ]]; constructor_table : [[]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
+  ]]; constructor_table : [[Main$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------@OVERRIDE_ERRORS-------------------
   

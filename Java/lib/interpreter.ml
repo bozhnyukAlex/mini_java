@@ -320,6 +320,16 @@ module ClassLoader (M : MONADERROR) = struct
   let c_table_add cd_list cl_ht =
     monadic_list_iter cd_list (add_to_class_table cl_ht) cl_ht
 
+  (* Если у класса нет конструкторов - надо добавить дефолтный *)
+  let add_default_constructors_if_needed ht =
+    Hashtbl.iter
+      (fun key cr ->
+        if Hashtbl.length cr.constructor_table = 0 then
+          Hashtbl.add cr.constructor_table (key ^ "$$")
+            { args = []; body = StmtBlock [] })
+      ht;
+    return ht
+
   let update_child_keys ht =
     let update : class_r -> class_r M.t =
      fun cr ->
@@ -384,11 +394,24 @@ module ClassLoader (M : MONADERROR) = struct
           | _ -> error "Only one super statement must be in constructor" )
       | _ -> error "Constructor body must be in block!"
     in
-    if Hashtbl.length par.constructor_table > 0 then
-      monadic_list_iter
-        (convert_table_to_list ch.constructor_table)
-        check_constructor ()
-    else return ()
+    (* Проверяем super в том случае, если конструкторов больше одного или он один и c аргументами*)
+    match Hashtbl.length par.constructor_table with
+    | 0 -> return ()
+    | 1 -> (
+        match
+          get_elem_if_present par.constructor_table (par.this_key ^ "$$")
+        with
+        (* Один конструктор, но с аргументами *)
+        | None ->
+            monadic_list_iter
+              (convert_table_to_list ch.constructor_table)
+              check_constructor ()
+        (* Один конструктор, без аргументов. super() в таком случае будет вызываться автоматически в начале *)
+        | _ -> return () )
+    | _ ->
+        monadic_list_iter
+          (convert_table_to_list ch.constructor_table)
+          check_constructor ()
 
   let is_this : stmt -> bool = function
     | Expression (CallMethod (This, _)) -> true
@@ -488,7 +511,9 @@ module ClassLoader (M : MONADERROR) = struct
         prepare_object class_table >>= fun table_with_object ->
         c_table_add cd_list table_with_object
         >>= fun table_with_added_classes ->
-        update_child_keys table_with_added_classes >>= fun updated_table ->
+        add_default_constructors_if_needed table_with_added_classes
+        >>= fun with_defaults ->
+        update_child_keys with_defaults >>= fun updated_table ->
         do_inheritance updated_table
 end
 
@@ -653,21 +678,16 @@ module Main (M : MONADERROR) = struct
     | CallMethod (Super, _) -> return Void
     | CallMethod (This, _) -> return Void
     (* По нашей модели такой вызов мог произойти только внутри какого-то объекта *)
-    | CallMethod (Identifier m_ident, args) -> (
+    | CallMethod (Identifier m_ident, args) ->
         let curr_obj_key =
           match ctx.cur_object with
           | RNull -> "null"
           | RObj { class_key = key; field_ref_table = _ } -> key
         in
-
         let curr_class =
           Option.get (get_elem_if_present class_table curr_obj_key)
         in
-        make_type_string args ctx >>= fun args_string ->
-        let m_key = m_ident ^ args_string ^ "@@" in
-        match get_elem_if_present curr_class.method_table m_key with
-        | None -> error "No such method in class!"
-        | Some mr -> return mr.m_type )
+        check_method curr_class m_ident args ctx >>= fun mr -> return mr.m_type
     | FieldAccess (obj_expr, Identifier f_key) -> (
         expr_type_check obj_expr ctx >>= fun obj_c ->
         match obj_c with
@@ -687,16 +707,12 @@ module Main (M : MONADERROR) = struct
         >>= fun obj_c ->
         match obj_c with
         | ClassName "null" -> error "NullPointerException"
-        | ClassName obj_key -> (
-            make_type_string args ctx >>= fun args_string ->
-            let m_key = m_ident ^ args_string ^ "@@" in
+        | ClassName obj_key ->
             let obj_class =
               Option.get (get_elem_if_present class_table obj_key)
             in
-            let method_o = get_elem_if_present obj_class.method_table m_key in
-            match method_o with
-            | None -> error "No such method with this name and types!"
-            | Some meth_r -> return meth_r.m_type )
+            check_method obj_class m_ident args ctx >>= fun m_r ->
+            return m_r.m_type
         | _ -> error "Wrong type: must be object reference" )
     | ArrayAccess (arr_expr, index_expr) -> (
         expr_type_check index_expr ctx >>= fun ind_t ->
@@ -732,15 +748,10 @@ module Main (M : MONADERROR) = struct
             (* Если аргументов у конструктора нет - все норм, пустой конструктор всегда имеется *)
             match args with
             | [] -> return (ClassName class_name)
-            | _ -> (
-                make_type_string args ctx >>= fun args_string ->
-                let constr_key = class_name ^ args_string ^ "$$" in
-                let consrt_o =
-                  get_elem_if_present cl_elem.constructor_table constr_key
-                in
-                match consrt_o with
-                | None -> error "No such constructor with this types!"
-                | _ -> return (ClassName class_name) ) ) )
+            | _ ->
+                (* Если отработал нормально - значит, все окей, просто возвращаем тип созданный *)
+                check_constructor cl_elem args ctx
+                >> return (ClassName class_name) ) )
     | Identifier key -> (
         (* Смотрим среди локальных переменных контекста *)
         let var_o = get_elem_if_present ctx.var_table key in
@@ -815,7 +826,86 @@ module Main (M : MONADERROR) = struct
     in
     helper_type elist ""
 
-  (* |> fun res_str -> get res_str  *)
+  and check_method : class_r -> key_t -> expr list -> context -> method_r M.t =
+   fun cl_r m_name expr_list check_ctx ->
+    (* смотрим совпадение типов на определенной позиции *)
+    let check_type_m : int -> type_t -> key_t -> method_r -> bool =
+     fun pos curr_type _ value ->
+      match List.nth_opt value.args pos with
+      | None -> false
+      | Some (found_type, _) -> (
+          match curr_type with
+          | ClassName "null" -> (
+              match found_type with ClassName _ -> true | _ -> false )
+          | _ -> found_type = curr_type )
+    in
+    let rec helper_checker curr_ht pos e_list ctx acc =
+      match Hashtbl.length curr_ht with
+      (* 0 осталось методов - значит ни один не подошел. Ошибка *)
+      | 0 -> error "No such method!"
+      | other -> (
+          match e_list with
+          (* Если перебрали все аргументы - смотрим на кол-во элементов хеш-таблицы *)
+          | [] -> (
+              match other with
+              (* 1 - формируем ключ и смотрим, чтобы имя подходило *)
+              | 1 -> (
+                  let method_key = m_name ^ acc ^ "@@" in
+                  match get_elem_if_present cl_r.method_table method_key with
+                  | None -> error "No such method"
+                  | Some mr -> return mr )
+              (* Иначе плохо. Не смогли распознать метод. Такая ситуация возможна *)
+              | _ -> error "Cannot resolve method" )
+          | e :: es ->
+              expr_type_check e ctx >>= fun e_type ->
+              helper_checker
+                (Hashtbl_p.filter curr_ht (check_type_m pos e_type))
+                (pos + 1) es ctx
+                (acc ^ show_type_t e_type) )
+    in
+    (* Вначале фильтруем по количеству аргументов *)
+    helper_checker
+      (Hashtbl_p.filter cl_r.method_table (fun _ mr ->
+           List.length mr.args = List.length expr_list))
+      0 expr_list check_ctx ""
+
+  and check_constructor cl_r expr_list check_ctx =
+    let check_type_c : int -> type_t -> key_t -> constructor_r -> bool =
+     fun pos curr_type _ value ->
+      match List.nth_opt value.args pos with
+      | None -> false
+      | Some (found_type, _) -> (
+          match curr_type with
+          | ClassName "null" -> (
+              match found_type with ClassName _ -> true | _ -> false )
+          | _ -> found_type = curr_type )
+    in
+    let rec helper_checker_c curr_ht pos e_list ctx acc =
+      match Hashtbl.length curr_ht with
+      | 0 -> error "No such constructor!"
+      | other -> (
+          match e_list with
+          | [] -> (
+              match other with
+              | 1 -> (
+                  let constructor_key = cl_r.this_key ^ acc ^ "$$" in
+                  match
+                    get_elem_if_present cl_r.constructor_table constructor_key
+                  with
+                  | None -> error "No such constructor!"
+                  | Some cr -> return cr )
+              | _ -> error "Cannot resolve constructor!" )
+          | e :: es ->
+              expr_type_check e ctx >>= fun e_type ->
+              helper_checker_c
+                (Hashtbl_p.filter curr_ht (check_type_c pos e_type))
+                (pos + 1) es ctx
+                (acc ^ show_type_t e_type) )
+    in
+    helper_checker_c
+      (Hashtbl_p.filter cl_r.constructor_table (fun _ cr ->
+           List.length cr.args = List.length expr_list))
+      0 expr_list check_ctx ""
 
   let get_int_value = function VInt x -> x | _ -> 0
 
@@ -1158,83 +1248,77 @@ module Main (M : MONADERROR) = struct
               match obj_ref with
               | RNull -> error "NullPointerException"
               | RObj { class_key = cl_k; field_ref_table = _ } -> (
-                  make_type_string args octx >>= fun args_string ->
-                  let method_key = m_name ^ args_string ^ "@@" in
+                  (* make_type_string args octx >>= fun args_string ->
+                     let method_key = m_name ^ args_string ^ "@@" in *)
                   (* Смотрим класс, к которому принадлежит объект, с проверкой на существование *)
                   match get_elem_if_present class_table cl_k with
                   | None -> error "No such object in class!"
-                  | Some obj_class -> (
+                  | Some obj_class ->
                       (* Смотрим метод у этого класса, опять с проверкой на существование *)
-                      match
-                        get_elem_if_present obj_class.method_table method_key
-                      with
-                      | None -> error "No such method in class!"
-                      | Some mr ->
-                          (* Смотреть тело на None не нужно, это только если метод абстрактный,
-                             а проверка на то, чтобы нельзя было создать абстрактный класс - в вычислении ClassCreate *)
-                          let m_body = Option.get mr.body in
-                          let m_arg_list = mr.args in
-                          let new_var_table : (key_t, variable) Hashtbl_p.t =
-                            Hashtbl.create 100
-                          in
-                          let prepare_table_with_args :
-                              (key_t, variable) Hashtbl_p.t ->
-                              expr list ->
-                              ((key_t, variable) Hashtbl_p.t * context) M.t =
-                           fun ht args_l ->
-                            let rec helper_add h_ht arg_expr_list arg_mr_list
-                                help_ctx =
-                              match (arg_expr_list, arg_mr_list) with
-                              (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
-                                 Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
-                              | [], [] -> return (h_ht, help_ctx)
-                              | ( arg :: args,
-                                  (head_type, Name head_name) :: pairs ) ->
-                                  eval_expr arg help_ctx >>= fun he_ctx ->
-                                  Hashtbl.add h_ht head_name
-                                    {
-                                      v_type = head_type;
-                                      v_key = head_name;
-                                      is_mutable = true;
-                                      v_value =
-                                        Option.get he_ctx.last_expr_result;
-                                      scope_level = 0;
-                                    };
-                                  helper_add h_ht args pairs he_ctx
-                              | _ -> error "No such method in class!"
-                            in
-                            helper_add ht args_l m_arg_list octx
-                          in
-                          prepare_table_with_args new_var_table args
-                          >>= fun (new_vt, new_ctx) ->
-                          (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
-                          eval_stmt m_body
-                            {
-                              cur_object = obj_ref;
-                              prev_object = Some octx.cur_object;
-                              var_table = new_vt;
-                              last_expr_result = None;
-                              incremented = [];
-                              decremented = [];
-                              was_break = false;
-                              was_continue = false;
-                              was_return = false;
-                              curr_method_type = mr.m_type;
-                              is_main = false;
-                              cycle_cnt = 0;
-                              scope_level = 0;
-                            }
-                          (* От контекста нас интересует только результат работы метода *)
-                          >>=
-                          fun m_res_ctx ->
-                          (* После отработки метода возвращаем контекст с результатом работы метода
-                             Если внутри метода менялись какие-то состояния объектов -
-                             они должны поменяться исходя из мутабельности хеш-таблиц в результате присваиваний *)
-                          return
-                            {
-                              new_ctx with
-                              last_expr_result = m_res_ctx.last_expr_result;
-                            } ) ) )
+                      check_method obj_class m_name args octx >>= fun mr ->
+                      (* Смотреть тело на None не нужно, это только если метод абстрактный,
+                         а проверка на то, чтобы нельзя было создать абстрактный класс - в TODO: вычислении ClassCreate *)
+                      let m_body = Option.get mr.body in
+                      let m_arg_list = mr.args in
+                      let new_var_table : (key_t, variable) Hashtbl_p.t =
+                        Hashtbl.create 100
+                      in
+                      let prepare_table_with_args :
+                          (key_t, variable) Hashtbl_p.t ->
+                          expr list ->
+                          ((key_t, variable) Hashtbl_p.t * context) M.t =
+                       fun ht args_l ->
+                        let rec helper_add h_ht arg_expr_list arg_mr_list
+                            help_ctx =
+                          match (arg_expr_list, arg_mr_list) with
+                          (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
+                             Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
+                          | [], [] -> return (h_ht, help_ctx)
+                          | arg :: args, (head_type, Name head_name) :: pairs ->
+                              eval_expr arg help_ctx >>= fun he_ctx ->
+                              Hashtbl.add h_ht head_name
+                                {
+                                  v_type = head_type;
+                                  v_key = head_name;
+                                  is_mutable = true;
+                                  v_value = Option.get he_ctx.last_expr_result;
+                                  scope_level = 0;
+                                };
+                              helper_add h_ht args pairs he_ctx
+                          | _ -> error "No such method in class!"
+                        in
+                        helper_add ht args_l m_arg_list octx
+                      in
+                      prepare_table_with_args new_var_table args
+                      >>= fun (new_vt, new_ctx) ->
+                      (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
+                      eval_stmt m_body
+                        {
+                          cur_object = obj_ref;
+                          prev_object = Some octx.cur_object;
+                          var_table = new_vt;
+                          last_expr_result = None;
+                          incremented = [];
+                          decremented = [];
+                          was_break = false;
+                          was_continue = false;
+                          was_return = false;
+                          curr_method_type = mr.m_type;
+                          is_main = false;
+                          cycle_cnt = 0;
+                          scope_level = 0;
+                        }
+                      (* От контекста нас интересует только результат работы метода *)
+                      >>=
+                      fun m_res_ctx ->
+                      (* После отработки метода возвращаем контекст с результатом работы метода
+                         Если внутри метода менялись какие-то состояния объектов -
+                         они должны поменяться исходя из мутабельности хеш-таблиц в результате присваиваний *)
+                      return
+                        {
+                          new_ctx with
+                          last_expr_result = m_res_ctx.last_expr_result;
+                        } ) )
           | _ -> error "Must be non-null object!" )
       (* Это в случае, если вызываем внутри какого-то объекта. This нам вернет этот объект при вычислении *)
       | CallMethod (Identifier m, args) ->
