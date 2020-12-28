@@ -558,6 +558,7 @@ module Main (M : MONADERROR) = struct
     (* Считаем вложенные циклы *)
     cycle_cnt : int;
     scope_level : int;
+    is_constructor : bool;
   }
   [@@deriving show { with_path = false }]
 
@@ -576,6 +577,7 @@ module Main (M : MONADERROR) = struct
         is_main = true;
         cycle_cnt = 0;
         scope_level = 0;
+        is_constructor = false;
       }
 
   let find_class_with_main ht =
@@ -1239,7 +1241,60 @@ module Main (M : MONADERROR) = struct
           in
           return { ctx with last_expr_result = Some var_by_id.v_value }
       | Null -> return { ctx with last_expr_result = Some (VObjectRef RNull) }
-      (*Должен быть после CallMethod (This, ...)!!!!*)
+      (* Эта штука исполняется в стейтмент-блоке *)
+      | CallMethod (This, args) ->
+          (* Должна быть проверка на то, что мы в конструкторе!*)
+          if not ctx.is_constructor then
+            error "this(...) call must be in constructor!"
+          else
+            let get_cur_class_key =
+              match ctx.cur_object with
+              | RNull -> error "NullPointerException"
+              | RObj { class_key = key; field_ref_table = _ } -> return key
+            in
+            get_cur_class_key >>= fun curr_class_key ->
+            let cur_class_r =
+              Option.get (get_elem_if_present class_table curr_class_key)
+            in
+            check_constructor cur_class_r args ctx >>= fun constr_r ->
+            prepare_constructor_block constr_r.body cur_class_r
+            >>= fun c_body ->
+            (*Подготавливаем таблицу аргументов в контексте без локальных переменных, остальное остается прежним*)
+            prepare_table_with_args (Hashtbl.create 100) args constr_r.args
+              { ctx with var_table = Hashtbl.create 100 }
+            >>= fun (vt, vctx) ->
+            (* Контекст работы с телом: текущий объект, но посчитаны все аргументы и распиханы по таблице переменных *)
+            eval_stmt c_body { vctx with var_table = vt } >>= fun res_ctx ->
+            return { res_ctx with last_expr_result = Some VVoid }
+      | CallMethod (Super, args) -> (
+          if not ctx.is_constructor then
+            error "super(...) call must be in constructor!"
+          else
+            let get_cur_class_key =
+              match ctx.cur_object with
+              | RNull -> error "NullPointerException"
+              | RObj { class_key = key; field_ref_table = _ } -> return key
+            in
+            get_cur_class_key >>= fun curr_class_key ->
+            let cur_class_r =
+              Option.get (get_elem_if_present class_table curr_class_key)
+            in
+            match cur_class_r.parent_key with
+            | None ->
+                error "Bad super(...) call usage : this class has no parent!"
+            | Some par_key ->
+                let par_r =
+                  Option.get (get_elem_if_present class_table par_key)
+                in
+                check_constructor par_r args ctx >>= fun constr_r ->
+                prepare_constructor_block constr_r.body par_r
+                >>= fun par_constr_body ->
+                prepare_table_with_args (Hashtbl.create 100) args constr_r.args
+                  { ctx with var_table = Hashtbl.create 100 }
+                >>= fun (vt, vctx) ->
+                eval_stmt par_constr_body { vctx with var_table = vt }
+                (*ТУТ ПОДУМАЙ НАД КОНТЕКСТОМ*) >>= fun res_ctx
+                  -> return { res_ctx with last_expr_result = Some VVoid } )
       | This ->
           return
             { ctx with last_expr_result = Some (VObjectRef ctx.cur_object) }
@@ -1291,6 +1346,7 @@ module Main (M : MONADERROR) = struct
                           is_main = false;
                           cycle_cnt = 0;
                           scope_level = 0;
+                          is_constructor = false;
                         }
                       (* От контекста нас интересует только результат работы метода *)
                       >>=
@@ -1455,6 +1511,7 @@ module Main (M : MONADERROR) = struct
                 is_main = false;
                 cycle_cnt = 0;
                 scope_level = 0;
+                is_constructor = false;
               }
             (* Внутри initres_ctx лежит объект с проинициализированными полями, готовый к обработке конструктором *)
             >>=
@@ -1465,7 +1522,8 @@ module Main (M : MONADERROR) = struct
                 initres_ctx
             in
             get_new_var_table >>= fun (vt, vctx) ->
-            eval_stmt constr_r.body { vctx with var_table = vt }
+            prepare_constructor_block constr_r.body obj_class >>= fun c_body ->
+            eval_stmt c_body { vctx with var_table = vt; is_constructor = true }
             >>= fun c_ctx ->
             (* В итоге возвращем тот же контекст, что и был, с получившимся объектом посе исполнения конструктора *)
             return
@@ -1473,6 +1531,7 @@ module Main (M : MONADERROR) = struct
                 ctx with
                 last_expr_result = Some (VObjectRef c_ctx.cur_object);
                 was_return = false;
+                is_constructor = false;
               }
       | _ -> return ctx
     in
@@ -1504,6 +1563,28 @@ module Main (M : MONADERROR) = struct
       | _ -> error "No such instance in class!"
     in
     helper_add ht args_l m_arg_list pr_ctx
+
+  and prepare_constructor_block curr_body curr_class_r =
+    match curr_body with
+    | StmtBlock (Expression (CallMethod (Super, _)) :: _) -> return curr_body
+    | StmtBlock other -> (
+        (* Если увидели, что начало на не супер - то надо просмотреть, есть ли конструкторы у родителя *)
+        match curr_class_r.parent_key with
+        (* Родителя нет - тогда просто возвращаем тот-же конструктор *)
+        | None -> return curr_body
+        (* Есть родитель - смотрим у него, чтобы был один дефолтный конструктор *)
+        | Some par_key ->
+            let par_r = Option.get (get_elem_if_present class_table par_key) in
+            (* Конструктор один и он дефолтный - в начало вставляем вызов super() *)
+            if
+              Hashtbl.length par_r.constructor_table = 1
+              && get_elem_if_present par_r.constructor_table
+                   (par_r.this_key ^ "$$")
+                 = None
+            then
+              return (StmtBlock (Expression (CallMethod (Super, [])) :: other))
+            else error "Constructor must start with super!" )
+    | _ -> error "Must be statement block!"
 
   let execute : (key_t, class_r) Hashtbl.t -> context M.t =
    fun ht ->
