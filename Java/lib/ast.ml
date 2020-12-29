@@ -25,6 +25,7 @@ and field_ref = {
   f_type : type_t;
   f_value : value;
   is_mutable : bool;
+  assignment_count : int;
 }
 
 (* Ссылка на объект - может быть null или запись именем класса (он же ключ) и ссылкой на поля *)

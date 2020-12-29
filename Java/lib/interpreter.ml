@@ -538,6 +538,7 @@ module Main (M : MONADERROR) = struct
     v_type : type_t;
     v_key : key_t;
     is_mutable : bool;
+    assignment_count : int;
     v_value : value;
     scope_level : int;
   }
@@ -1151,6 +1152,7 @@ module Main (M : MONADERROR) = struct
                             v_type = vars_type;
                             v_key = name;
                             is_mutable = is_final final_mod_o;
+                            assignment_count = 0;
                             v_value = get_init_value_of_type vars_type;
                             scope_level = vctx.scope_level;
                           };
@@ -1166,6 +1168,7 @@ module Main (M : MONADERROR) = struct
                               v_type = var_expr_type;
                               v_key = name;
                               is_mutable = is_final final_mod_o;
+                              assignment_count = 1;
                               v_value = Option.get vare_ctx.last_expr_result;
                               scope_level = vare_ctx.scope_level;
                             };
@@ -1443,6 +1446,7 @@ module Main (M : MONADERROR) = struct
                               f_type = curr_f_type;
                               f_value = Option.get fe_ctx.last_expr_result;
                               is_mutable = is_mutable_field f_name;
+                              assignment_count = 1;
                             };
                           return (fe_ctx, acc_ht)
                         in
@@ -1474,6 +1478,7 @@ module Main (M : MONADERROR) = struct
                             f_type = curr_f_type;
                             f_value = get_init_value_of_type curr_f_type;
                             is_mutable = is_mutable_field f_name;
+                            assignment_count = 0;
                           };
                         return (help_ctx, acc_ht) )
                     >>= fun (head_ctx, head_ht) ->
@@ -1564,6 +1569,7 @@ module Main (M : MONADERROR) = struct
               v_type = head_type;
               v_key = head_name;
               is_mutable = true;
+              assignment_count = 1;
               v_value = Option.get he_ctx.last_expr_result;
               scope_level = 0;
             };
