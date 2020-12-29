@@ -1293,8 +1293,8 @@ module Main (M : MONADERROR) = struct
                   { ctx with var_table = Hashtbl.create 100 }
                 >>= fun (vt, vctx) ->
                 eval_stmt par_constr_body { vctx with var_table = vt }
-                (*ТУТ ПОДУМАЙ НАД КОНТЕКСТОМ*) >>= fun res_ctx
-                  -> return { res_ctx with last_expr_result = Some VVoid } )
+                >>= fun res_ctx ->
+                return { res_ctx with last_expr_result = Some VVoid } )
       | This ->
           return
             { ctx with last_expr_result = Some (VObjectRef ctx.cur_object) }
@@ -1419,9 +1419,9 @@ module Main (M : MONADERROR) = struct
               Hashtbl.create 1020
             in
             (* В контексте этой функции должен быть пустой объект с пустой таблицей *)
-            let init_object cl_r init_ctx =
+            let rec init_object cl_r init_ctx =
               let field_tuples = get_var_field_pairs_list_typed cl_r.dec_tree in
-              let rec helper_init (*acc_ht*) acc_ht help_ctx = function
+              let rec helper_init acc_ht help_ctx = function
                 | [] -> return help_ctx
                 | (curr_f_type, Name f_name, f_expr_o) :: tps ->
                     let is_mutable_field f_key =
@@ -1490,7 +1490,15 @@ module Main (M : MONADERROR) = struct
                       }
                       tps
               in
-              helper_init (Hashtbl.create 100) init_ctx field_tuples
+              (* Просто пройтись по полям текущего class_dec - недостаточно, надо пройтись и по иерархии родителей *)
+              match cl_r.parent_key with
+              | None -> helper_init (Hashtbl.create 100) init_ctx field_tuples
+              | Some par_key ->
+                  let parent_r =
+                    Option.get (get_elem_if_present class_table par_key)
+                  in
+                  init_object parent_r init_ctx >>= fun par_ctx ->
+                  helper_init (Hashtbl.create 100) par_ctx field_tuples
               (* Инициализация переменных, которая происходит до конструктора - в пустом контексте *)
             in
             let new_object =
