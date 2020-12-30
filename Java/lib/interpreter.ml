@@ -262,7 +262,7 @@ module ClassLoader (M : MONADERROR) = struct
               (* Является ли метод абстрактным *)
               let is_abstract = is_abstract m_ms in
 
-              (*Перед добавлением стоит проверять, чтобы у абстрактного класса не было тела и прочие ошибки*)
+              (*Перед добавлением стоит проверять, чтобы у абстрактного метода не было тела и прочие ошибки*)
               let check_abstract_body_syntax =
                 match is_abstract with
                 | true -> (
@@ -548,8 +548,6 @@ module Main (M : MONADERROR) = struct
     cur_object : obj_ref;
     var_table : (key_t, variable) Hashtbl_p.t;
     last_expr_result : value option;
-    incremented : key_t list;
-    decremented : key_t list;
     was_break : bool;
     was_continue : bool;
     was_return : bool;
@@ -560,6 +558,8 @@ module Main (M : MONADERROR) = struct
     cycle_cnt : int;
     scope_level : int;
     is_constructor : bool;
+    main_context : context option;
+    obj_created_cnt : int;
   }
   [@@deriving show { with_path = false }]
 
@@ -569,8 +569,6 @@ module Main (M : MONADERROR) = struct
         cur_object;
         var_table;
         last_expr_result = None;
-        incremented = [];
-        decremented = [];
         was_break = false;
         was_continue = false;
         was_return = false;
@@ -579,7 +577,14 @@ module Main (M : MONADERROR) = struct
         cycle_cnt = 0;
         scope_level = 0;
         is_constructor = false;
+        main_context = None;
+        obj_created_cnt = 0;
       }
+
+  (* Если main контекст None - то main контекст - это мы сами, и пока еще никуда не заходили, себя возвращаем,
+     иначе возвращаем тот контекст, который хранится *)
+  let get_main_ctx cur_ctx =
+    match cur_ctx.main_context with None -> cur_ctx | Some m_ctx -> m_ctx
 
   let find_class_with_main ht =
     return
@@ -697,7 +702,7 @@ module Main (M : MONADERROR) = struct
         let curr_obj_key =
           match ctx.cur_object with
           | RNull -> "null"
-          | RObj { class_key = key; field_ref_table = _ } -> key
+          | RObj { class_key = key; field_ref_table = _; number = _ } -> key
         in
         let curr_class =
           Option.get (get_elem_if_present class_table curr_obj_key)
@@ -774,7 +779,7 @@ module Main (M : MONADERROR) = struct
         (* Нет, а вдруг есть среди полей объекта текущего класса? *)
         | None -> (
             match ctx.cur_object with
-            | RObj { class_key = _; field_ref_table = ft } -> (
+            | RObj { class_key = _; field_ref_table = ft; number = _ } -> (
                 (* Смотрим в таблице полей конкретного объекта *)
                 match get_elem_if_present ft key with
                 | None -> error "No such variable or field with this name!"
@@ -788,7 +793,8 @@ module Main (M : MONADERROR) = struct
         | VInt _ -> return Int
         | VString _ -> return String
         | VObjectRef RNull -> return (ClassName "null")
-        | VObjectRef (RObj { class_key = ck; field_ref_table = _ }) ->
+        | VObjectRef (RObj { class_key = ck; field_ref_table = _; number = _ })
+          ->
             return (ClassName ck)
         | _ -> error "Wrong const value" )
     | Assign (left, right) -> (
@@ -1138,7 +1144,7 @@ module Main (M : MONADERROR) = struct
           | (Name name, var_expr_o) :: vs -> (
               match vctx.cur_object with
               | RNull -> error "Must be non-null object!"
-              | RObj { class_key = _; field_ref_table = frt } ->
+              | RObj { class_key = _; field_ref_table = frt; number = _ } ->
                   ( if
                     (* Смотрим, чтобы подобного имени не было ни среди локальных переменных, ни среди полей класса *)
                     Hashtbl.mem vctx.var_table name || Hashtbl.mem frt name
@@ -1253,7 +1259,8 @@ module Main (M : MONADERROR) = struct
             let get_cur_class_key =
               match ctx.cur_object with
               | RNull -> error "NullPointerException"
-              | RObj { class_key = key; field_ref_table = _ } -> return key
+              | RObj { class_key = key; field_ref_table = _; number = _ } ->
+                  return key
             in
             get_cur_class_key >>= fun curr_class_key ->
             let cur_class_r =
@@ -1276,7 +1283,8 @@ module Main (M : MONADERROR) = struct
             let get_cur_class_key =
               match ctx.cur_object with
               | RNull -> error "NullPointerException"
-              | RObj { class_key = key; field_ref_table = _ } -> return key
+              | RObj { class_key = key; field_ref_table = _; number = _ } ->
+                  return key
             in
             get_cur_class_key >>= fun curr_class_key ->
             let cur_class_r =
@@ -1305,7 +1313,8 @@ module Main (M : MONADERROR) = struct
           eval_expr obj_expr ctx >>= fun octx ->
           let obj = Option.get octx.last_expr_result in
           match obj with
-          | VObjectRef (RObj { class_key = _; field_ref_table = frt }) ->
+          | VObjectRef
+              (RObj { class_key = _; field_ref_table = frt; number = _ }) ->
               (* Смело пользуемся Option.get, потому что перед этим была проверка типов, в ней проверяется наличие этого поля у класса*)
               let fld = Option.get (Hashtbl.find_opt frt f_key) in
               return { octx with last_expr_result = Some fld.f_value }
@@ -1317,9 +1326,7 @@ module Main (M : MONADERROR) = struct
           | VObjectRef obj_ref -> (
               match obj_ref with
               | RNull -> error "NullPointerException"
-              | RObj { class_key = cl_k; field_ref_table = _ } -> (
-                  (* make_type_string args octx >>= fun args_string ->
-                     let method_key = m_name ^ args_string ^ "@@" in *)
+              | RObj { class_key = cl_k; field_ref_table = _; number = _ } -> (
                   (* Смотрим класс, к которому принадлежит объект, с проверкой на существование *)
                   match get_elem_if_present class_table cl_k with
                   | None -> error "No such object in class!"
@@ -1340,8 +1347,6 @@ module Main (M : MONADERROR) = struct
                           cur_object = obj_ref;
                           var_table = new_vt;
                           last_expr_result = None;
-                          incremented = [];
-                          decremented = [];
                           was_break = false;
                           was_continue = false;
                           was_return = false;
@@ -1350,6 +1355,8 @@ module Main (M : MONADERROR) = struct
                           cycle_cnt = 0;
                           scope_level = 0;
                           is_constructor = false;
+                          main_context = Some (get_main_ctx ctx);
+                          obj_created_cnt = ctx.obj_created_cnt;
                         }
                       (* От контекста нас интересует только результат работы метода *)
                       >>=
@@ -1361,6 +1368,7 @@ module Main (M : MONADERROR) = struct
                         {
                           new_ctx with
                           last_expr_result = m_res_ctx.last_expr_result;
+                          obj_created_cnt = m_res_ctx.obj_created_cnt;
                         } ) )
           | _ -> error "Must be non-null object!" )
       (* Это в случае, если вызываем внутри какого-то объекта. This нам вернет этот объект при вычислении *)
@@ -1482,7 +1490,12 @@ module Main (M : MONADERROR) = struct
                           };
                         return (help_ctx, acc_ht) )
                     >>= fun (head_ctx, head_ht) ->
+                    let obj_num obj =
+                      try get_obj_number obj |> fun n -> return n
+                      with Invalid_argument m -> error m
+                    in
                     (* Обрабатывать хвост идем уже с контекстом, в котором лежит обновленный объект *)
+                    obj_num head_ctx.cur_object >>= fun num ->
                     helper_init head_ht
                       {
                         head_ctx with
@@ -1491,6 +1504,7 @@ module Main (M : MONADERROR) = struct
                             {
                               class_key = class_name;
                               field_ref_table = head_ht;
+                              number = num;
                             };
                       }
                       tps
@@ -1508,15 +1522,17 @@ module Main (M : MONADERROR) = struct
             in
             let new_object =
               RObj
-                { class_key = class_name; field_ref_table = Hashtbl.create 100 }
+                {
+                  class_key = class_name;
+                  field_ref_table = Hashtbl.create 100;
+                  number = ctx.obj_created_cnt + 1;
+                }
             in
             init_object obj_class
               {
                 cur_object = new_object;
                 var_table = Hashtbl.create 100;
                 last_expr_result = None;
-                incremented = [];
-                decremented = [];
                 was_break = false;
                 was_continue = false;
                 was_return = false;
@@ -1525,6 +1541,8 @@ module Main (M : MONADERROR) = struct
                 cycle_cnt = 0;
                 scope_level = 0;
                 is_constructor = false;
+                main_context = Some (get_main_ctx ctx);
+                obj_created_cnt = ctx.obj_created_cnt + 1;
               }
             (* Внутри initres_ctx лежит объект с проинициализированными полями, готовый к обработке конструктором *)
             >>=
@@ -1545,6 +1563,7 @@ module Main (M : MONADERROR) = struct
                 last_expr_result = Some (VObjectRef c_ctx.cur_object);
                 was_return = false;
                 is_constructor = false;
+                obj_created_cnt = c_ctx.obj_created_cnt;
               }
       | _ -> return ctx
     in
@@ -1604,7 +1623,12 @@ module Main (M : MONADERROR) = struct
    fun ht ->
     find_class_with_main ht >>= fun cl ->
     make_context
-      (RObj { class_key = cl.this_key; field_ref_table = Hashtbl.create 10 })
+      (RObj
+         {
+           class_key = cl.this_key;
+           field_ref_table = Hashtbl.create 10;
+           number = 0;
+         })
       (Hashtbl.create 10)
     >>= fun ctx ->
     let main = Hashtbl.find cl.method_table "main@@" in

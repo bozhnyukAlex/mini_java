@@ -34,7 +34,12 @@ and obj_ref =
   | RObj of {
       class_key : string;
       field_ref_table : (string, field_ref) Hashtbl_p.t;
+      number : int;
     }
+
+let get_obj_number = function
+  | RNull -> raise (Invalid_argument "NullPointerException")
+  | RObj { class_key = _; field_ref_table = _; number = n } -> n
 
 let ( ++ ) v1 v2 =
   match (v1, v2) with
