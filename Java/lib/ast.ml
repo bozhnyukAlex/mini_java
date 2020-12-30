@@ -37,9 +37,78 @@ and obj_ref =
       number : int;
     }
 
+let get_obj_fields = function
+  | RNull -> raise (Invalid_argument "NullPointerException")
+  | RObj { class_key = _; field_ref_table = frt; number = _ } -> frt
+
 let get_obj_number = function
   | RNull -> raise (Invalid_argument "NullPointerException")
   | RObj { class_key = _; field_ref_table = _; number = n } -> n
+
+let get_obj_info = function
+  | RNull -> raise (Invalid_argument "NullPointerException")
+  | RObj { class_key = k; field_ref_table = t; number = n } -> (k, t, n)
+
+let update_array_val v_arr index new_val =
+  match v_arr with
+  | VArray v_list ->
+      let update_list_on_pos pos list new_v =
+        List.mapi (fun i old_v -> if i = pos then new_v else old_v) list
+      in
+      (* Проверяем, чтобы значения в массиве были одного типа *)
+      let check_list list =
+        match List.hd list with
+        | VBool _ -> List.for_all (function VBool _ -> true | _ -> false) list
+        | VInt _ -> List.for_all (function VInt _ -> true | _ -> false) list
+        | VString _ ->
+            List.for_all (function VString _ -> true | _ -> false) list
+        | VArray _ -> false
+        | VVoid -> false
+        | VObjectRef (RObj { class_key = key; field_ref_table = _; number = _ })
+          ->
+            List.for_all
+              (function
+                | VObjectRef RNull -> true
+                | VObjectRef
+                    (RObj { class_key = k; field_ref_table = _; number = _ })
+                  when k = key ->
+                    true
+                | _ -> false)
+              list
+        (* Если первый Null - старамся найти первый не Null и по его образцу проверяем весь массив *)
+        | VObjectRef RNull -> (
+            let rec find_first_not_null = function
+              | [] -> RNull
+              | v :: vs -> (
+                  match v with
+                  | VObjectRef RNull -> find_first_not_null vs
+                  | VObjectRef (RObj r) -> RObj r
+                  | _ -> raise (Invalid_argument "Wrong type!") )
+            in
+            try
+              find_first_not_null list |> fun obj_r ->
+              match obj_r with
+              (* Вернулся null - значит все значения null - значит все норм *)
+              | RNull -> true
+              (* Иначе смотрим, чтобы был один тип и cмотрим, чтобы были null или нужного типа *)
+              | RObj { class_key = key; field_ref_table = _; number = _ } ->
+                  List.for_all
+                    (function
+                      | VObjectRef RNull -> true
+                      | VObjectRef
+                          (RObj
+                            { class_key = k; field_ref_table = _; number = _ })
+                        when k = key ->
+                          true
+                      | _ -> false)
+                    list
+            with Invalid_argument _ -> false )
+      in
+      update_list_on_pos index v_list new_val |> fun new_list ->
+      if check_list new_list = true then new_list
+        (* То самое исключение, из-за которого Java/C# - отстой *)
+      else raise (Failure "ArrayStoreException")
+  | _ -> raise (Invalid_argument "Wrong value for array update!")
 
 let ( ++ ) v1 v2 =
   match (v1, v2) with

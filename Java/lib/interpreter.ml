@@ -586,6 +586,10 @@ module Main (M : MONADERROR) = struct
   let get_main_ctx cur_ctx =
     match cur_ctx.main_context with None -> cur_ctx | Some m_ctx -> m_ctx
 
+  let obj_num obj =
+    try get_obj_number obj |> fun n -> return n
+    with Invalid_argument m -> error m
+
   let find_class_with_main ht =
     return
       (List.find
@@ -1490,10 +1494,6 @@ module Main (M : MONADERROR) = struct
                           };
                         return (help_ctx, acc_ht) )
                     >>= fun (head_ctx, head_ht) ->
-                    let obj_num obj =
-                      try get_obj_number obj |> fun n -> return n
-                      with Invalid_argument m -> error m
-                    in
                     (* Обрабатывать хвост идем уже с контекстом, в котором лежит обновленный объект *)
                     obj_num head_ctx.cur_object >>= fun num ->
                     helper_init head_ht
@@ -1565,9 +1565,120 @@ module Main (M : MONADERROR) = struct
                 is_constructor = false;
                 obj_created_cnt = c_ctx.obj_created_cnt;
               }
+      | Assign (Identifier var_key, val_expr) -> (
+          eval_expr val_expr ctx >>= fun val_evaled_ctx ->
+          if Hashtbl.mem val_evaled_ctx.var_table var_key then
+            let old_var =
+              Option.get (get_elem_if_present ctx.var_table var_key)
+            in
+            let check_assign_cnt_v var =
+              match var.assignment_count with
+              | 0 -> return ()
+              | _ when not var.is_mutable -> return ()
+              | _ -> error "Assignment to a constant variable"
+            in
+            check_assign_cnt_v old_var
+            >>
+            ( Hashtbl.replace ctx.var_table var_key
+                {
+                  old_var with
+                  v_value = Option.get val_evaled_ctx.last_expr_result;
+                  assignment_count = old_var.assignment_count + 1;
+                };
+              return val_evaled_ctx )
+            (* Если не получилось найти среди переменных - ищем среди полей текущего объекта *)
+          else
+            match val_evaled_ctx.cur_object with
+            | RNull -> error "NullPointerException"
+            | RObj { class_key = _; field_ref_table = cur_frt; number = _ } ->
+                if Hashtbl.mem cur_frt var_key then
+                  (* Мы обновляем состояние объекта во всей системе + помним про final*)
+                  let old_field =
+                    Option.get (get_elem_if_present cur_frt var_key)
+                  in
+                  let check_assign_cnt_f : field_ref -> unit M.t =
+                   fun fld ->
+                    match fld.assignment_count with
+                    | 0 -> return ()
+                    | _ when not fld.is_mutable -> return ()
+                    | _ -> error "Assignment to a constant field"
+                  in
+                  check_assign_cnt_f old_field
+                  >> ( update_object_state ctx.cur_object var_key
+                         (Option.get val_evaled_ctx.last_expr_result)
+                         val_evaled_ctx
+                     |> fun _ -> return val_evaled_ctx )
+                else error "No such variable" )
+      | Assign (FieldAccess (obj_expr, Identifier f_name), val_expr) -> (
+          eval_expr val_expr ctx >>= fun val_evaled_ctx ->
+          eval_expr obj_expr val_evaled_ctx >>= fun obj_evaled_ctx ->
+          let obj_r =
+            get_obj_value (Option.get obj_evaled_ctx.last_expr_result)
+          in
+          let new_val = Option.get val_evaled_ctx.last_expr_result in
+          try
+            get_obj_info obj_r |> fun (_, frt, _) ->
+            if Hashtbl.mem frt f_name then
+              update_object_state obj_r f_name new_val obj_evaled_ctx
+              |> fun _ -> return obj_evaled_ctx
+            else error "No such field in class"
+          with Invalid_argument m -> error m )
       | _ -> return ctx
     in
     return ctx
+
+  and update_object_state obj field_key new_value update_ctx =
+    get_obj_number obj |> fun object_number ->
+    let rec update_states f_ht f_key n_val =
+      Hashtbl.iter
+        (fun _ field_ref ->
+          match field_ref with
+          | {
+           key = _;
+           f_type = _;
+           f_value = f_val;
+           is_mutable = _;
+           assignment_count = _;
+          } -> (
+              match f_val with
+              | VObjectRef objr ->
+                  get_obj_info objr |> fun (_, frt, fnum) ->
+                  if fnum = object_number then (
+                    Option.get (get_elem_if_present frt f_key)
+                    |> fun old_field ->
+                    Hashtbl.replace frt f_key
+                      {
+                        old_field with
+                        f_value = n_val;
+                        assignment_count = old_field.assignment_count + 1;
+                      };
+                    update_states frt f_key n_val )
+              | _ -> () ))
+        f_ht
+    in
+    let helper_update f_key n_val u_ctx num =
+      (* Пробегаемся по переменным main контекста как по вершинам дерева, если объект с нужным номером - обновляем состояние и запускает рекурсивный алгоритм обновления *)
+      Hashtbl.iter
+        (fun _ var ->
+          match var.v_value with
+          (*  Если значение - какой-то объект *)
+          | VObjectRef objr -> (
+              try
+                get_obj_info objr |> fun (_, frt, fnum) ->
+                (* Номер совпал - меняем значение на новое и запускаем рекурсивный обход полей *)
+                if num = fnum then (
+                  Option.get (get_elem_if_present frt f_key) |> fun old_field ->
+                  Hashtbl.replace frt f_key { old_field with f_value = n_val };
+                  update_states frt f_key n_val
+                  (* Номер не совпал - запускаем рекурсивный обход полей *)
+                  )
+                else update_states frt f_key n_val
+                (* Если RNull - пропускаем *)
+              with Invalid_argument _ -> () )
+          | _ -> ())
+        (get_main_ctx u_ctx).var_table
+    in
+    helper_update field_key new_value update_ctx
 
   and prepare_table_with_args :
       (key_t, variable) Hashtbl_p.t ->
