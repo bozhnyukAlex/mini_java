@@ -68,7 +68,7 @@ let get_type_by_value = function
   | VArray (Arr { a_type = t; values = _; number = _ }) -> Array t
   | VArray ANull -> Array Void
 
-let update_array_val v_arr index new_val =
+let update_array_val_exn v_arr index new_val =
   match v_arr with
   | VArray (Arr { a_type = at; values = v_list; number = an }) ->
       let update_list_on_pos pos list new_v =

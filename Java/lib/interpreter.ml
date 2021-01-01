@@ -983,7 +983,8 @@ module Main (M : MONADERROR) = struct
           Hashtbl.iter delete ctx.var_table;
           return ctx
         in
-        helper_eval st_list sctx >>= fun sbctx -> delete_scope_var sbctx
+        helper_eval st_list sctx >>= fun sbctx ->
+        if sbctx.is_main then return sbctx else delete_scope_var sbctx
     | While (bexpr, lstmt) -> (
         let rec loop s ctx =
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
@@ -1212,10 +1213,10 @@ module Main (M : MONADERROR) = struct
         in
         helper_vardec var_list sctx
 
-  (*Not implemented *)
+  (*TODO: PostInc, PostDec, PrefInc, PrefDec remaining! *)
   and eval_expr : expr -> context -> context M.t =
-   fun expr ctx ->
-    let rec eval_e (* TODO: СДЕЛАТЬ ФУНКЦИЕЙ *) =
+   fun expr ectx ->
+    let rec eval_e e_expr ctx =
       let eval_op left right op =
         eval_expr left ctx >>= fun lctx ->
         eval_expr right lctx >>= fun rctx ->
@@ -1233,7 +1234,7 @@ module Main (M : MONADERROR) = struct
         try return { vctx with last_expr_result = Some new_v }
         with Invalid_argument m -> error m
       in
-      match expr with
+      match e_expr with
       | Add (left, right) -> eval_op left right ( ++ )
       | Sub (left, right) -> eval_op left right ( -- )
       | Div (left, right) -> eval_op left right ( // )
@@ -1595,21 +1596,26 @@ module Main (M : MONADERROR) = struct
       | Assign (FieldAccess (obj_expr, Identifier f_name), val_expr) ->
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
           update_field_v obj_expr f_name val_evaled_ctx
-      (* | Assign (ArrayAccess (Identifier arr_name, index_expr), val_expr) -> (
+      | Assign (ArrayAccess (arr_expr, index_expr), val_expr) -> (
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
-          eval_expr index_expr val_evaled_ctx >>= fun index_evaled_ctx ->
-          get_old_arr arr_name index_evaled_ctx >>= fun old_arr_v ->
-          get_index (Option.get index_evaled_ctx.last_expr_result)
-          >>= fun index ->
-          try
-            update_identifier_v arr_name
-              (update_array_val old_arr_v index
-                 (Option.get val_evaled_ctx.last_expr_result))
-              index_evaled_ctx
-          with Invalid_argument m | Failure m -> error m ) *)
-      | _ -> return ctx
+          eval_expr arr_expr val_evaled_ctx >>= fun arr_evaled_ctx ->
+          eval_expr index_expr arr_evaled_ctx >>= fun index_evaled_ctx ->
+          match Option.get arr_evaled_ctx.last_expr_result with
+          | VArray arr -> (
+              match Option.get index_evaled_ctx.last_expr_result with
+              | VInt i -> (
+                  let new_val = Option.get val_evaled_ctx.last_expr_result in
+                  try
+                    update_array_state arr i new_val index_evaled_ctx
+                    |> fun _ ->
+                    return
+                      { index_evaled_ctx with last_expr_result = Some new_val }
+                  with Invalid_argument m | Failure m -> error m )
+              | _ -> error "Wrong type for array index!" )
+          | _ -> error "Wrong type for array asssignment!" )
+      | _ -> error "Wrong expression construction!"
     in
-    return ctx
+    expr_type_check expr ectx >> eval_e expr ectx
 
   and get_old_arr arr_n g_ctx =
     match get_elem_if_present g_ctx.var_table arr_n with
@@ -1662,10 +1668,13 @@ module Main (M : MONADERROR) = struct
               | _ -> error "Assignment to a constant field"
             in
             check_assign_cnt_f old_field
-            >> ( update_object_state val_evaled_ctx.cur_object var_key
-                   (Option.get val_evaled_ctx.last_expr_result)
-                   val_evaled_ctx
-               |> fun _ -> return val_evaled_ctx )
+            >>
+            try
+              update_object_state_exn val_evaled_ctx.cur_object var_key
+                (Option.get val_evaled_ctx.last_expr_result)
+                val_evaled_ctx
+              |> fun _ -> return val_evaled_ctx
+            with Invalid_argument m -> error m
           else error "No such variable"
 
   and update_field_v obj_expr f_name val_evaled_ctx =
@@ -1675,14 +1684,126 @@ module Main (M : MONADERROR) = struct
     try
       get_obj_info_exn obj_r |> fun (_, frt, _) ->
       if Hashtbl.mem frt f_name then
-        update_object_state obj_r f_name new_val obj_evaled_ctx |> fun _ ->
+        update_object_state_exn obj_r f_name new_val obj_evaled_ctx |> fun _ ->
         return obj_evaled_ctx
       else error "No such field in class"
     with Invalid_argument m -> error m
 
-  and update_object_state obj field_key new_value update_ctx =
-    get_obj_number_exn obj |> fun object_number ->
-    let rec update_states f_ht f_key n_val =
+  and update_array_state arr index new_value update_ctx =
+    let rec update_states f_ht i n_val a_n =
+      Hashtbl.iter
+        (fun _ field_ref ->
+          (* Перебираем все поля из таблицы *)
+          match field_ref with
+          | {
+           key = f_key;
+           f_type = _;
+           f_value = f_val;
+           is_mutable = _;
+           assignment_count = _;
+          } -> (
+              match f_val with
+              (* Если массив - смотрим, если номер совпал - обновляем элемент по индексу.
+                 + смотрим, если у нас массив объектов - то надо по нему тоже пробежаться, у каждого объекта сделать рекурсивный запуск обхода *)
+              | VArray
+                  (Arr { a_type = at; values = cur_values; number = cur_num })
+                -> (
+                  if cur_num = a_n then
+                    (* Надо в текущей таблице заменить массив на новый (заменить поле) *)
+                    Hashtbl.replace f_ht f_key
+                      {
+                        field_ref with
+                        f_value =
+                          update_array_val_exn
+                            (VArray
+                               (Arr
+                                  {
+                                    a_type = at;
+                                    values = cur_values;
+                                    number = cur_num;
+                                  }))
+                            i n_val;
+                      }
+                    |> fun () ->
+                    match at with
+                    | ClassName _ ->
+                        List.iter
+                          (fun v ->
+                            match v with
+                            | VObjectRef
+                                (RObj
+                                  {
+                                    class_key = _;
+                                    field_ref_table = frt;
+                                    number = _;
+                                  }) ->
+                                update_states frt i n_val a_n
+                            | _ -> ())
+                          cur_values
+                    | _ -> () )
+              (* Если не-null объект - рекурсивный запуск по его таблице полей  *)
+              | VObjectRef
+                  (RObj { class_key = _; field_ref_table = frt; number = _ }) ->
+                  update_states frt i n_val a_n
+              | _ -> () ))
+        f_ht
+    in
+
+    let rec helper_update i n_val u_ctx a_n =
+      Hashtbl.iter
+        (fun v_key var ->
+          match var.v_value with
+          | VObjectRef
+              (RObj { class_key = _; field_ref_table = frt; number = _ }) ->
+              update_states frt i n_val a_n
+          | VArray (Arr { a_type = at; values = cur_values; number = cur_num })
+            -> (
+              if cur_num = a_n then
+                (* Надо в текущей таблице заменить массив на новый (заменить значение переменной) *)
+                Hashtbl.replace (get_main_ctx u_ctx).var_table v_key
+                  {
+                    var with
+                    v_value =
+                      update_array_val_exn
+                        (VArray
+                           (Arr
+                              {
+                                a_type = at;
+                                values = cur_values;
+                                number = cur_num;
+                              }))
+                        i n_val;
+                  }
+                |> fun () ->
+                match at with
+                | ClassName _ ->
+                    List.iter
+                      (fun v ->
+                        match v with
+                        | VObjectRef
+                            (RObj
+                              {
+                                class_key = _;
+                                field_ref_table = frt;
+                                number = _;
+                              }) ->
+                            update_states frt i n_val a_n
+                        | _ -> ())
+                      cur_values
+                | _ -> () )
+          | _ -> ())
+        (get_main_ctx u_ctx).var_table
+    in
+    try
+      get_arr_info_exn arr |> fun (_, _, a_number) ->
+      helper_update index new_value update_ctx a_number
+    with
+    | Invalid_argument m -> raise (Invalid_argument m)
+    | Failure m -> raise (Failure m)
+
+  and update_object_state_exn obj field_key new_value update_ctx =
+    let rec update_states f_ht f_key n_val o_num =
+      (* Перебираем все поля из таблицы *)
       Hashtbl.iter
         (fun _ field_ref ->
           match field_ref with
@@ -1694,9 +1815,12 @@ module Main (M : MONADERROR) = struct
            assignment_count = _;
           } -> (
               match f_val with
-              | VObjectRef objr ->
-                  get_obj_info_exn objr |> fun (_, frt, fnum) ->
-                  if fnum = object_number then (
+              (* Если значение поля - какой-то не-null объект, то... *)
+              | VObjectRef
+                  (RObj { class_key = _; field_ref_table = frt; number = fnum })
+                ->
+                  (* Смотрим, если номера совпадают - обновляем поле. В любом случае делаем запуск по полям этого объекта *)
+                  ( if fnum = o_num then
                     Option.get (get_elem_if_present frt f_key)
                     |> fun old_field ->
                     Hashtbl.replace frt f_key
@@ -1704,34 +1828,82 @@ module Main (M : MONADERROR) = struct
                         old_field with
                         f_value = n_val;
                         assignment_count = old_field.assignment_count + 1;
-                      };
-                    update_states frt f_key n_val )
+                      } );
+                  update_states frt f_key n_val o_num
+              (* Массив объектов - бежим по нему, если объект - бежим по его полям. При совпадении номера еще и обновляем *)
+              | VArray
+                  (Arr { a_type = ClassName _; values = v_list; number = _ }) ->
+                  List.iter
+                    (fun v ->
+                      match v with
+                      | VObjectRef
+                          (RObj
+                            {
+                              class_key = _;
+                              field_ref_table = frt;
+                              number = c_num;
+                            }) ->
+                          ( if c_num = o_num then
+                            Option.get (get_elem_if_present frt f_key)
+                            |> fun old_field ->
+                            Hashtbl.replace frt f_key
+                              {
+                                old_field with
+                                f_value = n_val;
+                                assignment_count =
+                                  old_field.assignment_count + 1;
+                              } );
+                          update_states frt f_key n_val o_num
+                      | _ -> ())
+                    v_list
+              (* Иначе пропуск, идем дальше *)
               | _ -> () ))
         f_ht
     in
-    let helper_update f_key n_val u_ctx num =
+    let helper_update f_key n_val u_ctx num o_num =
       (* Пробегаемся по переменным main контекста как по вершинам дерева, если объект с нужным номером - обновляем состояние и запускает рекурсивный алгоритм обновления *)
       Hashtbl.iter
         (fun _ var ->
           match var.v_value with
           (*  Если значение - какой-то объект *)
-          | VObjectRef objr -> (
-              try
-                get_obj_info_exn objr |> fun (_, frt, fnum) ->
-                (* Номер совпал - меняем значение на новое и запускаем рекурсивный обход полей *)
-                if num = fnum then (
-                  Option.get (get_elem_if_present frt f_key) |> fun old_field ->
-                  Hashtbl.replace frt f_key { old_field with f_value = n_val };
-                  update_states frt f_key n_val
-                  (* Номер не совпал - запускаем рекурсивный обход полей *)
-                  )
-                else update_states frt f_key n_val
-                (* Если RNull - пропускаем *)
-              with Invalid_argument _ -> () )
+          | VObjectRef
+              (RObj { class_key = _; field_ref_table = frt; number = fnum }) ->
+              if num = fnum then (
+                Option.get (get_elem_if_present frt f_key) |> fun old_field ->
+                Hashtbl.replace frt f_key { old_field with f_value = n_val };
+                update_states frt f_key n_val o_num
+                (* Номер не совпал - запускаем рекурсивный обход полей *)
+                )
+              else update_states frt f_key n_val o_num
+          (* Массив объектов - пробегаемся по элементам, видим объект - запускаем обход по его таблице полей с обновлением при совпадении номера *)
+          | VArray (Arr { a_type = ClassName _; values = v_list; number = _ })
+            ->
+              List.iter
+                (fun v ->
+                  match v with
+                  | VObjectRef
+                      (RObj
+                        { class_key = _; field_ref_table = frt; number = c_num })
+                    ->
+                      ( if c_num = num then
+                        Option.get (get_elem_if_present frt f_key)
+                        |> fun old_field ->
+                        Hashtbl.replace frt f_key
+                          {
+                            old_field with
+                            f_value = n_val;
+                            assignment_count = old_field.assignment_count + 1;
+                          } );
+                      update_states frt f_key n_val o_num
+                  | _ -> ())
+                v_list
           | _ -> ())
         (get_main_ctx u_ctx).var_table
     in
-    helper_update field_key new_value update_ctx
+    try
+      get_obj_number_exn obj |> fun object_number ->
+      helper_update field_key new_value update_ctx object_number
+    with Invalid_argument m -> raise (Invalid_argument m)
 
   and prepare_table_with_args :
       (key_t, variable) Hashtbl_p.t ->
