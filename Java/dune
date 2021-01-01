@@ -6,4 +6,4 @@
 
 (cram
  (deps demos/demoParserFirst.exe demos/demoParserSecond.exe
-   demos/demoClassLoader.exe))
+   demos/demoClassLoader.exe demos/demoInterpreter.exe))

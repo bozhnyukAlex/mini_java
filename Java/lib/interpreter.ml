@@ -753,15 +753,23 @@ module Main (M : MONADERROR) = struct
             match arr_type with
             | Void -> error "Wrong type of array"
             | Array _ -> error "Wrong type of Array"
-            | _ -> return arr_type )
+            | _ -> return (Array arr_type) )
         | _ -> error "Wrong type: size must be Int" )
     | ArrayCreateElements (arr_type, elems) ->
         let rec process_list_el = function
-          | [] -> return arr_type
-          | el :: els ->
+          | [] -> return (Array arr_type)
+          | el :: els -> (
               expr_type_check el ctx >>= fun el_type ->
-              if arr_type = el_type then process_list_el els
-              else error "Wrong type of array element"
+              match arr_type with
+              | ClassName cleft -> (
+                  match el_type with
+                  | ClassName "null" -> process_list_el els
+                  | ClassName cright ->
+                      check_classname_assign cleft cright >> process_list_el els
+                  | _ -> error "Wrong type of array element: creation" )
+              | _ ->
+                  if arr_type = el_type then process_list_el els
+                  else error "Wrong type of array element: creation" )
         in
         process_list_el elems
     | ClassCreate (Name class_name, args) -> (
@@ -1237,6 +1245,7 @@ module Main (M : MONADERROR) = struct
       match e_expr with
       | Add (left, right) -> eval_op left right ( ++ )
       | Sub (left, right) -> eval_op left right ( -- )
+      | Mult (left, right) -> eval_op left right ( ** )
       | Div (left, right) -> eval_op left right ( // )
       | Mod (left, right) -> eval_op left right ( %% )
       | And (left, right) -> eval_op left right ( &&& )
@@ -1937,7 +1946,7 @@ module Main (M : MONADERROR) = struct
     match curr_body with
     | StmtBlock (Expression (CallMethod (Super, _)) :: _) -> return curr_body
     | StmtBlock other -> (
-        (* Если увидели, что начало на не супер - то надо просмотреть, есть ли конструкторы у родителя *)
+        (* Если увидели, что начало не на супер - то надо просмотреть, есть ли конструкторы у родителя *)
         match curr_class_r.parent_key with
         (* Родителя нет - тогда просто возвращаем тот-же конструктор *)
         | None -> return curr_body
@@ -1949,10 +1958,12 @@ module Main (M : MONADERROR) = struct
               Hashtbl.length par_r.constructor_table = 1
               && get_elem_if_present par_r.constructor_table
                    (par_r.this_key ^ "$$")
-                 = None
+                 <> None
             then
               return (StmtBlock (Expression (CallMethod (Super, [])) :: other))
-            else error "Constructor must start with super!" )
+            else
+              error
+                ("Constructor must start with super!" ^ par_r.this_key ^ "$$") )
     | _ -> error "Must be statement block!"
 
   let execute : (key_t, class_r) Hashtbl.t -> context M.t =

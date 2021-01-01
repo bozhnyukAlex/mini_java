@@ -711,3 +711,78 @@
   -------------------@OVERRIDE_ERRORS-------------------
   
   @Override annotation on not overriden method
+
+
+
+
+  $ (cd ../../../../default && demos/demoInterpreter.exe)
+  ------------------- FIRST TEST ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "a" ->
+     { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 1;
+       v_value = VInt (1); scope_level = 0 }
+    
+  "b" ->
+   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (2); scope_level = 0 }
+  
+  "c" ->
+   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (3); scope_level = 0 }
+  
+  ; last_expr_result = Some (VInt (3)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  main_context = None; obj_created_cnt = 0
+  }
+  
+  ------------------- LITTLE ARITHMETIC TEST ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "val2" ->
+     { v_type = Int; v_key = "val2"; is_mutable = false; assignment_count = 1;
+       v_value = VInt (3); scope_level = 0 }
+    
+  "a" ->
+   { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (2); scope_level = 0 }
+  
+  "val7" ->
+   { v_type = Int; v_key = "val7"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (124); scope_level = 0 }
+  
+  "val1" ->
+   { v_type = Int; v_key = "val1"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (15); scope_level = 0 }
+  
+  "val3" ->
+   { v_type = Int; v_key = "val3"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (101); scope_level = 0 }
+  
+  "b" ->
+   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (2); scope_level = 0 }
+  
+  "val4" ->
+   { v_type = Int; v_key = "val4"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (5); scope_level = 0 }
+  
+  "val5" ->
+   { v_type = Int; v_key = "val5"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (0); scope_level = 0 }
+  
+  "val6" ->
+   { v_type = Int; v_key = "val6"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (300); scope_level = 0 }
+  
+  "c" ->
+   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (3); scope_level = 0 }
+  
+  ; last_expr_result = Some (VInt (124)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  main_context = None; obj_created_cnt = 0
+  }
+  

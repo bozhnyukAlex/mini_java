@@ -24,3 +24,10 @@
  (libraries Java.Lib)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))
+
+(executable
+ (name demoInterpreter)
+ (modules demoInterpreter)
+ (libraries Java.Lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))
