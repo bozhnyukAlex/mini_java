@@ -13,7 +13,7 @@ type type_t =
 type value =
   | VBool of bool
   | VInt of int
-  | VArray of value list
+  | VArray of array_ref
   | VVoid
   | VString of string
   | VObjectRef of obj_ref
@@ -37,75 +37,49 @@ and obj_ref =
       number : int;
     }
 
-let get_obj_fields = function
+and array_ref =
+  | ANull
+  | Arr of { a_type : type_t; values : value list; number : int }
+
+let get_arr_info_exn = function
+  | ANull -> raise (Invalid_argument "NullPointerException")
+  | Arr { a_type = at; values = av; number = an } -> (at, av, an)
+
+let get_obj_fields_exn = function
   | RNull -> raise (Invalid_argument "NullPointerException")
   | RObj { class_key = _; field_ref_table = frt; number = _ } -> frt
 
-let get_obj_number = function
+let get_obj_number_exn = function
   | RNull -> raise (Invalid_argument "NullPointerException")
   | RObj { class_key = _; field_ref_table = _; number = n } -> n
 
-let get_obj_info = function
+let get_obj_info_exn = function
   | RNull -> raise (Invalid_argument "NullPointerException")
   | RObj { class_key = k; field_ref_table = t; number = n } -> (k, t, n)
 
+let get_type_by_value = function
+  | VInt _ -> Int
+  | VBool _ -> Bool
+  | VString _ -> String
+  | VVoid -> Void
+  | VObjectRef RNull -> ClassName "null"
+  | VObjectRef (RObj { class_key = ck; field_ref_table = _; number = _ }) ->
+      ClassName ck
+  | VArray (Arr { a_type = t; values = _; number = _ }) -> Array t
+  | VArray ANull -> Array Void
+
 let update_array_val v_arr index new_val =
   match v_arr with
-  | VArray v_list ->
+  | VArray (Arr { a_type = at; values = v_list; number = an }) ->
       let update_list_on_pos pos list new_v =
         List.mapi (fun i old_v -> if i = pos then new_v else old_v) list
       in
-      (* Проверяем, чтобы значения в массиве были одного типа *)
-      let check_list list =
-        match List.hd list with
-        | VBool _ -> List.for_all (function VBool _ -> true | _ -> false) list
-        | VInt _ -> List.for_all (function VInt _ -> true | _ -> false) list
-        | VString _ ->
-            List.for_all (function VString _ -> true | _ -> false) list
-        | VArray _ -> false
-        | VVoid -> false
-        | VObjectRef (RObj { class_key = key; field_ref_table = _; number = _ })
-          ->
-            List.for_all
-              (function
-                | VObjectRef RNull -> true
-                | VObjectRef
-                    (RObj { class_key = k; field_ref_table = _; number = _ })
-                  when k = key ->
-                    true
-                | _ -> false)
-              list
-        (* Если первый Null - старамся найти первый не Null и по его образцу проверяем весь массив *)
-        | VObjectRef RNull -> (
-            let rec find_first_not_null = function
-              | [] -> RNull
-              | v :: vs -> (
-                  match v with
-                  | VObjectRef RNull -> find_first_not_null vs
-                  | VObjectRef (RObj r) -> RObj r
-                  | _ -> raise (Invalid_argument "Wrong type!") )
-            in
-            try
-              find_first_not_null list |> fun obj_r ->
-              match obj_r with
-              (* Вернулся null - значит все значения null - значит все норм *)
-              | RNull -> true
-              (* Иначе смотрим, чтобы был один тип и cмотрим, чтобы были null или нужного типа *)
-              | RObj { class_key = key; field_ref_table = _; number = _ } ->
-                  List.for_all
-                    (function
-                      | VObjectRef RNull -> true
-                      | VObjectRef
-                          (RObj
-                            { class_key = k; field_ref_table = _; number = _ })
-                        when k = key ->
-                          true
-                      | _ -> false)
-                    list
-            with Invalid_argument _ -> false )
+      let check_value_type a_type new_val =
+        a_type = get_type_by_value new_val
       in
-      update_list_on_pos index v_list new_val |> fun new_list ->
-      if check_list new_list = true then new_list
+      if check_value_type at new_val then
+        update_list_on_pos index v_list new_val |> fun new_list ->
+        VArray (Arr { a_type = at; values = new_list; number = an })
         (* То самое исключение, из-за которого Java/C# - отстой *)
       else raise (Failure "ArrayStoreException")
   | _ -> raise (Invalid_argument "Wrong value for array update!")
@@ -181,8 +155,7 @@ let rec equal_value v1 v2 =
   | VVoid, VVoid -> true
   | VString s, VString t -> s = t
   | VObjectRef x, VObjectRef y -> x = y
-  | VArray x_values, VArray y_values ->
-      List.for_all2 equal_value x_values y_values
+  | VArray x, VArray y -> x = y
   | _ -> raise (Invalid_argument "Wrong types for equality!")
 
 let rec ( === ) v1 v2 =
@@ -192,8 +165,7 @@ let rec ( === ) v1 v2 =
   | VVoid, VVoid -> VBool true
   | VString s, VString t -> VBool (s = t)
   | VObjectRef x, VObjectRef y -> VBool (x = y)
-  | VArray x_values, VArray y_values ->
-      VBool (List.for_all2 equal_value x_values y_values)
+  | VArray x, VArray y -> VBool (x = y)
   | _ -> raise (Invalid_argument "Wrong types for equality!")
 
 let rec ( !=! ) v1 v2 = not_v (v1 === v2)
@@ -204,7 +176,7 @@ let get_init_value_of_type = function
   | ClassName _ -> VObjectRef RNull
   | Bool -> VBool false
   | Void -> VVoid
-  | Array _ -> VArray []
+  | Array _ -> VArray ANull
 
 type name = Name of string [@@deriving show { with_path = false }]
 

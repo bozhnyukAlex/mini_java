@@ -261,7 +261,6 @@ module ClassLoader (M : MONADERROR) = struct
               let is_class_abstract = is_abstract ml in
               (* Является ли метод абстрактным *)
               let is_abstract = is_abstract m_ms in
-
               (*Перед добавлением стоит проверять, чтобы у абстрактного метода не было тела и прочие ошибки*)
               let check_abstract_body_syntax =
                 match is_abstract with
@@ -587,7 +586,7 @@ module Main (M : MONADERROR) = struct
     match cur_ctx.main_context with None -> cur_ctx | Some m_ctx -> m_ctx
 
   let obj_num obj =
-    try get_obj_number obj |> fun n -> return n
+    try get_obj_number_exn obj |> fun n -> return n
     with Invalid_argument m -> error m
 
   let find_class_with_main ht =
@@ -800,6 +799,9 @@ module Main (M : MONADERROR) = struct
         | VObjectRef (RObj { class_key = ck; field_ref_table = _; number = _ })
           ->
             return (ClassName ck)
+        | VArray ANull -> return (Array Void)
+        | VArray (Arr { a_type = t; values = _; number = _ }) ->
+            return (Array t)
         | _ -> error "Wrong const value" )
     | Assign (left, right) -> (
         expr_type_check left ctx >>= fun lt ->
@@ -939,8 +941,6 @@ module Main (M : MONADERROR) = struct
   let get_bool_value = function VBool b -> b | _ -> false
 
   let get_obj_value = function VObjectRef o -> o | _ -> RNull
-
-  let get_arr_value = function VArray l -> l | _ -> []
 
   let make_list_of_elem el size =
     let rec helper acc curr =
@@ -1384,14 +1384,18 @@ module Main (M : MONADERROR) = struct
           let arr_v = Option.get arrctx.last_expr_result in
           let ind_v = Option.get indctx.last_expr_result in
           match arr_v with
-          | VArray values -> (
+          | VArray (Arr { a_type = _; values = a_values; number = _ }) -> (
               match ind_v with
-              | VInt i when i < 0 || i > List.length values ->
+              | VInt i when i < 0 || i > List.length a_values ->
                   error "ArrayOutOfBoundsException"
               | VInt i ->
                   return
-                    { indctx with last_expr_result = Some (List.nth values i) }
+                    {
+                      indctx with
+                      last_expr_result = Some (List.nth a_values i);
+                    }
               | _ -> error "Index must be int!" )
+          | VArray ANull -> error "NullPointerException"
           | _ -> error "Must be array!" )
       | ArrayCreateSized (arr_type, size_expr) -> (
           eval_expr size_expr ctx >>= fun szctx ->
@@ -1403,10 +1407,19 @@ module Main (M : MONADERROR) = struct
                 {
                   szctx with
                   last_expr_result =
-                    Some (VArray (make_list_of_elem init_v size));
+                    (* Some (VArray (make_list_of_elem init_v size)); *)
+                    Some
+                      (VArray
+                         (Arr
+                            {
+                              a_type = arr_type;
+                              values = make_list_of_elem init_v size;
+                              number = szctx.obj_created_cnt + 1;
+                            }));
+                  obj_created_cnt = szctx.obj_created_cnt + 1;
                 }
           | _ -> error "Size must be int!" )
-      | ArrayCreateElements (_, expr_list) ->
+      | ArrayCreateElements (a_type, expr_list) ->
           let make_val_list ex_list fctx =
             let rec helper acc e_lst hctx =
               match e_lst with
@@ -1414,12 +1427,21 @@ module Main (M : MONADERROR) = struct
               | e :: es ->
                   eval_expr e hctx >>= fun ectx ->
                   let head_val = Option.get ectx.last_expr_result in
-                  helper (head_val :: acc) es ectx
+                  helper (acc @ [ head_val ]) es ectx
             in
             helper [] ex_list fctx
           in
-          let new_v_list = get (make_val_list expr_list ctx) in
-          return { ctx with last_expr_result = Some (VArray new_v_list) }
+          make_val_list expr_list ctx >>= fun values ->
+          (* return { ctx with last_expr_result = Some (VArray new_v_list) } *)
+          return
+            {
+              ctx with
+              last_expr_result =
+                Some
+                  (VArray
+                     (Arr { a_type; values; number = ctx.obj_created_cnt + 1 }));
+              obj_created_cnt = ctx.obj_created_cnt + 1;
+            }
       | ClassCreate (Name class_name, c_args) ->
           (* В проверке типов наличие уже проверялось, можем смело использовать Option.get *)
           let obj_class =
@@ -1556,7 +1578,7 @@ module Main (M : MONADERROR) = struct
             prepare_constructor_block constr_r.body obj_class >>= fun c_body ->
             eval_stmt c_body { vctx with var_table = vt; is_constructor = true }
             >>= fun c_ctx ->
-            (* В итоге возвращем тот же контекст, что и был, с получившимся объектом посе исполнения конструктора *)
+            (* В итоге возвращем тот же контекст, что и был, с получившимся объектом после исполнения конструктора *)
             return
               {
                 ctx with
@@ -1565,70 +1587,101 @@ module Main (M : MONADERROR) = struct
                 is_constructor = false;
                 obj_created_cnt = c_ctx.obj_created_cnt;
               }
-      | Assign (Identifier var_key, val_expr) -> (
+      | Assign (Identifier var_key, val_expr) ->
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
-          if Hashtbl.mem val_evaled_ctx.var_table var_key then
-            let old_var =
-              Option.get (get_elem_if_present ctx.var_table var_key)
-            in
-            let check_assign_cnt_v var =
-              match var.assignment_count with
-              | 0 -> return ()
-              | _ when not var.is_mutable -> return ()
-              | _ -> error "Assignment to a constant variable"
-            in
-            check_assign_cnt_v old_var
-            >>
-            ( Hashtbl.replace ctx.var_table var_key
-                {
-                  old_var with
-                  v_value = Option.get val_evaled_ctx.last_expr_result;
-                  assignment_count = old_var.assignment_count + 1;
-                };
-              return val_evaled_ctx )
-            (* Если не получилось найти среди переменных - ищем среди полей текущего объекта *)
-          else
-            match val_evaled_ctx.cur_object with
-            | RNull -> error "NullPointerException"
-            | RObj { class_key = _; field_ref_table = cur_frt; number = _ } ->
-                if Hashtbl.mem cur_frt var_key then
-                  (* Мы обновляем состояние объекта во всей системе + помним про final*)
-                  let old_field =
-                    Option.get (get_elem_if_present cur_frt var_key)
-                  in
-                  let check_assign_cnt_f : field_ref -> unit M.t =
-                   fun fld ->
-                    match fld.assignment_count with
-                    | 0 -> return ()
-                    | _ when not fld.is_mutable -> return ()
-                    | _ -> error "Assignment to a constant field"
-                  in
-                  check_assign_cnt_f old_field
-                  >> ( update_object_state ctx.cur_object var_key
-                         (Option.get val_evaled_ctx.last_expr_result)
-                         val_evaled_ctx
-                     |> fun _ -> return val_evaled_ctx )
-                else error "No such variable" )
-      | Assign (FieldAccess (obj_expr, Identifier f_name), val_expr) -> (
+          update_identifier_v var_key
+            (Option.get val_evaled_ctx.last_expr_result)
+            val_evaled_ctx
+      | Assign (FieldAccess (obj_expr, Identifier f_name), val_expr) ->
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
-          eval_expr obj_expr val_evaled_ctx >>= fun obj_evaled_ctx ->
-          let obj_r =
-            get_obj_value (Option.get obj_evaled_ctx.last_expr_result)
-          in
-          let new_val = Option.get val_evaled_ctx.last_expr_result in
+          update_field_v obj_expr f_name val_evaled_ctx
+      (* | Assign (ArrayAccess (Identifier arr_name, index_expr), val_expr) -> (
+          eval_expr val_expr ctx >>= fun val_evaled_ctx ->
+          eval_expr index_expr val_evaled_ctx >>= fun index_evaled_ctx ->
+          get_old_arr arr_name index_evaled_ctx >>= fun old_arr_v ->
+          get_index (Option.get index_evaled_ctx.last_expr_result)
+          >>= fun index ->
           try
-            get_obj_info obj_r |> fun (_, frt, _) ->
-            if Hashtbl.mem frt f_name then
-              update_object_state obj_r f_name new_val obj_evaled_ctx
-              |> fun _ -> return obj_evaled_ctx
-            else error "No such field in class"
-          with Invalid_argument m -> error m )
+            update_identifier_v arr_name
+              (update_array_val old_arr_v index
+                 (Option.get val_evaled_ctx.last_expr_result))
+              index_evaled_ctx
+          with Invalid_argument m | Failure m -> error m ) *)
       | _ -> return ctx
     in
     return ctx
 
+  and get_old_arr arr_n g_ctx =
+    match get_elem_if_present g_ctx.var_table arr_n with
+    | Some v -> return v.v_value
+    | None -> (
+        try
+          let curr_obj_fields = get_obj_fields_exn g_ctx.cur_object in
+          match get_elem_if_present curr_obj_fields arr_n with
+          | Some field -> return field.f_value
+          | None -> error "No such array field or variable"
+        with Invalid_argument m -> error m )
+
+  and get_index v =
+    match v with VInt x -> return x | _ -> error "Wrong value type!"
+
+  and update_identifier_v var_key new_val val_evaled_ctx =
+    if Hashtbl.mem val_evaled_ctx.var_table var_key then
+      let old_var =
+        Option.get (get_elem_if_present val_evaled_ctx.var_table var_key)
+      in
+      let check_assign_cnt_v var =
+        match var.assignment_count with
+        | 0 -> return ()
+        | _ when not var.is_mutable -> return ()
+        | _ -> error "Assignment to a constant variable"
+      in
+      check_assign_cnt_v old_var
+      >>
+      ( Hashtbl.replace val_evaled_ctx.var_table var_key
+          {
+            old_var with
+            v_value = new_val;
+            (* Option.get val_evaled_ctx.last_expr_result; *)
+            assignment_count = old_var.assignment_count + 1;
+          };
+        return val_evaled_ctx )
+      (* Если не получилось найти среди переменных - ищем среди полей текущего объекта *)
+    else
+      match val_evaled_ctx.cur_object with
+      | RNull -> error "NullPointerException"
+      | RObj { class_key = _; field_ref_table = cur_frt; number = _ } ->
+          if Hashtbl.mem cur_frt var_key then
+            (* Мы обновляем состояние объекта во всей системе + помним про final*)
+            let old_field = Option.get (get_elem_if_present cur_frt var_key) in
+            let check_assign_cnt_f : field_ref -> unit M.t =
+             fun fld ->
+              match fld.assignment_count with
+              | 0 -> return ()
+              | _ when not fld.is_mutable -> return ()
+              | _ -> error "Assignment to a constant field"
+            in
+            check_assign_cnt_f old_field
+            >> ( update_object_state val_evaled_ctx.cur_object var_key
+                   (Option.get val_evaled_ctx.last_expr_result)
+                   val_evaled_ctx
+               |> fun _ -> return val_evaled_ctx )
+          else error "No such variable"
+
+  and update_field_v obj_expr f_name val_evaled_ctx =
+    eval_expr obj_expr val_evaled_ctx >>= fun obj_evaled_ctx ->
+    let obj_r = get_obj_value (Option.get obj_evaled_ctx.last_expr_result) in
+    let new_val = Option.get val_evaled_ctx.last_expr_result in
+    try
+      get_obj_info_exn obj_r |> fun (_, frt, _) ->
+      if Hashtbl.mem frt f_name then
+        update_object_state obj_r f_name new_val obj_evaled_ctx |> fun _ ->
+        return obj_evaled_ctx
+      else error "No such field in class"
+    with Invalid_argument m -> error m
+
   and update_object_state obj field_key new_value update_ctx =
-    get_obj_number obj |> fun object_number ->
+    get_obj_number_exn obj |> fun object_number ->
     let rec update_states f_ht f_key n_val =
       Hashtbl.iter
         (fun _ field_ref ->
@@ -1642,7 +1695,7 @@ module Main (M : MONADERROR) = struct
           } -> (
               match f_val with
               | VObjectRef objr ->
-                  get_obj_info objr |> fun (_, frt, fnum) ->
+                  get_obj_info_exn objr |> fun (_, frt, fnum) ->
                   if fnum = object_number then (
                     Option.get (get_elem_if_present frt f_key)
                     |> fun old_field ->
@@ -1664,7 +1717,7 @@ module Main (M : MONADERROR) = struct
           (*  Если значение - какой-то объект *)
           | VObjectRef objr -> (
               try
-                get_obj_info objr |> fun (_, frt, fnum) ->
+                get_obj_info_exn objr |> fun (_, frt, fnum) ->
                 (* Номер совпал - меняем значение на новое и запускаем рекурсивный обход полей *)
                 if num = fnum then (
                   Option.get (get_elem_if_present frt f_key) |> fun old_field ->
