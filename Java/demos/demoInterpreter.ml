@@ -193,4 +193,4 @@ class Rectangle extends Figure {
 }
         |})
 
-let () = test_interp test_val
+(* let () = test_interp test_val *)
