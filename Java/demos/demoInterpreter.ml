@@ -70,6 +70,56 @@ let () = test_interp test_val
 
 let () =
   print_string
+    "------------------- SIMPLE METHOD CALL TEST ------------------\n"
+
+(* TODO: DON'T WORK *)
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+
+    public static void main() {
+        Person person = new Person(25, "Bob");
+        int res = person.sum(25, 100);
+        int a1 = person.getAge();
+        person.setAge(30);
+        int a2 = person.getAge(); 
+    }
+}
+
+class Person {
+    int age;
+    String name;
+
+    public Person() {}
+
+    public Person(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    public int sum(int a, int b) {
+        return a + b;
+    }
+
+    public int getAge() {
+        return this.age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+}
+        |})
+
+let () = test_interp test_val
+
+(* 
+let () =
+  print_string
     "------------------- PATTERN VISITOR TEST YES I'M CRAZY ------------------\n"
 
 let test_val =
@@ -81,7 +131,12 @@ let test_val =
 public class Main {
 
     public static void main() {
-        Circle c = new Circle(4);
+        Figure[] list = new Figure[] {new Circle(5), new Rectangle(2,4), new Triangle()};
+        AreaVisitor areaVisitor = new AreaVisitor();
+        PerimeterVisitor perimeterVisitor = new PerimeterVisitor();
+        int[] resPerimeter = new int[3];
+        int[] resArea = new int[3];
+        int gg = list[0].accept(areaVisitor);
         
 
     }
@@ -193,4 +248,4 @@ class Rectangle extends Figure {
 }
         |})
 
-(* let () = test_interp test_val *)
+let visitor_test = test_interp test_val *)

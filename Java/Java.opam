@@ -19,6 +19,7 @@ depends: [
   "ppx_deriving"
   "ppx_show"
   "iter"
+  "str"
 ]
 
 

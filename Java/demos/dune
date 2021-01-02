@@ -8,6 +8,7 @@
  (name demoParserFirst)
  (modules demoParserFirst)
  (libraries Java.Lib)
+ (modes byte exe)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))
 
@@ -15,6 +16,7 @@
  (name demoParserSecond)
  (modules demoParserSecond)
  (libraries Java.Lib)
+ (modes byte exe)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))
 
@@ -22,6 +24,7 @@
  (name demoClassLoader)
  (modules demoClassLoader)
  (libraries Java.Lib)
+ (modes byte exe)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))
 
@@ -29,5 +32,6 @@
  (name demoInterpreter)
  (modules demoInterpreter)
  (libraries Java.Lib)
+ (modes byte exe)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))
