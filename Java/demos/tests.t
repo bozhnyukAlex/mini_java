@@ -731,7 +731,8 @@
   ; last_expr_result = Some (VInt (3)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 0; is_creation = false
+  main_context = None; obj_created_cnt = 0; is_creation = false;
+  constr_affilation = None
   }
   
   ------------------- LITTLE ARITHMETIC TEST ------------------
@@ -780,7 +781,8 @@
   ; last_expr_result = Some (VInt (124)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 0; is_creation = false
+  main_context = None; obj_created_cnt = 0; is_creation = false;
+  constr_affilation = None
   }
   
   ------------------- SIMPLE METHOD CALL TEST ------------------
@@ -818,7 +820,8 @@
   ; last_expr_result = Some (VInt (30)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 1; is_creation = false
+  main_context = None; obj_created_cnt = 1; is_creation = false;
+  constr_affilation = None
   }
   
   ------------------- UPDATE OBJECT STATE IN MAIN TEST ------------------
@@ -899,8 +902,134 @@
   ; last_expr_result = Some (VInt (55)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 1; is_creation = false
+  main_context = None; obj_created_cnt = 1; is_creation = false;
+  constr_affilation = None
   }
   
   ------------------- CHILD WORKING TEST ------------------
-  No such variable or field with this name : age
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "childSecond" ->
+     { v_type = ClassName ("Child"); v_key = "childSecond"; is_mutable = false;
+       assignment_count = 1;
+       v_value =
+       VObjectRef (RObj ({ class_key = "Child";
+                           field_ref_table =
+                           "parent" ->
+                            { key = "parent"; f_type = ClassName ("Person");
+                              f_value =
+                              VObjectRef (RObj ({ class_key = "Person";
+                                                  field_ref_table =
+                                                  "age" ->
+                                                   { key = "age"; f_type = Int;
+                                                     f_value = VInt (25);
+                                                     is_mutable = false;
+                                                     assignment_count = 0 }
+                                                  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Bob");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 })); is_mutable = false; assignment_count = 0
+  }
+  
+  "age" ->
+   { key = "age"; f_type = Int; f_value = VInt (20); is_mutable = false;
+     assignment_count = 1 }
+  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString (""); is_mutable = false;
+     assignment_count = 0 }
+  
+  ; number = 4 })); scope_level = 0
+  }
+  
+  "person" ->
+   { v_type = ClassName ("Person"); v_key = "person"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "Person";
+                         field_ref_table =
+                         "age" ->
+                          { key = "age"; f_type = Int; f_value = VInt (25);
+                            is_mutable = false; assignment_count = 0 }
+                         
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Bob");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 })); scope_level = 0
+  }
+  
+  "childFirst" ->
+   { v_type = ClassName ("Child"); v_key = "childFirst"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "Child";
+                         field_ref_table =
+                         "parent" ->
+                          { key = "parent"; f_type = ClassName ("Person");
+                            f_value =
+                            VObjectRef (RObj ({ class_key = "Person";
+                                                field_ref_table =
+                                                "age" ->
+                                                 { key = "age"; f_type = Int;
+                                                   f_value = VInt (40);
+                                                   is_mutable = false;
+                                                   assignment_count = 0 }
+                                                
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Flexer");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 3 })); is_mutable = false; assignment_count = 0
+  }
+  
+  "age" ->
+   { key = "age"; f_type = Int; f_value = VInt (4); is_mutable = false;
+     assignment_count = 1 }
+  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Alice");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 2 })); scope_level = 0
+  }
+  
+  ;
+  last_expr_result =
+  Some (VObjectRef (RObj ({ class_key = "Child";
+                            field_ref_table =
+                            "parent" ->
+                             { key = "parent"; f_type = ClassName ("Person");
+                               f_value =
+                               VObjectRef (RObj ({ class_key = "Person";
+                                                   field_ref_table =
+                                                   "age" ->
+                                                    { key = "age";
+                                                      f_type = Int;
+                                                      f_value = VInt (40);
+                                                      is_mutable = false;
+                                                      assignment_count = 0 }
+                                                   
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Flexer");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 3 })); is_mutable = false; assignment_count = 0
+  }
+  
+  "age" ->
+   { key = "age"; f_type = Int; f_value = VInt (4); is_mutable = false;
+     assignment_count = 1 }
+  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Alice");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 2 }))); was_break = false; was_continue = false;
+  was_return = false; curr_method_type = Void; is_main = true; cycle_cnt = 0;
+  scope_level = 0; is_constructor = false; main_context = None;
+  obj_created_cnt = 4; is_creation = false; constr_affilation = None
+  }
+  

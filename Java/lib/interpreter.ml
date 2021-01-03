@@ -572,6 +572,7 @@ module Main (M : MONADERROR) = struct
     main_context : context option;
     obj_created_cnt : int;
     is_creation : bool;
+    constr_affilation : key_t option;
   }
   [@@deriving show { with_path = false }]
 
@@ -592,6 +593,7 @@ module Main (M : MONADERROR) = struct
         main_context = None;
         obj_created_cnt = 0;
         is_creation = false;
+        constr_affilation = None;
       }
 
   (* Если main контекст None - то main контекст - это мы сами, и пока еще никуда не заходили, себя возвращаем,
@@ -810,9 +812,9 @@ module Main (M : MONADERROR) = struct
                 (* Смотрим в таблице полей конкретного объекта *)
                 match get_elem_if_present ft key with
                 | None ->
-                    (* let _ =
-                         print_string ("ERROR CTX: " ^ show_context ctx ^ "\n")
-                       in *)
+                    let _ =
+                      print_string ("ERROR CTX: " ^ show_context ctx ^ "\n")
+                    in
                     error ("No such variable or field with this name : " ^ key)
                 | Some fr -> return fr.f_type )
             | _ -> error "NullPointerException" )
@@ -1018,6 +1020,7 @@ module Main (M : MONADERROR) = struct
 
   let rec eval_stmt : stmt -> context -> context M.t =
    fun stmt sctx ->
+    (* let _ = print_endline ("STMT: " ^ show_stmt stmt) in *)
     match stmt with
     | StmtBlock st_list ->
         let rec helper_eval : stmt list -> context -> context M.t =
@@ -1358,8 +1361,7 @@ module Main (M : MONADERROR) = struct
             prepare_constructor_block constr_r.body cur_class_r
             >>= fun c_body ->
             (*Подготавливаем таблицу аргументов в контексте без локальных переменных, остальное остается прежним*)
-            prepare_table_with_args (Hashtbl.create 100) args constr_r.args
-              { ctx with var_table = Hashtbl.create 100 }
+            prepare_table_with_args (Hashtbl.create 100) args constr_r.args ctx
             >>= fun (vt, vctx) ->
             (* Контекст работы с телом: текущий объект, но посчитаны все аргументы и распиханы по таблице переменных *)
             eval_stmt c_body { vctx with var_table = vt; is_creation = true }
@@ -1369,18 +1371,15 @@ module Main (M : MONADERROR) = struct
                 res_ctx with
                 last_expr_result = Some VVoid;
                 var_table = ctx.var_table;
+                constr_affilation = ctx.constr_affilation;
+                is_creation = true;
               }
       | CallMethod (Super, args) -> (
           if not ctx.is_constructor then
             error "super(...) call must be in constructor!"
           else
-            let get_cur_class_key =
-              match ctx.cur_object with
-              | RNull -> error "NullPointerException"
-              | RObj { class_key = key; field_ref_table = _; number = _ } ->
-                  return key
-            in
-            get_cur_class_key >>= fun curr_class_key ->
+            let curr_class_key = Option.get ctx.constr_affilation in
+            (* let _ = print_endline ("CUR_KEY: " ^ curr_class_key) in *)
             let cur_class_r =
               Option.get (get_elem_if_present class_table curr_class_key)
             in
@@ -1396,10 +1395,18 @@ module Main (M : MONADERROR) = struct
                 >>= fun par_constr_body ->
                 prepare_table_with_args (Hashtbl.create 100) args constr_r.args
                   (* ctx - включает в себя текущий объект внешнего конструктора, таблицу переменных в аргументах внешнего конструктора *)
-                  { ctx with var_table = Hashtbl.create 100 }
+                  ctx
                 >>= fun (vt, vctx) ->
+                (* let _ =
+                     print_endline ("SUPER_VT: " ^ show_hashtbl vt show_variable)
+                   in *)
                 eval_stmt par_constr_body
-                  { vctx with var_table = vt; is_creation = true }
+                  {
+                    vctx with
+                    var_table = vt;
+                    is_creation = true;
+                    constr_affilation = Some par_key;
+                  }
                 (* возвращается контекст с тем же объектом, но у него уже что-то проинициализировано *)
                 >>=
                 fun res_ctx ->
@@ -1408,6 +1415,8 @@ module Main (M : MONADERROR) = struct
                     res_ctx with
                     last_expr_result = Some VVoid;
                     var_table = ctx.var_table;
+                    constr_affilation = ctx.constr_affilation;
+                    is_creation = true;
                   } )
       | This ->
           return
@@ -1465,6 +1474,7 @@ module Main (M : MONADERROR) = struct
                           main_context = Some (get_main_ctx ctx);
                           obj_created_cnt = ctx.obj_created_cnt;
                           is_creation = false;
+                          constr_affilation = None;
                         }
                       (* От контекста нас интересует только результат работы метода *)
                       >>=
@@ -1598,8 +1608,8 @@ module Main (M : MONADERROR) = struct
                         | ClassName cright -> (
                             match curr_f_type with
                             | ClassName cleft ->
-                                check_classname_assign cleft cright
-                                >> add_field f_expr
+                                check_classname_assign cleft cright >>= fun _ ->
+                                add_field f_expr
                             | _ ->
                                 error "Wrong assign type in field declaration" )
                         | Array (ClassName cright) -> (
@@ -1644,7 +1654,13 @@ module Main (M : MONADERROR) = struct
                     Option.get (get_elem_if_present class_table par_key)
                   in
                   init_object parent_r init_ctx >>= fun par_ctx ->
-                  helper_init (Hashtbl.create 100) par_ctx field_tuples
+                  (* let _ =
+                       print_endline
+                         ("PAR_CTX_OBJECT " ^ show_obj_ref par_ctx.cur_object)
+                     in *)
+                  helper_init
+                    (get_obj_fields_exn par_ctx.cur_object)
+                    par_ctx field_tuples
               (* Инициализация переменных, которая происходит до конструктора - в пустом контексте *)
             in
             let new_object =
@@ -1671,30 +1687,36 @@ module Main (M : MONADERROR) = struct
                 main_context = Some (get_main_ctx ctx);
                 obj_created_cnt = ctx.obj_created_cnt + 1;
                 is_creation = false;
+                constr_affilation = None;
               }
             (* Внутри initres_ctx лежит объект с проинициализированными полями, готовый к обработке конструктором *)
             >>=
             fun initres_ctx ->
-            (* Контекст, в котором исполняется блок - получившийся объект + таблица переменных - аргументы конструктора *)
+            (* let _ =
+                 print_endline
+                   ("NEW OBJECT: " ^ show_obj_ref initres_ctx.cur_object)
+               in *)
+
+            (* Контекст, в котором должна готовиться таблица аргументов - текущий!!!!*)
             let get_new_var_table =
               prepare_table_with_args (Hashtbl.create 100) c_args constr_r.args
-                initres_ctx
+                ctx
             in
-            get_new_var_table >>= fun (vt, vctx) ->
+            get_new_var_table >>= fun (vt, _) ->
             (* let _ =
-                 print_string
-                   ( "VT IN CONSTRUCTOR EVAL: "
-                   ^ show_hashtbl vt show_variable
-                   ^ "\n" )
+                 print_endline
+                   ("VT IN CONSTRUCTOR EVAL: " ^ show_hashtbl vt show_variable)
                in *)
             prepare_constructor_block constr_r.body obj_class >>= fun c_body ->
+            (* Контекст, в котором исполняется блок - получившийся объект + таблица переменных - аргументы конструктора *)
             eval_stmt c_body
               {
-                vctx with
+                initres_ctx with
                 var_table = vt;
                 is_constructor = true;
                 is_creation = true;
                 is_main = false;
+                constr_affilation = Some obj_class.this_key;
               }
             >>= fun c_ctx ->
             (* В итоге возвращем тот же контекст, что и был, с получившимся объектом после исполнения конструктора *)
@@ -1705,7 +1727,8 @@ module Main (M : MONADERROR) = struct
                 was_return = false;
                 is_constructor = false;
                 obj_created_cnt = c_ctx.obj_created_cnt;
-                is_creation = false;
+                is_creation = ctx.is_creation;
+                constr_affilation = None;
               }
       | Assign (Identifier var_key, val_expr) ->
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
@@ -1739,6 +1762,7 @@ module Main (M : MONADERROR) = struct
           | _ -> error "Wrong type for array asssignment!" )
       | _ -> error "Wrong expression construction!"
     in
+    (* let _ = print_endline ("EXPR: " ^ show_expr expr) in *)
     expr_type_check expr ectx >>= fun _ -> eval_e expr ectx
 
   and get_old_arr arr_n g_ctx =
@@ -1756,7 +1780,7 @@ module Main (M : MONADERROR) = struct
     match v with VInt x -> return x | _ -> error "Wrong value type!"
 
   and update_identifier_v var_key new_val val_evaled_ctx =
-    if Hashtbl.mem val_evaled_ctx.var_table var_key then
+    if Hashtbl.mem val_evaled_ctx.var_table var_key then (
       let old_var =
         Option.get (get_elem_if_present val_evaled_ctx.var_table var_key)
       in
@@ -1766,17 +1790,17 @@ module Main (M : MONADERROR) = struct
         | _ when not var.is_mutable -> return ()
         | _ -> error "Assignment to a constant variable"
       in
-      check_assign_cnt_v old_var
-      >>
-      ( Hashtbl.replace val_evaled_ctx.var_table var_key
-          {
-            old_var with
-            v_value = new_val;
-            (* Option.get val_evaled_ctx.last_expr_result; *)
-            assignment_count = old_var.assignment_count + 1;
-          };
-        return val_evaled_ctx )
+      check_assign_cnt_v old_var >>= fun _ ->
+      Hashtbl.replace val_evaled_ctx.var_table var_key
+        {
+          old_var with
+          v_value = new_val;
+          (* Option.get val_evaled_ctx.last_expr_result; *)
+          assignment_count = old_var.assignment_count + 1;
+        };
+      return val_evaled_ctx
       (* Если не получилось найти среди переменных - ищем среди полей текущего объекта *)
+      )
     else
       match val_evaled_ctx.cur_object with
       | RNull -> error "NullPointerException"
