@@ -912,7 +912,7 @@ module Main (M : MONADERROR) = struct
               | _ -> false )
           | _ -> found_type = curr_type )
     in
-    let rec helper_checker curr_ht pos e_list ctx acc =
+    let rec helper_checker curr_ht pos e_list ctx =
       (* let _ =
            print_endline
              ("HELPER_CHECKER_HT: " ^ show_hashtbl curr_ht show_method_r)
@@ -955,14 +955,13 @@ module Main (M : MONADERROR) = struct
               expr_type_check e ctx >>= fun e_type ->
               helper_checker
                 (Hashtbl_p.filter curr_ht (check_type_m pos e_type))
-                (pos + 1) es ctx
-                (acc ^ show_type_t e_type) )
+                (pos + 1) es ctx )
     in
     (* Вначале фильтруем по количеству аргументов *)
     helper_checker
       (Hashtbl_p.filter cl_r.method_table (fun _ mr ->
            List.length mr.args = List.length expr_list))
-      0 expr_list check_ctx ""
+      0 expr_list check_ctx
 
   and check_constructor cl_r expr_list check_ctx =
     let check_type_c : int -> type_t -> key_t -> constructor_r -> bool =
@@ -979,7 +978,7 @@ module Main (M : MONADERROR) = struct
               | _ -> false )
           | _ -> found_type = curr_type )
     in
-    let rec helper_checker_c curr_ht pos e_list ctx acc =
+    let rec helper_checker_c curr_ht pos e_list ctx =
       match Hashtbl.length curr_ht with
       | 0 -> error "No such constructor!"
       | other -> (
@@ -992,13 +991,12 @@ module Main (M : MONADERROR) = struct
               expr_type_check e ctx >>= fun e_type ->
               helper_checker_c
                 (Hashtbl_p.filter curr_ht (check_type_c pos e_type))
-                (pos + 1) es ctx
-                (acc ^ show_type_t e_type) )
+                (pos + 1) es ctx )
     in
     helper_checker_c
       (Hashtbl_p.filter cl_r.constructor_table (fun _ cr ->
            List.length cr.args = List.length expr_list))
-      0 expr_list check_ctx ""
+      0 expr_list check_ctx
 
   let get_int_value = function VInt x -> x | _ -> 0
 
@@ -1327,13 +1325,18 @@ module Main (M : MONADERROR) = struct
       | Equal (left, right) -> eval_op left right ( === )
       | NotEqual (left, right) -> eval_op left right ( !=! )
       | Const v -> return { ctx with last_expr_result = Some v }
-      | Identifier id ->
-          (*TODO: СТОП, А ПОЛЯ ПРОВЕРИТЬ?! *)
-          (* let _ = print_string (show_context ctx ^ "\n" ^ id ^ "\n") in *)
-          let var_by_id =
-            Option.get (Hashtbl_p.get_elem_if_present ctx.var_table id)
-          in
-          return { ctx with last_expr_result = Some var_by_id.v_value }
+      | Identifier id -> (
+          match Hashtbl_p.get_elem_if_present ctx.var_table id with
+          | Some var_by_id ->
+              return { ctx with last_expr_result = Some var_by_id.v_value }
+          | None -> (
+              try
+                get_obj_info_exn ctx.cur_object |> fun (_, frt, _) ->
+                match get_elem_if_present frt id with
+                | Some f ->
+                    return { ctx with last_expr_result = Some f.f_value }
+                | None -> error "No such variable or field!"
+              with Invalid_argument m | Failure m -> error m ) )
       | Null -> return { ctx with last_expr_result = Some (VObjectRef RNull) }
       (* Эта штука исполняется в стейтмент-блоке *)
       | CallMethod (This, args) ->
@@ -1710,6 +1713,11 @@ module Main (M : MONADERROR) = struct
             (Option.get val_evaled_ctx.last_expr_result)
             val_evaled_ctx
       | Assign (FieldAccess (obj_expr, Identifier f_name), val_expr) ->
+          (* let _ =
+               print_endline
+                 ( "FIELD ASSIGNMENT CTX: " ^ show_context ctx ^ "EXPR: "
+                 ^ show_expr expr )
+             in *)
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
           update_field_v obj_expr f_name val_evaled_ctx
       | Assign (ArrayAccess (arr_expr, index_expr), val_expr) -> (
@@ -1722,7 +1730,7 @@ module Main (M : MONADERROR) = struct
               | VInt i -> (
                   let new_val = Option.get val_evaled_ctx.last_expr_result in
                   try
-                    update_array_state arr i new_val index_evaled_ctx
+                    update_array_state_exn arr i new_val index_evaled_ctx
                     |> fun _ ->
                     return
                       { index_evaled_ctx with last_expr_result = Some new_val }
@@ -1816,12 +1824,18 @@ module Main (M : MONADERROR) = struct
             }
           |> fun _ -> return obj_evaled_ctx
         else
+          (* let _ =
+               print_endline
+                 ( "OBJ_EVALED_CTX BEFORE UPDATE STATE: "
+                 ^ show_context obj_evaled_ctx
+                 ^ "\n" )
+             in *)
           update_object_state_exn obj_r f_name new_val obj_evaled_ctx
           |> fun _ -> return obj_evaled_ctx
       else error "No such field in class"
     with Invalid_argument m | Failure m -> error m
 
-  and update_array_state arr index new_value update_ctx =
+  and update_array_state_exn arr index new_value update_ctx =
     let rec update_states f_ht i n_val a_n =
       Hashtbl.iter
         (fun _ field_ref ->
@@ -1992,7 +2006,10 @@ module Main (M : MONADERROR) = struct
               | _ -> () ))
         f_ht
     in
-    let helper_update f_key n_val u_ctx num o_num =
+    let helper_update f_key n_val u_ctx o_num =
+      (* let _ =
+           print_endline ("F_KEY" ^ f_key ^ "\nU_CTX: " ^ show_context u_ctx ^ "\nNUM: ")
+         in *)
       (* Пробегаемся по переменным main контекста как по вершинам дерева, если объект с нужным номером - обновляем состояние и запускает рекурсивный алгоритм обновления *)
       Hashtbl.iter
         (fun _ var ->
@@ -2000,7 +2017,7 @@ module Main (M : MONADERROR) = struct
           (*  Если значение - какой-то объект *)
           | VObjectRef
               (RObj { class_key = _; field_ref_table = frt; number = fnum }) ->
-              if num = fnum then (
+              if o_num = fnum then (
                 Option.get (get_elem_if_present frt f_key) |> fun old_field ->
                 Hashtbl.replace frt f_key { old_field with f_value = n_val };
                 update_states frt f_key n_val o_num
@@ -2017,7 +2034,7 @@ module Main (M : MONADERROR) = struct
                       (RObj
                         { class_key = _; field_ref_table = frt; number = c_num })
                     ->
-                      ( if c_num = num then
+                      ( if c_num = o_num then
                         Option.get (get_elem_if_present frt f_key)
                         |> fun old_field ->
                         Hashtbl.replace frt f_key
@@ -2025,8 +2042,8 @@ module Main (M : MONADERROR) = struct
                             old_field with
                             f_value = n_val;
                             assignment_count = old_field.assignment_count + 1;
-                          } );
-                      update_states frt f_key n_val o_num
+                          } )
+                      |> fun () -> update_states frt f_key n_val o_num
                   | _ -> ())
                 v_list
           | _ -> ())

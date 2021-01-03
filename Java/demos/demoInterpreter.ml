@@ -72,7 +72,6 @@ let () =
   print_string
     "------------------- SIMPLE METHOD CALL TEST ------------------\n"
 
-(* TODO: DON'T WORK *)
 let test_val =
   Option.get
     (apply parser

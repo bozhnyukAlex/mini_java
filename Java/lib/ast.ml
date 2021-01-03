@@ -148,7 +148,7 @@ let not_v = function
   | VBool x -> VBool (not x)
   | _ -> raise (Invalid_argument "Wrong types for NOT operator!")
 
-let rec equal_value v1 v2 =
+let equal_value v1 v2 =
   match (v1, v2) with
   | VInt x, VInt y -> x = y
   | VBool x, VBool y -> x = y
@@ -158,7 +158,7 @@ let rec equal_value v1 v2 =
   | VArray x, VArray y -> x = y
   | _ -> raise (Invalid_argument "Wrong types for equality!")
 
-let rec ( === ) v1 v2 =
+let ( === ) v1 v2 =
   match (v1, v2) with
   | VInt x, VInt y -> VBool (x = y)
   | VBool x, VBool y -> VBool (x = y)
@@ -168,7 +168,7 @@ let rec ( === ) v1 v2 =
   | VArray x, VArray y -> VBool (x = y)
   | _ -> raise (Invalid_argument "Wrong types for equality!")
 
-let rec ( !=! ) v1 v2 = not_v (v1 === v2)
+let ( !=! ) v1 v2 = not_v (v1 === v2)
 
 let get_init_value_of_type = function
   | Int -> VInt 0

@@ -791,7 +791,7 @@
     var_table =
     "a2" ->
      { v_type = Int; v_key = "a2"; is_mutable = false; assignment_count = 1;
-       v_value = VInt (25); scope_level = 0 }
+       v_value = VInt (30); scope_level = 0 }
     
   "a1" ->
    { v_type = Int; v_key = "a1"; is_mutable = false; assignment_count = 1;
@@ -808,7 +808,7 @@
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (25);
+                          { key = "age"; f_type = Int; f_value = VInt (30);
                             is_mutable = false; assignment_count = 0 }
                          
   "name" ->
@@ -818,7 +818,7 @@
   ; number = 1 })); scope_level = 0
   }
   
-  ; last_expr_result = Some (VInt (25)); was_break = false;
+  ; last_expr_result = Some (VInt (30)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
   main_context = None; obj_created_cnt = 1; is_creation = false
