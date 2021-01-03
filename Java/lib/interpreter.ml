@@ -345,11 +345,11 @@ module ClassLoader (M : MONADERROR) = struct
   let c_table_add cd_list cl_ht =
     monadic_list_iter cd_list (add_to_class_table cl_ht) cl_ht
 
-  (* Если у класса нет конструкторов и он не абстрактный - надо добавить дефолтный *)
+  (* Если у класса нет конструкторов - надо добавить дефолтный *)
   let add_default_constructors_if_needed ht =
     Hashtbl.iter
       (fun key cr ->
-        if Hashtbl.length cr.constructor_table = 0 && not cr.is_abstract then
+        if Hashtbl.length cr.constructor_table = 0 then
           Hashtbl.add cr.constructor_table (key ^ "$$")
             { args = []; body = StmtBlock [] })
       ht;
@@ -511,7 +511,7 @@ module ClassLoader (M : MONADERROR) = struct
     >> process_methods parent child
     >> check_override_annotations parent child
     >> check_cur_constructors parent
-    >> check_child_constructors parent child
+    (* >> check_child_constructors parent child *)
     >>= fun _ -> run_transfert_on_children class_table child
 
   (* Запуск transfert на ребенке и детях ребенка *)
@@ -1948,7 +1948,7 @@ module Main (M : MONADERROR) = struct
     | Failure m -> raise (Failure m)
 
   and update_object_state_exn obj field_key new_value update_ctx =
-    let rec update_states f_ht f_key n_val o_num =
+    let rec update_states f_ht f_key n_val o_num assign_cnt =
       (* Перебираем все поля из таблицы *)
       Hashtbl.iter
         (fun _ field_ref ->
@@ -1973,9 +1973,9 @@ module Main (M : MONADERROR) = struct
                       {
                         old_field with
                         f_value = n_val;
-                        assignment_count = old_field.assignment_count + 1;
+                        assignment_count = assign_cnt;
                       } );
-                  update_states frt f_key n_val o_num
+                  update_states frt f_key n_val o_num assign_cnt
               (* Массив объектов - бежим по нему, если объект - бежим по его полям. При совпадении номера еще и обновляем *)
               | VArray
                   (Arr { a_type = ClassName _; values = v_list; number = _ }) ->
@@ -1996,17 +1996,16 @@ module Main (M : MONADERROR) = struct
                               {
                                 old_field with
                                 f_value = n_val;
-                                assignment_count =
-                                  old_field.assignment_count + 1;
+                                assignment_count = assign_cnt;
                               } );
-                          update_states frt f_key n_val o_num
+                          update_states frt f_key n_val o_num assign_cnt
                       | _ -> ())
                     v_list
               (* Иначе пропуск, идем дальше *)
               | _ -> () ))
         f_ht
     in
-    let helper_update f_key n_val u_ctx o_num =
+    let helper_update f_key n_val u_ctx o_num assign_cnt =
       (* let _ =
            print_endline ("F_KEY" ^ f_key ^ "\nU_CTX: " ^ show_context u_ctx ^ "\nNUM: ")
          in *)
@@ -2019,11 +2018,16 @@ module Main (M : MONADERROR) = struct
               (RObj { class_key = _; field_ref_table = frt; number = fnum }) ->
               if o_num = fnum then (
                 Option.get (get_elem_if_present frt f_key) |> fun old_field ->
-                Hashtbl.replace frt f_key { old_field with f_value = n_val };
-                update_states frt f_key n_val o_num
+                Hashtbl.replace frt f_key
+                  {
+                    old_field with
+                    f_value = n_val;
+                    assignment_count = assign_cnt;
+                  };
+                update_states frt f_key n_val o_num assign_cnt
                 (* Номер не совпал - запускаем рекурсивный обход полей *)
                 )
-              else update_states frt f_key n_val o_num
+              else update_states frt f_key n_val o_num assign_cnt
           (* Массив объектов - пробегаемся по элементам, видим объект - запускаем обход по его таблице полей с обновлением при совпадении номера *)
           | VArray (Arr { a_type = ClassName _; values = v_list; number = _ })
             ->
@@ -2041,17 +2045,22 @@ module Main (M : MONADERROR) = struct
                           {
                             old_field with
                             f_value = n_val;
-                            assignment_count = old_field.assignment_count + 1;
+                            assignment_count = assign_cnt;
                           } )
-                      |> fun () -> update_states frt f_key n_val o_num
+                      |> fun () ->
+                      update_states frt f_key n_val o_num assign_cnt
                   | _ -> ())
                 v_list
           | _ -> ())
         (get_main_ctx u_ctx).var_table
     in
     try
-      get_obj_number_exn obj |> fun object_number ->
-      helper_update field_key new_value update_ctx object_number
+      get_obj_info_exn obj |> fun (_, object_frt, object_number) ->
+      let assign_cnt =
+        (Option.get (get_elem_if_present object_frt field_key)).assignment_count
+        + 1
+      in
+      helper_update field_key new_value update_ctx object_number assign_cnt
     with Invalid_argument m -> raise (Invalid_argument m)
 
   and prepare_table_with_args :
@@ -2084,26 +2093,18 @@ module Main (M : MONADERROR) = struct
 
   and prepare_constructor_block curr_body curr_class_r =
     match curr_body with
-    | StmtBlock (Expression (CallMethod (Super, _)) :: _) -> return curr_body
+    | StmtBlock (Expression (CallMethod (Super, _)) :: _) -> (
+        match curr_class_r.parent_key with
+        | None -> error "Super call in constructor on not child class"
+        | Some _ -> return curr_body )
     | StmtBlock other -> (
         (* Если увидели, что начало не на супер - то надо просмотреть, есть ли конструкторы у родителя *)
         match curr_class_r.parent_key with
         (* Родителя нет - тогда просто возвращаем тот-же конструктор *)
         | None -> return curr_body
-        (* Есть родитель - смотрим у него, чтобы был один дефолтный конструктор *)
-        | Some par_key ->
-            let par_r = Option.get (get_elem_if_present class_table par_key) in
-            (* Конструктор один и он дефолтный и класс не абстрактный (у абстрактного 0 конструкторов) - в начало вставляем вызов super() *)
-            if
-              Hashtbl.length par_r.constructor_table = 1
-              && get_elem_if_present par_r.constructor_table
-                   (par_r.this_key ^ "$$")
-                 <> None
-            then
-              return (StmtBlock (Expression (CallMethod (Super, [])) :: other))
-            else if Hashtbl.length par_r.constructor_table = 0 then
-              return curr_body
-            else error "Constructor must start with super!" )
+        (* Есть родитель - просто делаем вставку super в начало *)
+        | Some _ ->
+            return (StmtBlock (Expression (CallMethod (Super, [])) :: other)) )
     | _ -> error "Must be statement block!"
 
   let execute : (key_t, class_r) Hashtbl.t -> context M.t =

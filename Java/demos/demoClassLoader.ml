@@ -325,56 +325,6 @@ class Child extends Person{
 let () = test_load test_value
 
 let () =
-  print_string "-------------------LACK_OF_SUPER_ERROR-------------------\n\n"
-
-let test_value =
-  Option.get
-    (apply parser
-       {| 
-public class Main
-{
-	public static void main() {
-		Person p = new Person(80, 45);
-	}
-}
-
-class Person {
-    public int age;
-    public int weight;
-    
-    public Person(int w, int a) {
-        this.weight = w;
-        this.age = a;
-    }
-    
-}
-
-class Child extends Person{
-    public int cash;
-    
-    public Child(int w, int a) {
-        cash = 0;
-    }
-    
-    public int getCash() {
-        return cash;
-    }
-    
-    public void setCash(int c) {
-        this.cash = c;
-    }
-    
-    public Child (int w, int a, int c) {
-        super(w, a);
-        cash = c;
-    }
-    
-}
-|})
-
-let () = test_load test_value
-
-let () =
   print_string "-------------------ABSTRACTNESS_ERRORS-------------------\n\n"
 
 let test_value =

@@ -116,10 +116,130 @@ class Person {
 
 let () = test_interp test_val
 
+let () =
+  print_string
+    "------------------- UPDATE OBJECT STATE IN MAIN TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+
+    public static void main() {
+        Person person = new Person(25, "Bob");
+        Person p1, p2, p3;
+        p1 = person;
+        p2 = p1;
+        p3 = p2;
+        person.setAge(55);
+        int res = p2.getAge(); 
+    }
+}
+
+class Person {
+    int age;
+    String name;
+
+    public Person() {}
+
+    public Person(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    public int sum(int a, int b) {
+        return a + b;
+    }
+
+    public int getAge() {
+        return this.age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+}
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string "------------------- CHILD WORKING TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+
+    public static void main() {
+        Person person = new Person(25, "Bob");
+        Person childFirst = new Child(3, "Alice");
+        Child childSecond = new Child(person);
+        childSecond.setAge(20);
+        childFirst.setAge(4);
+    }
+}
+
+class Person {
+    int age;
+    String name;
+
+    public Person() {}
+
+    public Person(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    public int sum(int a, int b) {
+        return a + b;
+    }
+
+    public int getAge() {
+        return this.age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+}
+class Child extends Person {
+
+    public Person parent;
+
+    public Child(int age, String name) {
+        super(age, name);
+        parent = new Person(40, "Flexer");
+    }
+
+    public Child(Person parent) {
+        this.parent = parent;
+    }
+
+    public Child() {}
+
+    public int getName() {
+        return name;
+    }
+
+    public Person getParent() {
+        return parent;
+    }
+}
+        |})
+
+let () = test_interp test_val
+
 (* 
 let () =
   print_string
-    "------------------- PATTERN VISITOR TEST YES I'M CRAZY ------------------\n"
+    "------------------- PATTERN VISITOR TEST ------------------\n"
 
 let test_val =
   Option.get
