@@ -787,7 +787,7 @@ module Main (M : MONADERROR) = struct
         process_list_el elems
     | ClassCreate (Name class_name, args) -> (
         match get_elem_if_present class_table class_name with
-        | None -> error "No such class!"
+        | None -> error ("No such class : " ^ class_name ^ "\n")
         | Some cl_elem -> (
             (* Если аргументов у конструктора нет - все норм, пустой конструктор всегда имеется *)
             match args with
@@ -1109,7 +1109,9 @@ module Main (M : MONADERROR) = struct
         else return { sctx with was_break = true }
     | Continue ->
         (* Continue не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
-        if sctx.cycle_cnt <= 0 then error "No loop for continue"
+        if sctx.cycle_cnt <= 0 then
+          (* let _ = print_endline ("CONTINUE CTX: " ^ show_context sctx) in *)
+          error "No loop for continue"
         else return { sctx with was_continue = true }
     | If (bexpr, then_stmt, else_stmt_o) -> (
         eval_expr bexpr sctx >>= fun bectx ->
@@ -1214,7 +1216,8 @@ module Main (M : MONADERROR) = struct
                   loop bs afs after_ctx
             | _ -> error "Wrong condition type in for statement"
         in
-        loop body_stmt after_expr_list dec_ctx
+        loop body_stmt after_expr_list
+          { dec_ctx with cycle_cnt = sctx.cycle_cnt + 1 }
     | Return rexpr_o -> (
         match rexpr_o with
         (* Если нет никакого выражения - метод, в котором мы исполняемся, должен иметь тип Void *)

@@ -742,9 +742,17 @@
      { v_type = Int; v_key = "val2"; is_mutable = false; assignment_count = 1;
        v_value = VInt (3); scope_level = 0 }
     
+  "s1" ->
+   { v_type = String; v_key = "s1"; is_mutable = false; assignment_count = 1;
+     v_value = VString ("a"); scope_level = 0 }
+  
   "a" ->
    { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 2;
      v_value = VInt (2); scope_level = 0 }
+  
+  "s3" ->
+   { v_type = String; v_key = "s3"; is_mutable = false; assignment_count = 1;
+     v_value = VString ("ab"); scope_level = 0 }
   
   "val7" ->
    { v_type = Int; v_key = "val7"; is_mutable = false; assignment_count = 1;
@@ -754,6 +762,10 @@
    { v_type = Int; v_key = "val1"; is_mutable = false; assignment_count = 1;
      v_value = VInt (15); scope_level = 0 }
   
+  "s4" ->
+   { v_type = String; v_key = "s4"; is_mutable = false; assignment_count = 1;
+     v_value = VString ("a2"); scope_level = 0 }
+  
   "val3" ->
    { v_type = Int; v_key = "val3"; is_mutable = false; assignment_count = 1;
      v_value = VInt (101); scope_level = 0 }
@@ -762,9 +774,17 @@
    { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
      v_value = VInt (2); scope_level = 0 }
   
+  "s5" ->
+   { v_type = String; v_key = "s5"; is_mutable = false; assignment_count = 1;
+     v_value = VString ("2b"); scope_level = 0 }
+  
   "val4" ->
    { v_type = Int; v_key = "val4"; is_mutable = false; assignment_count = 1;
      v_value = VInt (5); scope_level = 0 }
+  
+  "s2" ->
+   { v_type = String; v_key = "s2"; is_mutable = false; assignment_count = 1;
+     v_value = VString ("b"); scope_level = 0 }
   
   "val5" ->
    { v_type = Int; v_key = "val5"; is_mutable = false; assignment_count = 1;
@@ -778,10 +798,147 @@
    { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
      v_value = VInt (3); scope_level = 0 }
   
-  ; last_expr_result = Some (VInt (124)); was_break = false;
+  ; last_expr_result = Some (VString ("2b")); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
   prev_context = None; obj_created_cnt = 0; is_creation = false;
+  constr_affilation = None
+  }
+  
+  ------------------- BOOLEAN EXPRESSIONS TEST ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "s1" ->
+     { v_type = String; v_key = "s1"; is_mutable = false; assignment_count = 1;
+       v_value = VString ("a"); scope_level = 0 }
+    
+  "a" ->
+   { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (10); scope_level = 0 }
+  
+  "d" ->
+   { v_type = Int; v_key = "d"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (10); scope_level = 0 }
+  
+  "meVal" ->
+   { v_type = Int; v_key = "meVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "p2" ->
+   { v_type = ClassName ("Person"); v_key = "p2"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "Person";
+                         field_ref_table =
+                         "age" ->
+                          { key = "age"; f_type = Int; f_value = VInt (30);
+                            is_mutable = false; assignment_count = 0 }
+                         
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Alice");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 2 })); scope_level = 0
+  }
+  
+  "b" ->
+   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (50); scope_level = 0 }
+  
+  "objNEq" ->
+   { v_type = Int; v_key = "objNEq"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "eVal" ->
+   { v_type = Int; v_key = "eVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "p3" ->
+   { v_type = ClassName ("Person"); v_key = "p3"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "Person";
+                         field_ref_table =
+                         "age" ->
+                          { key = "age"; f_type = Int; f_value = VInt (20);
+                            is_mutable = false; assignment_count = 0 }
+                         
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Bob");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 })); scope_level = 0
+  }
+  
+  "p1" ->
+   { v_type = ClassName ("Person"); v_key = "p1"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "Person";
+                         field_ref_table =
+                         "age" ->
+                          { key = "age"; f_type = Int; f_value = VInt (20);
+                            is_mutable = false; assignment_count = 0 }
+                         
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Bob");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 })); scope_level = 0
+  }
+  
+  "s2" ->
+   { v_type = String; v_key = "s2"; is_mutable = false; assignment_count = 1;
+     v_value = VString ("b"); scope_level = 0 }
+  
+  "lVal" ->
+   { v_type = Int; v_key = "lVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "sEq" ->
+   { v_type = Int; v_key = "sEq"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "notVal" ->
+   { v_type = Int; v_key = "notVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "objEq" ->
+   { v_type = Int; v_key = "objEq"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "leVal" ->
+   { v_type = Int; v_key = "leVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "mVal" ->
+   { v_type = Int; v_key = "mVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "orVal" ->
+   { v_type = Int; v_key = "orVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "c" ->
+   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (100); scope_level = 0 }
+  
+  "sNEQ" ->
+   { v_type = Int; v_key = "sNEQ"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "neVal" ->
+   { v_type = Int; v_key = "neVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  "andVal" ->
+   { v_type = Int; v_key = "andVal"; is_mutable = false; assignment_count = 2;
+     v_value = VInt (1); scope_level = 0 }
+  
+  ; last_expr_result = Some (VInt (1)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  prev_context = None; obj_created_cnt = 2; is_creation = false;
   constr_affilation = None
   }
   
@@ -1035,7 +1192,7 @@
   
   ; last_expr_result = Some (VInt (3000)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = -1; scope_level = 1; is_constructor = false;
+  is_main = true; cycle_cnt = 0; scope_level = 1; is_constructor = false;
   prev_context = None; obj_created_cnt = 0; is_creation = false;
   constr_affilation = None
   }
@@ -1065,7 +1222,28 @@
   
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = -11; scope_level = 2; is_constructor = false;
+  is_main = true; cycle_cnt = 0; scope_level = 2; is_constructor = false;
+  prev_context = None; obj_created_cnt = 1; is_creation = false;
+  constr_affilation = None
+  }
+  
+  ------------------- BREAK TEST ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "arr" ->
+     { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+       assignment_count = 1;
+       v_value =
+       VArray (Arr ({ a_type = Int;
+                      values =
+                      [VInt (1); VInt (0); VInt (0); VInt (0); VInt (0);
+                       VInt (0); VInt (0); VInt (0); VInt (0); VInt (0)];
+                      number = 1 }));
+       scope_level = 0 }
+    
+  ; last_expr_result = Some (VInt (2)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = 0; scope_level = 1; is_constructor = false;
   prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
@@ -1254,7 +1432,7 @@
   
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = -2; scope_level = 2; is_constructor = false;
+  is_main = true; cycle_cnt = 0; scope_level = 2; is_constructor = false;
   prev_context = None; obj_created_cnt = 8; is_creation = false;
   constr_affilation = None
   }
@@ -1281,3 +1459,48 @@
   constr_affilation = None
   }
   
+  ------------------- RECURSION TEST (QUICK SORT) ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "n" ->
+     { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
+       v_value = VInt (16); scope_level = 0 }
+    
+  "quickSorter" ->
+   { v_type = ClassName ("QuickSorter"); v_key = "quickSorter";
+     is_mutable = false; assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "QuickSorter"; field_ref_table = ;
+                         number = 2 }));
+     scope_level = 0 }
+  
+  "arr" ->
+   { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VArray (Arr ({ a_type = Int;
+                    values =
+                    [VInt (0); VInt (1); VInt (2); VInt (3); VInt (4);
+                     VInt (5); VInt (6); VInt (7); VInt (8); VInt (9);
+                     VInt (10); VInt (11); VInt (12); VInt (13); VInt (14);
+                     VInt (15)];
+                    number = 1 }));
+     scope_level = 0 }
+  
+  "high" ->
+   { v_type = Int; v_key = "high"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (15); scope_level = 0 }
+  
+  "low" ->
+   { v_type = Int; v_key = "low"; is_mutable = false; assignment_count = 1;
+     v_value = VInt (0); scope_level = 0 }
+  
+  ; last_expr_result = Some (VBool (false)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  prev_context = None; obj_created_cnt = 2; is_creation = false;
+  constr_affilation = None
+  }
+  
+  ------------------- ARRAY_TYPE_MISMATCH_EXCEPTION ERROR ------------------
+  Wrong assign type!

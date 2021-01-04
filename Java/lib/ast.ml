@@ -148,7 +148,7 @@ let not_v = function
   | VBool x -> VBool (not x)
   | _ -> raise (Invalid_argument "Wrong types for NOT operator!")
 
-let equal_value v1 v2 =
+(* let equal_value v1 v2 =
   match (v1, v2) with
   | VInt x, VInt y -> x = y
   | VBool x, VBool y -> x = y
@@ -156,7 +156,7 @@ let equal_value v1 v2 =
   | VString s, VString t -> s = t
   | VObjectRef x, VObjectRef y -> x = y
   | VArray x, VArray y -> x = y
-  | _ -> raise (Invalid_argument "Wrong types for equality!")
+  | _ -> raise (Invalid_argument "Wrong types for equality!") *)
 
 let ( === ) v1 v2 =
   match (v1, v2) with
@@ -164,7 +164,13 @@ let ( === ) v1 v2 =
   | VBool x, VBool y -> VBool (x = y)
   | VVoid, VVoid -> VBool true
   | VString s, VString t -> VBool (s = t)
-  | VObjectRef x, VObjectRef y -> VBool (x = y)
+  | VObjectRef x, VObjectRef y -> (
+      match (x, y) with
+      | RNull, RNull -> VBool true
+      | RNull, _ | _, RNull -> VBool false
+      | ( RObj { class_key = _; field_ref_table = _; number = xn },
+          RObj { class_key = _; field_ref_table = _; number = yn } ) ->
+          VBool (xn = yn) )
   | VArray x, VArray y -> VBool (x = y)
   | _ -> raise (Invalid_argument "Wrong types for equality!")
 

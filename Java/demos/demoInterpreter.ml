@@ -62,7 +62,90 @@ public class Main {
         int val6 = (a + b) * 100; 
         a = a + 1;
         int val7 = (val1 * val2 + 4) / 2 + 100; 
+        String s1 = "a";
+        String s2 = "b";
+        String s3 = s1 + s2;
+        String s4 = s1 + a;
+        String s5 = a + s2;
     }  
+}
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string
+    "------------------- BOOLEAN EXPRESSIONS TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+
+    public static void main() {
+        int andVal = 0, orVal = 0, notVal = 0;
+        int mVal = 0, meVal = 0, lVal = 0, leVal = 0;
+        int eVal = 0, neVal = 0;
+        
+        int a = 10, b = 50, c = 100;
+        if (b > a) {
+            mVal = 1;
+        }
+        if (a < c) {
+            lVal = 1;
+        } 
+        if (b <= c) {
+            leVal = 1;
+        }
+        if (c >= b) {
+            meVal = 1;
+        }
+        int d = 10;
+        if (d == a) {
+            eVal = 1;
+        }
+        if (a != b) {
+            neVal = 1;
+        }
+        if (a < b && b < c) {
+            andVal = 1;
+        }
+        if (a < b || a != 10) {
+            orVal = 1;
+        }
+        if (!(a >= c)) {
+            notVal = 1;
+        }
+        String s1 = "a", s2 = "b";
+        int sEq = 0, sNEQ; 
+        if (s1 == "a") {
+            sEq = 1;
+        }
+        if (s2 != "a") {
+            sNEQ = 1;
+        }
+        Person p1 = new Person(20, "Bob"), p2 = new Person(30, "Alice"), p3 = p1;
+        int objEq = 0, objNEq = 0; 
+        if (p1 != p2) {
+            objNEq = 1;
+        }
+        if (p1 == p3) {
+            objEq = 1;
+        }
+    }  
+}
+
+class Person {
+    int age;
+    String name;
+
+    public Person(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
 }
         |})
 
@@ -305,6 +388,27 @@ public class Main {
                     arr[j + 1] = temp;
                 }
             }
+        }
+    }
+}
+        |})
+
+let () = test_interp test_val
+
+let () = print_string "------------------- BREAK TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|        
+public class Main {
+    public static void main() {
+        int[] arr = new int[10];
+        for (int i = 0; i < 10; i = i + 1) {
+            if (i % 2 == 1) {
+                break;
+            }
+            arr[i] = 1;
         }
     }
 }
@@ -555,6 +659,109 @@ class Factorial {
     public int getFact (int n) {
         if (n <= 1) return 1;
         else return n * getFact(n - 1);
+    }
+}
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string
+    "------------------- RECURSION TEST (QUICK SORT) ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        int[] arr = new int[] {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+        QuickSorter quickSorter = new QuickSorter();
+        int n = 16;
+        int low = 0;
+        int high = 15;
+        quickSorter.quickSort(arr, n, low, high);
+    }
+}
+
+class QuickSorter {
+    public void quickSort(int[] array, int n, int low, int high) {
+        if (n == 0) 
+            return;
+        
+        if (low >= high) 
+            return;
+        
+        int middle = low + (high - low) / 2;
+        int pivot = array[middle];
+        int i = low, j = high;
+        while (i <= j) {
+            while (array[i] < pivot) {
+                i = i + 1;
+            }
+            while (array[j] > pivot) {
+                j = j - 1;
+            }
+            if (i <= j) {
+                int temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+                i = i + 1;
+                j = j - 1;
+            }
+        }
+        if (low < j) 
+            quickSort(array, n, low, j);
+
+        if (high > i) 
+            quickSort(array, n, i, high);
+        
+    }
+}
+
+        |})
+
+let () = test_interp test_val
+
+(*Обязательно тест про массивы: я хочу, чтобы все почувствовали какой отстойный это язык, потому что там есть
+вот это: https://docs.microsoft.com/en-us/dotnet/api/system.arraytypemismatchexception?view=net-5.0*)
+let () =
+  print_string
+    "------------------- ARRAY_TYPE_MISMATCH_EXCEPTION ERROR ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        Pet[] pets = new Cat[10];
+        pets[0] = new Dog(2, "Spike");
+    }
+}
+
+
+class Pet {
+    int age;
+    String name;
+
+    public Pet(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+}
+
+class Cat extends Pet {
+    public Cat(int age, String name) {
+        super(age, name);
+    }
+}
+
+class Dog extends Pet {
+    public Dog(int age, String name) {
+        super(age, name);
     }
 }
         |})

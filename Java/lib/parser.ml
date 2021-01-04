@@ -281,10 +281,11 @@ module Stmt = struct
   let%test _ = apply continue_stat "continue;" = Some Continue
 
   let return_stat =
-    token "return "
+    token "return"
     >> choice
          [
-           (expression >>= fun ret -> token ";" >> return (Return (Some ret)));
+           ( skip_many1 space >> expression >>= fun ret ->
+             token ";" >> return (Return (Some ret)) );
            token ";" >> return (Return None);
          ]
 
