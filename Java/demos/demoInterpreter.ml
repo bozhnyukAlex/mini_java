@@ -767,3 +767,82 @@ class Dog extends Pet {
         |})
 
 let () = test_interp test_val
+
+let () =
+  print_string
+    "------------------- CONSTRUCTOR CHAINING TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        Cat cat = new Cat(2, "Mars", 30);
+    }
+}
+
+class Pet {
+    int age;
+    String name;
+
+    public Pet(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+}
+
+class Cat extends Pet {
+    int hairLevel;
+    public Cat(int age, String name) {
+        super(age, name);
+    }
+
+    public Cat(int age, String name, int hairLevel) {
+        this(age, name);
+        this.hairLevel = hairLevel;
+    }
+}
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string
+    "------------------- CONSTRUCTOR CHAINING RECURSION ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        Cat cat = new Cat(2, "Mars", 30);
+    }
+}
+
+class Pet {
+    int age;
+    String name;
+
+    public Pet(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+}
+
+class Cat extends Pet {
+    int hairLevel;
+    public Cat(int age, String name) {
+        super(age, name);
+    }
+
+    public Cat(int age, String name, int hairLevel) {
+        this(age, name, hairLevel);
+    }
+}
+        |})
+
+let () = test_interp test_val

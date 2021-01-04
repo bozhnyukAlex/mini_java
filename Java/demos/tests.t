@@ -412,15 +412,6 @@
   getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getAge@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
   setAgeInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Int, Name ("a"))];
     key = "setAgeInt@@";
@@ -443,6 +434,16 @@
   toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
+    body =
+    Some (StmtBlock ([If
+                      (Equal (This, Identifier ("obj")),
+                       Return (Some (Const (VInt (1)))),
+                       Some (Return (Some (Const (VInt (0))))))]))
+    }
   setWeightInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Int, Name ("w"))];
     key = "setWeightInt@@";
@@ -478,13 +479,14 @@
                                                               [Identifier ("i")])))]),
                                     Some (StmtBlock ([Continue])))]))]))
     }
-  ]]; constructor_table : [[ChildIntIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
+  ]]; constructor_table : [[ChildIntIntInt$$ -> { key = "ChildIntIntInt$$";
+    args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
     body =
     StmtBlock ([Expression (CallMethod
                             (Super, [Identifier ("w"); Identifier ("a")]));
                 Expression (Assign (Identifier ("cash"), Identifier ("c")))])
     }
-  ChildIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+  ChildIntInt$$ -> { key = "ChildIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
     body =
     StmtBlock ([Expression (CallMethod
                             (Super, [Identifier ("w"); Identifier ("a")]));
@@ -499,15 +501,6 @@
   getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getAge@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
   setAgeInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Int, Name ("a"))];
     key = "setAgeInt@@";
@@ -519,6 +512,16 @@
   toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
+    body =
+    Some (StmtBlock ([If
+                      (Equal (This, Identifier ("obj")),
+                       Return (Some (Const (VInt (1)))),
+                       Some (Return (Some (Const (VInt (0))))))]))
+    }
   setWeightInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = [(Int, Name ("w"))];
     key = "setWeightInt@@";
@@ -527,7 +530,7 @@
                                   (FieldAccess (This, Identifier ("weight")),
                                    Identifier ("w")))]))
     }
-  ]]; constructor_table : [[PersonIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+  ]]; constructor_table : [[PersonIntInt$$ -> { key = "PersonIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
     body =
     StmtBlock ([Expression (Assign
                             (FieldAccess (This, Identifier ("weight")),
@@ -540,29 +543,31 @@
   Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  ]]; constructor_table : [[Object$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; constructor_table : [[Object$$ -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
   ]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
-  Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+  Main -> { this_key : Main; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
+    body =
+    Some (StmtBlock ([If
+                      (Equal (This, Identifier ("obj")),
+                       Return (Some (Const (VInt (1)))),
+                       Some (Return (Some (Const (VInt (0))))))]))
+    }
   main@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "main@@";
     body =
@@ -573,7 +578,7 @@
                                (Name ("Person"),
                                 [Const (VInt (80)); Const (VInt (45))])))])]))
     }
-  ]]; constructor_table : [[Main$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; constructor_table : [[Main$$ -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
   ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------SIMILAR_FIELDS-------------------
@@ -600,15 +605,6 @@
   ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getWeight@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
   getCash@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "getCash@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
@@ -623,13 +619,24 @@
   toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  ]]; constructor_table : [[ChildIntIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
+    body =
+    Some (StmtBlock ([If
+                      (Equal (This, Identifier ("obj")),
+                       Return (Some (Const (VInt (1)))),
+                       Some (Return (Some (Const (VInt (0))))))]))
+    }
+  ]]; constructor_table : [[ChildIntIntInt$$ -> { key = "ChildIntIntInt$$";
+    args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
     body =
     StmtBlock ([Expression (CallMethod
                             (Super, [Identifier ("w"); Identifier ("a")]));
                 Expression (Assign (Identifier ("cash"), Identifier ("c")))])
     }
-  ChildIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+  ChildIntInt$$ -> { key = "ChildIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
     body =
     StmtBlock ([Expression (CallMethod
                             (Super, [Identifier ("w"); Identifier ("a")]));
@@ -644,19 +651,20 @@
   getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = false;
     has_override_annotation = false; args = []; key = "getAge@@";
     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+    has_override_annotation = false; args = []; key = "toString@@";
+    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  ]]; constructor_table : [[PersonIntInt$$ -> { args = [(Int, Name ("w")); (Int, Name ("a"))];
+  ]]; constructor_table : [[PersonIntInt$$ -> { key = "PersonIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
     body =
     StmtBlock ([Expression (Assign
                             (FieldAccess (This, Identifier ("weight")),
@@ -669,29 +677,31 @@
   Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
     has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
     body =
     Some (StmtBlock ([If
                       (Equal (This, Identifier ("obj")),
                        Return (Some (Const (VInt (1)))),
                        Some (Return (Some (Const (VInt (0))))))]))
     }
-  ]]; constructor_table : [[Object$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; constructor_table : [[Object$$ -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
   ]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
-  Main -> { this_key : Main; field_table : [[]]; method_table : [[equals@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))]; key = "equals@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
+  Main -> { this_key : Main; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "toString@@";
     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
+    has_override_annotation = false;
+    args = [(ClassName ("Object"), Name ("obj"))];
+    key = "equalsClassName Object@@";
+    body =
+    Some (StmtBlock ([If
+                      (Equal (This, Identifier ("obj")),
+                       Return (Some (Const (VInt (1)))),
+                       Some (Return (Some (Const (VInt (0))))))]))
+    }
   main@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
     has_override_annotation = false; args = []; key = "main@@";
     body =
@@ -702,7 +712,7 @@
                                (Name ("Person"),
                                 [Const (VInt (80)); Const (VInt (45))])))])]))
     }
-  ]]; constructor_table : [[Main$$ -> { args = []; body = StmtBlock ([]) }
+  ]]; constructor_table : [[Main$$ -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
   ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
   -------------------@OVERRIDE_ERRORS-------------------
@@ -730,7 +740,7 @@
   
   ; last_expr_result = Some (VInt (3)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 0; is_creation = false;
   constr_affilation = None
   }
@@ -800,7 +810,7 @@
   
   ; last_expr_result = Some (VString ("2b")); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 0; is_creation = false;
   constr_affilation = None
   }
@@ -937,7 +947,7 @@
   
   ; last_expr_result = Some (VInt (1)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 2; is_creation = false;
   constr_affilation = None
   }
@@ -976,7 +986,7 @@
   
   ; last_expr_result = Some (VInt (30)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
@@ -1058,7 +1068,7 @@
   
   ; last_expr_result = Some (VInt (55)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
@@ -1166,8 +1176,8 @@
      is_mutable = false; assignment_count = 0 }
   
   ; number = 1 }))); was_break = false; was_continue = false;
-  was_return = false; curr_method_type = Void; is_main = true; cycle_cnt = 0;
-  scope_level = 0; is_constructor = false; prev_context = None;
+  was_return = false; curr_method_type = Void; is_main_scope = true;
+  cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 4; is_creation = false; constr_affilation = None
   }
   
@@ -1192,7 +1202,7 @@
   
   ; last_expr_result = Some (VInt (3000)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 1; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 1; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 0; is_creation = false;
   constr_affilation = None
   }
@@ -1222,7 +1232,7 @@
   
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 2; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
@@ -1243,7 +1253,7 @@
     
   ; last_expr_result = Some (VInt (2)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 1; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 1; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
@@ -1274,7 +1284,7 @@
   
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 2; is_creation = false;
   constr_affilation = None
   }
@@ -1347,8 +1357,8 @@
      is_mutable = false; assignment_count = 0 }
   
   ; number = 1 }))); was_break = false; was_continue = false;
-  was_return = false; curr_method_type = Void; is_main = true; cycle_cnt = 0;
-  scope_level = 0; is_constructor = false; prev_context = None;
+  was_return = false; curr_method_type = Void; is_main_scope = true;
+  cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
   
@@ -1432,7 +1442,7 @@
   
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 2; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 8; is_creation = false;
   constr_affilation = None
   }
@@ -1454,7 +1464,7 @@
   
   ; last_expr_result = Some (VInt (120)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
@@ -1497,10 +1507,58 @@
   
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
-  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
   prev_context = None; obj_created_cnt = 2; is_creation = false;
   constr_affilation = None
   }
   
   ------------------- ARRAY_TYPE_MISMATCH_EXCEPTION ERROR ------------------
   Wrong assign type!
+  ------------------- CONSTRUCTOR CHAINING TEST ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "cat" ->
+     { v_type = ClassName ("Cat"); v_key = "cat"; is_mutable = false;
+       assignment_count = 1;
+       v_value =
+       VObjectRef (RObj ({ class_key = "Cat";
+                           field_ref_table =
+                           "age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (2);
+                              is_mutable = false; assignment_count = 0 }
+                           
+  "hairLevel" ->
+   { key = "hairLevel"; f_type = Int; f_value = VInt (30); is_mutable = false;
+     assignment_count = 0 }
+  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Mars");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 })); scope_level = 0
+  }
+  
+  ;
+  last_expr_result =
+  Some (VObjectRef (RObj ({ class_key = "Cat";
+                            field_ref_table =
+                            "age" ->
+                             { key = "age"; f_type = Int; f_value = VInt (2);
+                               is_mutable = false; assignment_count = 0 }
+                            
+  "hairLevel" ->
+   { key = "hairLevel"; f_type = Int; f_value = VInt (30); is_mutable = false;
+     assignment_count = 0 }
+  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Mars");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 }))); was_break = false; was_continue = false;
+  was_return = false; curr_method_type = Void; is_main_scope = true;
+  cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 1; is_creation = false; constr_affilation = None
+  }
+  
+  ------------------- CONSTRUCTOR CHAINING RECURSION ------------------
+  Constructor recursion!

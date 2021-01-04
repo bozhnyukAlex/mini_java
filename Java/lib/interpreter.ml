@@ -37,7 +37,7 @@ end
 
 type key_t = string [@@deriving show]
 
-type constructor_r = { args : (type_t * name) list; body : stmt }
+type constructor_r = { key : key_t; args : (type_t * name) list; body : stmt }
 [@@deriving show { with_path = false }]
 
 let startswith test_str sub_str =
@@ -125,7 +125,7 @@ module ClassLoader (M : MONADERROR) = struct
         is_overridable = true;
         has_override_annotation = false;
         args = [ (ClassName "Object", Name "obj") ];
-        key = "equals@@";
+        key = "equalsClassName Object@@";
         body =
           apply Stmt.stat_block
             {| 
@@ -154,7 +154,7 @@ module ClassLoader (M : MONADERROR) = struct
       }
     in
     return
-      ( Hashtbl.add method_table "equals@@" equals;
+      ( Hashtbl.add method_table "equalsClassName Object@@" equals;
         Hashtbl.add method_table "toString@@" to_string;
         Hashtbl.add ht "Object"
           {
@@ -317,7 +317,8 @@ module ClassLoader (M : MONADERROR) = struct
               in
               check_names_match
               >> check_modifiers_f field_elem
-              >> add_with_check constructor_table constr_key { args; body }
+              >> add_with_check constructor_table constr_key
+                   { key = constr_key; args; body }
                    "Constructor with this type exists"
               >> return ()
         in
@@ -348,10 +349,10 @@ module ClassLoader (M : MONADERROR) = struct
   (* Если у класса нет конструкторов - надо добавить дефолтный *)
   let add_default_constructors_if_needed ht =
     Hashtbl.iter
-      (fun key cr ->
+      (fun k cr ->
         if Hashtbl.length cr.constructor_table = 0 then
-          Hashtbl.add cr.constructor_table (key ^ "$$")
-            { args = []; body = StmtBlock [] })
+          Hashtbl.add cr.constructor_table (k ^ "$$")
+            { key = k ^ "$$"; args = []; body = StmtBlock [] })
       ht;
     return ht
 
@@ -400,8 +401,11 @@ module ClassLoader (M : MONADERROR) = struct
     | _ -> false
 
   let body_starts_with_super : constructor_r -> bool = function
-    | { args = _; body = StmtBlock (Expression (CallMethod (Super, _)) :: _) }
-      ->
+    | {
+        key = _;
+        args = _;
+        body = StmtBlock (Expression (CallMethod (Super, _)) :: _);
+      } ->
         true
     | _ -> false
 
@@ -410,7 +414,7 @@ module ClassLoader (M : MONADERROR) = struct
     let check_constructor : constructor_r -> unit t =
      fun constr_r ->
       match constr_r with
-      | { args = _; body = StmtBlock stlist } -> (
+      | { key = _; args = _; body = StmtBlock stlist } -> (
           match List.filter is_super stlist with
           | [] -> error "No super statement in inherited constructor"
           | [ _ ] ->
@@ -443,7 +447,11 @@ module ClassLoader (M : MONADERROR) = struct
     | _ -> false
 
   let body_starts_with_this : constructor_r -> bool = function
-    | { args = _; body = StmtBlock (Expression (CallMethod (This, _)) :: _) } ->
+    | {
+        key = _;
+        args = _;
+        body = StmtBlock (Expression (CallMethod (This, _)) :: _);
+      } ->
         true
     | _ -> false
 
@@ -563,12 +571,12 @@ module Main (M : MONADERROR) = struct
     was_continue : bool;
     was_return : bool;
     curr_method_type : type_t;
-    (* Посмотрим, мб не надо *)
-    is_main : bool;
+    is_main_scope : bool;
     (* Считаем вложенные циклы *)
     cycle_cnt : int;
     scope_level : int;
-    is_constructor : bool;
+    (* None - не в конструкторе, Some k -> в конструкторе с ключом k *)
+    cur_constr_key : key_t option;
     prev_context : context option;
     obj_created_cnt : int;
     is_creation : bool;
@@ -586,10 +594,10 @@ module Main (M : MONADERROR) = struct
         was_continue = false;
         was_return = false;
         curr_method_type = Void;
-        is_main = true;
+        is_main_scope = true;
         cycle_cnt = 0;
         scope_level = 0;
-        is_constructor = false;
+        cur_constr_key = None;
         prev_context = None;
         obj_created_cnt = 0;
         is_creation = false;
@@ -807,9 +815,9 @@ module Main (M : MONADERROR) = struct
                 (* Смотрим в таблице полей конкретного объекта *)
                 match get_elem_if_present ft key with
                 | None ->
-                    let _ =
-                      print_string ("ERROR CTX: " ^ show_context ctx ^ "\n")
-                    in
+                    (* let _ =
+                         print_string ("ERROR CTX: " ^ show_context ctx ^ "\n")
+                       in *)
                     error ("No such variable or field with this name : " ^ key)
                 | Some fr -> return fr.f_type )
             | _ -> error "NullPointerException" )
@@ -977,7 +985,12 @@ module Main (M : MONADERROR) = struct
     in
     let rec helper_checker_c curr_ht pos e_list ctx =
       match Hashtbl.length curr_ht with
-      | 0 -> error "No such constructor!"
+      | 0 ->
+          (* let _ =
+               print_endline
+                 ("ERROR_CTX: " ^ show_hashtbl curr_ht show_constructor_r)
+             in *)
+          error "No such constructor!"
       | other -> (
           match e_list with
           | [] -> (
@@ -1054,9 +1067,9 @@ module Main (M : MONADERROR) = struct
              print_string ("HELPER_EVAL SCTX: " ^ show_context sctx ^ "\n")
            in *)
         helper_eval st_list sctx >>= fun sbctx ->
-        if sbctx.is_main then return sbctx else delete_scope_var sbctx
+        if sbctx.is_main_scope then return sbctx else delete_scope_var sbctx
     | While (bexpr, lstmt) -> (
-        let was_main = sctx.is_main in
+        let was_main = sctx.is_main_scope in
         let rec loop s ctx =
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
@@ -1084,7 +1097,7 @@ module Main (M : MONADERROR) = struct
                          {
                            bectx with
                            cycle_cnt = ctx.cycle_cnt - 1;
-                           is_main = (if was_main then true else false);
+                           is_main_scope = (if was_main then true else false);
                          })
                 | _ -> return { bectx with cycle_cnt = ctx.cycle_cnt - 1 } )
             | Some (VBool true) ->
@@ -1101,7 +1114,11 @@ module Main (M : MONADERROR) = struct
         | StmtBlock _ ->
             loop lstmt
               (inc_scope_level
-                 { sctx with cycle_cnt = sctx.cycle_cnt + 1; is_main = false })
+                 {
+                   sctx with
+                   cycle_cnt = sctx.cycle_cnt + 1;
+                   is_main_scope = false;
+                 })
         | _ -> loop lstmt { sctx with cycle_cnt = sctx.cycle_cnt + 1 } )
     | Break ->
         (* Break не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
@@ -1115,15 +1132,15 @@ module Main (M : MONADERROR) = struct
         else return { sctx with was_continue = true }
     | If (bexpr, then_stmt, else_stmt_o) -> (
         eval_expr bexpr sctx >>= fun bectx ->
-        let was_main = bectx.is_main in
+        let was_main = bectx.is_main_scope in
         match bectx.last_expr_result with
         | Some (VBool true) -> (
             match then_stmt with
             | StmtBlock _ ->
                 eval_stmt then_stmt
-                  (inc_scope_level { bectx with is_main = false })
+                  (inc_scope_level { bectx with is_main_scope = false })
                 >>= fun tctx ->
-                return (dec_scope_level { tctx with is_main = was_main })
+                return (dec_scope_level { tctx with is_main_scope = was_main })
             | _ -> eval_stmt then_stmt bectx )
         | Some (VBool false) -> (
             match else_stmt_o with
@@ -1131,25 +1148,25 @@ module Main (M : MONADERROR) = struct
                 match else_stmt with
                 | StmtBlock _ ->
                     eval_stmt else_stmt
-                      (inc_scope_level { bectx with is_main = false })
+                      (inc_scope_level { bectx with is_main_scope = false })
                     >>= fun ectx ->
                     return
                       (dec_scope_level
                          {
                            ectx with
-                           is_main = (if was_main then true else false);
+                           is_main_scope = (if was_main then true else false);
                          })
                 | _ -> eval_stmt else_stmt bectx )
             | None -> return sctx )
         | _ -> error "Wrong type for condition statement" )
     | For (dec_stmt_o, bexpr_o, after_expr_list, body_stmt) ->
         (* С циклом for scope_level всегда увеличивается, не смотря на наличие/отсутствие блока тела *)
-        let was_main = sctx.is_main in
+        let was_main = sctx.is_main_scope in
         ( match dec_stmt_o with
-        | None -> return (inc_scope_level { sctx with is_main = false })
+        | None -> return (inc_scope_level { sctx with is_main_scope = false })
         | Some dec_stmt ->
-            eval_stmt dec_stmt (inc_scope_level { sctx with is_main = false })
-        )
+            eval_stmt dec_stmt
+              (inc_scope_level { sctx with is_main_scope = false }) )
         >>= fun dec_ctx ->
         let rec loop bs afs ctx =
           (* let _ = print_endline ("LOOP CTX: " ^ show_context ctx) in *)
@@ -1161,7 +1178,7 @@ module Main (M : MONADERROR) = struct
                 was_break = false;
                 cycle_cnt = ctx.cycle_cnt - 1;
                 scope_level = ctx.scope_level - 1;
-                is_main = was_main;
+                is_main_scope = was_main;
               }
           else
             (*Стандартно: смотрим результат бул-выражения, если true - вычислить тело и инкременты после*)
@@ -1180,7 +1197,7 @@ module Main (M : MONADERROR) = struct
                     bectx with
                     cycle_cnt = bectx.cycle_cnt - 1;
                     scope_level = bectx.scope_level - 1;
-                    is_main = was_main;
+                    is_main_scope = was_main;
                   }
             | Some (VBool true) ->
                 let rec eval_inc_expr_list e_list c =
@@ -1205,7 +1222,10 @@ module Main (M : MONADERROR) = struct
                 (* Вылетел return - все прерываем, возвращаем контекст *)
                 if bdctx.was_return then
                   return
-                    { bdctx with is_main = (if was_main then true else false) }
+                    {
+                      bdctx with
+                      is_main_scope = (if was_main then true else false);
+                    }
                   (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
                 else if bdctx.was_continue then
                   loop bs afs { bdctx with was_continue = false }
@@ -1379,20 +1399,24 @@ module Main (M : MONADERROR) = struct
       (* Эта штука исполняется в стейтмент-блоке *)
       | CallMethod (This, args) ->
           (* Должна быть проверка на то, что мы в конструкторе!*)
-          if not ctx.is_constructor then
-            error "this(...) call must be in constructor!"
+          ( match ctx.cur_constr_key with
+          | None -> error "super(...) call must be in constructor!"
+          | Some k -> return k )
+          >>= fun external_constr_key ->
+          let get_cur_class_key =
+            match ctx.cur_object with
+            | RNull -> error "NullPointerException"
+            | RObj { class_key = key; field_ref_table = _; number = _ } ->
+                return key
+          in
+          get_cur_class_key >>= fun curr_class_key ->
+          let cur_class_r =
+            Option.get (get_elem_if_present class_table curr_class_key)
+          in
+          check_constructor cur_class_r args ctx >>= fun constr_r ->
+          if constr_r.key = external_constr_key then
+            error "Constructor recursion!"
           else
-            let get_cur_class_key =
-              match ctx.cur_object with
-              | RNull -> error "NullPointerException"
-              | RObj { class_key = key; field_ref_table = _; number = _ } ->
-                  return key
-            in
-            get_cur_class_key >>= fun curr_class_key ->
-            let cur_class_r =
-              Option.get (get_elem_if_present class_table curr_class_key)
-            in
-            check_constructor cur_class_r args ctx >>= fun constr_r ->
             prepare_constructor_block constr_r.body cur_class_r
             >>= fun c_body ->
             (*Подготавливаем таблицу аргументов в контексте без локальных переменных, остальное остается прежним*)
@@ -1410,49 +1434,51 @@ module Main (M : MONADERROR) = struct
                 is_creation = true;
               }
       | CallMethod (Super, args) -> (
-          if not ctx.is_constructor then
-            error "super(...) call must be in constructor!"
-          else
-            let curr_class_key = Option.get ctx.constr_affilation in
-            (* let _ = print_endline ("CUR_KEY: " ^ curr_class_key) in *)
-            let cur_class_r =
-              Option.get (get_elem_if_present class_table curr_class_key)
-            in
-            match cur_class_r.parent_key with
-            | None ->
-                error "Bad super(...) call usage : this class has no parent!"
-            | Some par_key ->
-                let par_r =
-                  Option.get (get_elem_if_present class_table par_key)
-                in
-                check_constructor par_r args ctx >>= fun constr_r ->
-                prepare_constructor_block constr_r.body par_r
-                >>= fun par_constr_body ->
-                prepare_table_with_args (Hashtbl.create 100) args constr_r.args
-                  (* ctx - включает в себя текущий объект внешнего конструктора, таблицу переменных в аргументах внешнего конструктора *)
-                  ctx
-                >>= fun (vt, vctx) ->
-                (* let _ =
-                     print_endline ("SUPER_VT: " ^ show_hashtbl vt show_variable)
-                   in *)
-                eval_stmt par_constr_body
-                  {
-                    vctx with
-                    var_table = vt;
-                    is_creation = true;
-                    constr_affilation = Some par_key;
-                  }
-                (* возвращается контекст с тем же объектом, но у него уже что-то проинициализировано *)
-                >>=
-                fun res_ctx ->
-                return
-                  {
-                    res_ctx with
-                    last_expr_result = Some VVoid;
-                    var_table = ctx.var_table;
-                    constr_affilation = ctx.constr_affilation;
-                    is_creation = true;
-                  } )
+          ( match ctx.cur_constr_key with
+          | None -> error "super(...) call must be in constructor!"
+          | Some k -> return k )
+          >>= fun _ ->
+          let curr_class_key = Option.get ctx.constr_affilation in
+          (* let _ = print_endline ("CUR_KEY: " ^ curr_class_key) in *)
+          let cur_class_r =
+            Option.get (get_elem_if_present class_table curr_class_key)
+          in
+          match cur_class_r.parent_key with
+          | None ->
+              error "Bad super(...) call usage : this class has no parent!"
+          | Some par_key ->
+              let par_r =
+                Option.get (get_elem_if_present class_table par_key)
+              in
+              check_constructor par_r args ctx >>= fun constr_r ->
+              prepare_constructor_block constr_r.body par_r
+              >>= fun par_constr_body ->
+              prepare_table_with_args (Hashtbl.create 100) args constr_r.args
+                (* ctx - включает в себя текущий объект внешнего конструктора, таблицу переменных в аргументах внешнего конструктора *)
+                ctx
+              >>= fun (vt, vctx) ->
+              (* let _ =
+                   print_endline ("SUPER_VT: " ^ show_hashtbl vt show_variable)
+                 in *)
+              eval_stmt par_constr_body
+                {
+                  vctx with
+                  var_table = vt;
+                  is_creation = true;
+                  constr_affilation = Some par_key;
+                  cur_constr_key = Some constr_r.key;
+                }
+              (* возвращается контекст с тем же объектом, но у него уже что-то проинициализировано *)
+              >>=
+              fun res_ctx ->
+              return
+                {
+                  res_ctx with
+                  last_expr_result = Some VVoid;
+                  var_table = ctx.var_table;
+                  constr_affilation = ctx.constr_affilation;
+                  is_creation = true;
+                } )
       | This ->
           return
             { ctx with last_expr_result = Some (VObjectRef ctx.cur_object) }
@@ -1502,10 +1528,10 @@ module Main (M : MONADERROR) = struct
                           was_continue = false;
                           was_return = false;
                           curr_method_type = mr.m_type;
-                          is_main = false;
+                          is_main_scope = false;
                           cycle_cnt = 0;
                           scope_level = 0;
-                          is_constructor = false;
+                          cur_constr_key = None;
                           prev_context = Some ctx;
                           obj_created_cnt = ctx.obj_created_cnt;
                           is_creation = false;
@@ -1715,12 +1741,12 @@ module Main (M : MONADERROR) = struct
                 was_continue = false;
                 was_return = false;
                 curr_method_type = Void;
-                is_main = false;
+                is_main_scope = false;
                 cycle_cnt = 0;
                 scope_level = 0;
-                is_constructor = false;
                 prev_context = Some ctx;
                 obj_created_cnt = ctx.obj_created_cnt + 1;
+                cur_constr_key = None;
                 is_creation = false;
                 constr_affilation = None;
               }
@@ -1748,10 +1774,10 @@ module Main (M : MONADERROR) = struct
               {
                 initres_ctx with
                 var_table = vt;
-                is_constructor = true;
                 is_creation = true;
-                is_main = false;
+                is_main_scope = false;
                 constr_affilation = Some obj_class.this_key;
+                cur_constr_key = Some constr_r.key;
               }
             >>= fun c_ctx ->
             (* В итоге возвращем тот же контекст, что и был, с получившимся объектом после исполнения конструктора *)
@@ -1760,7 +1786,6 @@ module Main (M : MONADERROR) = struct
                 ctx with
                 last_expr_result = Some (VObjectRef c_ctx.cur_object);
                 was_return = false;
-                is_constructor = false;
                 obj_created_cnt = c_ctx.obj_created_cnt;
               }
       | Assign (Identifier var_key, val_expr) ->
@@ -2173,9 +2198,14 @@ module Main (M : MONADERROR) = struct
         match curr_class_r.parent_key with
         (* Родителя нет - тогда просто возвращаем тот-же конструктор *)
         | None -> return curr_body
-        (* Есть родитель - просто делаем вставку super в начало *)
-        | Some _ ->
-            return (StmtBlock (Expression (CallMethod (Super, [])) :: other)) )
+        (* Есть родитель - делаем вставку super в начало, если нет в начале вызова this(...) *)
+        | Some _ -> (
+            match curr_body with
+            | StmtBlock (Expression (CallMethod (This, _)) :: _) ->
+                return curr_body
+            | _ ->
+                return
+                  (StmtBlock (Expression (CallMethod (Super, [])) :: other)) ) )
     | _ -> error "Must be statement block!"
 
   let execute : (key_t, class_r) Hashtbl.t -> context M.t =
