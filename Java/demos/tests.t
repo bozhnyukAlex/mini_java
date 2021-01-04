@@ -731,7 +731,7 @@
   ; last_expr_result = Some (VInt (3)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 0; is_creation = false;
+  prev_context = None; obj_created_cnt = 0; is_creation = false;
   constr_affilation = None
   }
   
@@ -781,7 +781,7 @@
   ; last_expr_result = Some (VInt (124)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 0; is_creation = false;
+  prev_context = None; obj_created_cnt = 0; is_creation = false;
   constr_affilation = None
   }
   
@@ -820,7 +820,7 @@
   ; last_expr_result = Some (VInt (30)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 1; is_creation = false;
+  prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
   
@@ -902,7 +902,7 @@
   ; last_expr_result = Some (VInt (55)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 1; is_creation = false;
+  prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
   
@@ -1010,7 +1010,7 @@
   
   ; number = 1 }))); was_break = false; was_continue = false;
   was_return = false; curr_method_type = Void; is_main = true; cycle_cnt = 0;
-  scope_level = 0; is_constructor = false; main_context = None;
+  scope_level = 0; is_constructor = false; prev_context = None;
   obj_created_cnt = 4; is_creation = false; constr_affilation = None
   }
   
@@ -1036,7 +1036,7 @@
   ; last_expr_result = Some (VInt (3000)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = -1; scope_level = 1; is_constructor = false;
-  main_context = None; obj_created_cnt = 0; is_creation = false;
+  prev_context = None; obj_created_cnt = 0; is_creation = false;
   constr_affilation = None
   }
   
@@ -1066,7 +1066,7 @@
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = -11; scope_level = 2; is_constructor = false;
-  main_context = None; obj_created_cnt = 1; is_creation = false;
+  prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
   
@@ -1097,7 +1097,7 @@
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
-  main_context = None; obj_created_cnt = 2; is_creation = false;
+  prev_context = None; obj_created_cnt = 2; is_creation = false;
   constr_affilation = None
   }
   
@@ -1170,7 +1170,7 @@
   
   ; number = 1 }))); was_break = false; was_continue = false;
   was_return = false; curr_method_type = Void; is_main = true; cycle_cnt = 0;
-  scope_level = 0; is_constructor = false; main_context = None;
+  scope_level = 0; is_constructor = false; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
   
@@ -1255,7 +1255,29 @@
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main = true; cycle_cnt = -2; scope_level = 2; is_constructor = false;
-  main_context = None; obj_created_cnt = 8; is_creation = false;
+  prev_context = None; obj_created_cnt = 8; is_creation = false;
+  constr_affilation = None
+  }
+  
+  ------------------- RECURSION TEST (FACTORIAL) ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "f" ->
+     { v_type = Int; v_key = "f"; is_mutable = false; assignment_count = 1;
+       v_value = VInt (120); scope_level = 0 }
+    
+  "factorial" ->
+   { v_type = ClassName ("Factorial"); v_key = "factorial"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "Factorial"; field_ref_table = ;
+                         number = 1 }));
+     scope_level = 0 }
+  
+  ; last_expr_result = Some (VInt (120)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  prev_context = None; obj_created_cnt = 1; is_creation = false;
   constr_affilation = None
   }
   

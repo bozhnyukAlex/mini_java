@@ -533,4 +533,30 @@ class Rectangle extends Figure {
 }
         |})
 
-let visitor_test = test_interp test_val
+let () = test_interp test_val
+
+let () =
+  print_string
+    "------------------- RECURSION TEST (FACTORIAL) ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        Factorial factorial = new Factorial();
+        int f = factorial.getFact(5);
+    }
+}
+
+class Factorial {
+    public int getFact (int n) {
+        if (n <= 1) return 1;
+        else return n * getFact(n - 1);
+    }
+}
+        |})
+
+let () = test_interp test_val

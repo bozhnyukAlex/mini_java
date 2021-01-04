@@ -569,7 +569,7 @@ module Main (M : MONADERROR) = struct
     cycle_cnt : int;
     scope_level : int;
     is_constructor : bool;
-    main_context : context option;
+    prev_context : context option;
     obj_created_cnt : int;
     is_creation : bool;
     constr_affilation : key_t option;
@@ -590,16 +590,11 @@ module Main (M : MONADERROR) = struct
         cycle_cnt = 0;
         scope_level = 0;
         is_constructor = false;
-        main_context = None;
+        prev_context = None;
         obj_created_cnt = 0;
         is_creation = false;
         constr_affilation = None;
       }
-
-  (* Если main контекст None - то main контекст - это мы сами, и пока еще никуда не заходили, себя возвращаем,
-     иначе возвращаем тот контекст, который хранится *)
-  let get_main_ctx cur_ctx =
-    match cur_ctx.main_context with None -> cur_ctx | Some m_ctx -> m_ctx
 
   let obj_num obj =
     try get_obj_number_exn obj |> fun n -> return n
@@ -1508,7 +1503,7 @@ module Main (M : MONADERROR) = struct
                           cycle_cnt = 0;
                           scope_level = 0;
                           is_constructor = false;
-                          main_context = Some (get_main_ctx ctx);
+                          prev_context = Some ctx;
                           obj_created_cnt = ctx.obj_created_cnt;
                           is_creation = false;
                           constr_affilation = None;
@@ -1596,9 +1591,6 @@ module Main (M : MONADERROR) = struct
             }
       | ClassCreate (Name class_name, c_args) ->
           (* В проверке типов наличие уже проверялось, можем смело использовать Option.get *)
-          let is_main_ctx =
-            match ctx.main_context with None -> true | Some _ -> false
-          in
           let obj_class =
             Option.get (get_elem_if_present class_table class_name)
           in
@@ -1724,7 +1716,7 @@ module Main (M : MONADERROR) = struct
                 cycle_cnt = 0;
                 scope_level = 0;
                 is_constructor = false;
-                main_context = Some (get_main_ctx ctx);
+                prev_context = Some ctx;
                 obj_created_cnt = ctx.obj_created_cnt + 1;
                 is_creation = false;
                 constr_affilation = None;
@@ -2007,11 +1999,14 @@ module Main (M : MONADERROR) = struct
                 | _ -> () )
           | _ -> ())
         u_ctx.var_table
+      |> fun () ->
+      match u_ctx.prev_context with
+      | None -> ()
+      | Some prev_ctx -> helper_update i n_val prev_ctx a_n
     in
     try
       get_arr_info_exn arr |> fun (_, _, a_number) ->
-      helper_update index new_value update_ctx a_number |> fun _ ->
-      helper_update index new_value (get_main_ctx update_ctx) a_number
+      helper_update index new_value update_ctx a_number
     with
     | Invalid_argument m -> raise (Invalid_argument m)
     | Failure m -> raise (Failure m)
@@ -2074,11 +2069,11 @@ module Main (M : MONADERROR) = struct
               | _ -> () ))
         f_ht
     in
-    let helper_update f_key n_val u_ctx o_num assign_cnt =
+    let rec helper_update f_key n_val u_ctx o_num assign_cnt =
       (* let _ =
            print_endline ("F_KEY" ^ f_key ^ "\nU_CTX: " ^ show_context u_ctx ^ "\nNUM: ")
          in *)
-      (* Пробегаемся по переменным main контекста как по вершинам дерева, если объект с нужным номером - обновляем состояние и запускает рекурсивный алгоритм обновления *)
+      (* Пробегаемся по переменным контекста как по вершинам дерева, если объект с нужным номером - обновляем состояние и запускает рекурсивный алгоритм обновления *)
       Hashtbl.iter
         (fun _ var ->
           match var.v_value with
@@ -2122,6 +2117,10 @@ module Main (M : MONADERROR) = struct
                 v_list
           | _ -> ())
         u_ctx.var_table
+      |> fun () ->
+      match u_ctx.prev_context with
+      | None -> ()
+      | Some prev_ctx -> helper_update f_key n_val prev_ctx o_num assign_cnt
     in
     try
       get_obj_info_exn obj |> fun (_, object_frt, object_number) ->
@@ -2130,9 +2129,6 @@ module Main (M : MONADERROR) = struct
         + 1
       in
       helper_update field_key new_value update_ctx object_number assign_cnt
-      |> fun () ->
-      helper_update field_key new_value (get_main_ctx update_ctx) object_number
-        assign_cnt
     with Invalid_argument m -> raise (Invalid_argument m)
 
   and prepare_table_with_args :
