@@ -1237,7 +1237,7 @@
   constr_affilation = None
   }
   
-  ------------------- BREAK TEST ------------------
+  ------------------- BREAK AND CONTINUE TEST ------------------
   { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
     var_table =
     "b" ->
