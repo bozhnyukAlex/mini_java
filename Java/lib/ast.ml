@@ -106,7 +106,7 @@ let ( // ) v1 v2 =
   match (v1, v2) with
   | VInt _, VInt y when y = 0 -> raise Division_by_zero
   | VInt x, VInt y -> VInt (x / y)
-  | _, _ -> raise (Invalid_argument "Wrong argument types for subtraction!")
+  | _, _ -> raise (Invalid_argument "Wrong argument types for division!")
 
 let ( %% ) v1 v2 =
   match (v1, v2) with

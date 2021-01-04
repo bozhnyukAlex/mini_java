@@ -1174,3 +1174,88 @@
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
   
+  ------------------- PATTERN VISITOR TEST ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "resPerimeter" ->
+     { v_type = Array (Int); v_key = "resPerimeter"; is_mutable = false;
+       assignment_count = 1;
+       v_value =
+       VArray (Arr ({ a_type = Int; values = [VInt (75); VInt (8); VInt (0)];
+                      number = 7 }));
+       scope_level = 0 }
+    
+  "areaVisitor" ->
+   { v_type = ClassName ("AreaVisitor"); v_key = "areaVisitor";
+     is_mutable = false; assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "AreaVisitor"; field_ref_table = ;
+                         number = 5 }));
+     scope_level = 0 }
+  
+  "list" ->
+   { v_type = Array (ClassName ("Figure")); v_key = "list"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VArray (Arr ({ a_type = ClassName ("Figure");
+                    values =
+                    [VObjectRef (RObj ({ class_key = "Circle";
+                                         field_ref_table =
+                                         "radius" ->
+                                          { key = "radius"; f_type = Int;
+                                            f_value = VInt (5);
+                                            is_mutable = false;
+                                            assignment_count = 0 }
+                                         
+  ; number = 1 }));
+  VObjectRef (RObj ({ class_key = "Rectangle";
+                      field_ref_table =
+                      "a" ->
+                       { key = "a"; f_type = Int; f_value = VInt (2);
+                         is_mutable = false; assignment_count = 0 }
+                      
+  "b" ->
+   { key = "b"; f_type = Int; f_value = VInt (4); is_mutable = false;
+     assignment_count = 0 }
+  
+  ; number = 2 }));
+  VObjectRef (RObj ({ class_key = "Triangle";
+                      field_ref_table =
+                      "a" ->
+                       { key = "a"; f_type = Int; f_value = VInt (1);
+                         is_mutable = false; assignment_count = 0 }
+                      
+  "b" ->
+   { key = "b"; f_type = Int; f_value = VInt (1); is_mutable = false;
+     assignment_count = 0 }
+  
+  "c" ->
+   { key = "c"; f_type = Int; f_value = VInt (1); is_mutable = false;
+     assignment_count = 0 }
+  
+  ; number = 3 }))]; number = 4 })); scope_level = 0
+  }
+  
+  "resArea" ->
+   { v_type = Array (Int); v_key = "resArea"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VArray (Arr ({ a_type = Int; values = [VInt (30); VInt (12); VInt (3)];
+                    number = 8 }));
+     scope_level = 0 }
+  
+  "perimeterVisitor" ->
+   { v_type = ClassName ("PerimeterVisitor"); v_key = "perimeterVisitor";
+     is_mutable = false; assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "PerimeterVisitor"; field_ref_table = ;
+                         number = 6 }));
+     scope_level = 0 }
+  
+  ; last_expr_result = Some (VBool (false)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = -2; scope_level = 2; is_constructor = false;
+  main_context = None; obj_created_cnt = 8; is_creation = false;
+  constr_affilation = None
+  }
+  

@@ -399,10 +399,8 @@ class Child extends Person {
 
 let () = test_interp test_val
 
-(* 
 let () =
-  print_string
-    "------------------- PATTERN VISITOR TEST ------------------\n"
+  print_string "------------------- PATTERN VISITOR TEST ------------------\n"
 
 let test_val =
   Option.get
@@ -418,7 +416,12 @@ public class Main {
         PerimeterVisitor perimeterVisitor = new PerimeterVisitor();
         int[] resPerimeter = new int[3];
         int[] resArea = new int[3];
-        int gg = list[0].accept(areaVisitor);
+        for (int i = 0; i < 3; i = i + 1) {
+            resPerimeter[i] = list[i].accept(areaVisitor);
+        }
+        for(int j = 0; j < 3; j = j + 1) {
+            resArea[j] = list[j].accept(perimeterVisitor);
+        }
         
 
     }
@@ -530,4 +533,4 @@ class Rectangle extends Figure {
 }
         |})
 
-let visitor_test = test_interp test_val *)
+let visitor_test = test_interp test_val
