@@ -395,7 +395,9 @@ public class Main {
 
 let () = test_interp test_val
 
-let () = print_string "------------------- BREAK TEST ------------------\n"
+let () =
+  print_string
+    "------------------- BREAK AND CONTINUE TEST ------------------\n"
 
 let test_val =
   Option.get
@@ -405,11 +407,18 @@ public class Main {
     public static void main() {
         int[] arr = new int[10];
         for (int i = 0; i < 10; i = i + 1) {
-            if (i % 2 == 1) {
-                break;
+            if (i % 2 == 0) {
+                continue;
             }
             arr[i] = 1;
         }
+        int[] b = new int[20];
+        for (int i = 0; i < 20; i = i + 1) {
+            if (i == 15) {
+                break;
+            }
+            b[i] = i;
+        } 
     }
 }
         |})

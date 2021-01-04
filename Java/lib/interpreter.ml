@@ -1228,7 +1228,8 @@ module Main (M : MONADERROR) = struct
                     }
                   (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
                 else if bdctx.was_continue then
-                  loop bs afs { bdctx with was_continue = false }
+                  eval_inc_expr_list afs bdctx >>= fun after_ctx ->
+                  loop bs afs { after_ctx with was_continue = false }
                 else
                   (* Иначе можем просто вычислить инкременты после и сделать цикл *)
                   (* let _ = print_endline ("BDCTX: " ^ show_context bdctx) in *)
