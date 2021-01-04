@@ -1126,9 +1126,7 @@ module Main (M : MONADERROR) = struct
                 eval_stmt then_stmt
                   (inc_scope_level { bectx with is_main = false })
                 >>= fun tctx ->
-                return
-                  (dec_scope_level
-                     { tctx with is_main = (if was_main then true else false) })
+                return (dec_scope_level { tctx with is_main = was_main })
             | _ -> eval_stmt then_stmt bectx )
         | Some (VBool false) -> (
             match else_stmt_o with
@@ -1166,7 +1164,7 @@ module Main (M : MONADERROR) = struct
                 was_break = false;
                 cycle_cnt = ctx.cycle_cnt - 1;
                 scope_level = ctx.scope_level - 1;
-                is_main = (if was_main then true else false);
+                is_main = was_main;
               }
           else
             (*Стандартно: смотрим результат бул-выражения, если true - вычислить тело и инкременты после*)
@@ -1185,7 +1183,7 @@ module Main (M : MONADERROR) = struct
                     bectx with
                     cycle_cnt = bectx.cycle_cnt - 1;
                     scope_level = bectx.scope_level - 1;
-                    is_main = (if was_main then true else false);
+                    is_main = was_main;
                   }
             | Some (VBool true) ->
                 let rec eval_inc_expr_list e_list c =
@@ -1598,6 +1596,9 @@ module Main (M : MONADERROR) = struct
             }
       | ClassCreate (Name class_name, c_args) ->
           (* В проверке типов наличие уже проверялось, можем смело использовать Option.get *)
+          let is_main_ctx =
+            match ctx.main_context with None -> true | Some _ -> false
+          in
           let obj_class =
             Option.get (get_elem_if_present class_table class_name)
           in
@@ -1766,8 +1767,6 @@ module Main (M : MONADERROR) = struct
                 was_return = false;
                 is_constructor = false;
                 obj_created_cnt = c_ctx.obj_created_cnt;
-                is_creation = ctx.is_creation;
-                constr_affilation = None;
               }
       | Assign (Identifier var_key, val_expr) ->
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
@@ -1783,7 +1782,13 @@ module Main (M : MONADERROR) = struct
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
           update_field_v obj_expr f_name val_evaled_ctx
       | Assign (ArrayAccess (arr_expr, index_expr), val_expr) -> (
-          eval_expr val_expr ctx >>= fun val_evaled_ctx ->
+          (* let _ =
+               print_endline
+                 ( "ARREXPR: " ^ show_expr expr ^ "\n" ^ "E_CTX: "
+                 ^ show_context ctx )
+             in *)
+          eval_expr val_expr ctx
+          >>= fun val_evaled_ctx ->
           eval_expr arr_expr val_evaled_ctx >>= fun arr_evaled_ctx ->
           eval_expr index_expr arr_evaled_ctx >>= fun index_evaled_ctx ->
           match Option.get arr_evaled_ctx.last_expr_result with
@@ -1969,7 +1974,7 @@ module Main (M : MONADERROR) = struct
             -> (
               if cur_num = a_n then
                 (* Надо в текущей таблице заменить массив на новый (заменить значение переменной) *)
-                Hashtbl.replace (get_main_ctx u_ctx).var_table v_key
+                Hashtbl.replace u_ctx.var_table v_key
                   {
                     var with
                     v_value =
@@ -2001,11 +2006,12 @@ module Main (M : MONADERROR) = struct
                       cur_values
                 | _ -> () )
           | _ -> ())
-        (get_main_ctx u_ctx).var_table
+        u_ctx.var_table
     in
     try
       get_arr_info_exn arr |> fun (_, _, a_number) ->
-      helper_update index new_value update_ctx a_number
+      helper_update index new_value update_ctx a_number |> fun _ ->
+      helper_update index new_value (get_main_ctx update_ctx) a_number
     with
     | Invalid_argument m -> raise (Invalid_argument m)
     | Failure m -> raise (Failure m)
@@ -2115,7 +2121,7 @@ module Main (M : MONADERROR) = struct
                   | _ -> ())
                 v_list
           | _ -> ())
-        (get_main_ctx u_ctx).var_table
+        u_ctx.var_table
     in
     try
       get_obj_info_exn obj |> fun (_, object_frt, object_number) ->
@@ -2124,6 +2130,9 @@ module Main (M : MONADERROR) = struct
         + 1
       in
       helper_update field_key new_value update_ctx object_number assign_cnt
+      |> fun () ->
+      helper_update field_key new_value (get_main_ctx update_ctx) object_number
+        assign_cnt
     with Invalid_argument m -> raise (Invalid_argument m)
 
   and prepare_table_with_args :

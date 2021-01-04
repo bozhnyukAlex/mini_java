@@ -1070,3 +1070,107 @@
   constr_affilation = None
   }
   
+  ------------------- ARRAY SORT AS FUNCTION (CHECKING CHANGE OF ARRAY STATE IN OTHER CONTEXT) ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "bubbleSorter" ->
+     { v_type = ClassName ("BubbleSorter"); v_key = "bubbleSorter";
+       is_mutable = false; assignment_count = 1;
+       v_value =
+       VObjectRef (RObj ({ class_key = "BubbleSorter"; field_ref_table = ;
+                           number = 2 }));
+       scope_level = 0 }
+    
+  "arr" ->
+   { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VArray (Arr ({ a_type = Int;
+                    values =
+                    [VInt (0); VInt (1); VInt (2); VInt (3); VInt (4);
+                     VInt (5); VInt (6); VInt (7); VInt (8); VInt (9);
+                     VInt (10); VInt (11); VInt (12); VInt (13); VInt (14);
+                     VInt (15)];
+                    number = 1 }));
+     scope_level = 0 }
+  
+  ; last_expr_result = Some (VBool (false)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = 0; scope_level = 0; is_constructor = false;
+  main_context = None; obj_created_cnt = 2; is_creation = false;
+  constr_affilation = None
+  }
+  
+  ------------------- CHANGE OF OBJECT STATE IN OTHER CONTEXT ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "child" ->
+     { v_type = ClassName ("Child"); v_key = "child"; is_mutable = false;
+       assignment_count = 1;
+       v_value =
+       VObjectRef (RObj ({ class_key = "Child";
+                           field_ref_table =
+                           "parent" ->
+                            { key = "parent"; f_type = ClassName ("Person");
+                              f_value =
+                              VObjectRef (RObj ({ class_key = "Person";
+                                                  field_ref_table =
+                                                  "age" ->
+                                                   { key = "age"; f_type = Int;
+                                                     f_value = VInt (30);
+                                                     is_mutable = false;
+                                                     assignment_count = 1 }
+                                                  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Bob");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 })); is_mutable = false; assignment_count = 0
+  }
+  
+  "age" ->
+   { key = "age"; f_type = Int; f_value = VInt (0); is_mutable = false;
+     assignment_count = 0 }
+  
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString (""); is_mutable = false;
+     assignment_count = 0 }
+  
+  ; number = 2 })); scope_level = 0
+  }
+  
+  "person" ->
+   { v_type = ClassName ("Person"); v_key = "person"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VObjectRef (RObj ({ class_key = "Person";
+                         field_ref_table =
+                         "age" ->
+                          { key = "age"; f_type = Int; f_value = VInt (30);
+                            is_mutable = false; assignment_count = 1 }
+                         
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Bob");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 })); scope_level = 0
+  }
+  
+  ;
+  last_expr_result =
+  Some (VObjectRef (RObj ({ class_key = "Person";
+                            field_ref_table =
+                            "age" ->
+                             { key = "age"; f_type = Int; f_value = VInt (30);
+                               is_mutable = false; assignment_count = 1 }
+                            
+  "name" ->
+   { key = "name"; f_type = String; f_value = VString ("Bob");
+     is_mutable = false; assignment_count = 0 }
+  
+  ; number = 1 }))); was_break = false; was_continue = false;
+  was_return = false; curr_method_type = Void; is_main = true; cycle_cnt = 0;
+  scope_level = 0; is_constructor = false; main_context = None;
+  obj_created_cnt = 2; is_creation = false; constr_affilation = None
+  }
+  

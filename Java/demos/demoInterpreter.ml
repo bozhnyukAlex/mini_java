@@ -292,11 +292,10 @@ let () =
 let test_val =
   Option.get
     (apply parser
-       {|
-        
+       {|        
 public class Main {
     public static void main() {
-        int[] arr = new int[] {10,9,8,7,6,5,4,3,2,1,0};
+        int[] arr = new int[] {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
         int n = 11;
         for (int i = 0; i < n - 1; i = i + 1) {
             for (int j = 0; j < n - i - 1; j = j + 1) {
@@ -307,6 +306,93 @@ public class Main {
                 }
             }
         }
+    }
+}
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string
+    "------------------- ARRAY SORT AS FUNCTION (CHECKING CHANGE OF ARRAY \
+     STATE IN OTHER CONTEXT) ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        int[] arr = new int[] {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+        BubbleSorter bubbleSorter = new BubbleSorter();
+        bubbleSorter.sort(arr, 16);
+    }
+}
+
+class BubbleSorter {
+    public void sort(int[] arr, int n) {
+        for (int i = 0; i < n - 1; i = i + 1) {
+            for (int j = 0; j < n - i - 1; j = j + 1) {
+                if (arr[j] > arr[j + 1]) {
+                    int temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+    }
+}
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string
+    "------------------- CHANGE OF OBJECT STATE IN OTHER CONTEXT \
+     ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        Person person = new Person(25, "Bob");
+        Child child = new Child(person);
+        child.setParentAge(30);
+    }
+}
+
+class Person {
+    int age;
+    String name;
+
+    public Person() {}
+
+    public Person(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+}
+
+class Child extends Person {
+
+    public Person parent;
+
+    public Child(int age, String name) {
+        super(age, name);
+        parent = new Person(40, "Spike");
+    }
+
+    public Child(Person parent) {
+        this.parent = parent;
+    }
+
+    public void setParentAge(int age) {
+        Person p1 = parent; 
+        p1.age = age;
     }
 }
         |})
