@@ -1157,6 +1157,7 @@ module Main (M : MONADERROR) = struct
         )
         >>= fun dec_ctx ->
         let rec loop bs afs ctx =
+          let _ = print_endline ("LOOP CTX: " ^ show_context ctx) in
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
             delete_scope_var
@@ -1539,7 +1540,7 @@ module Main (M : MONADERROR) = struct
           match arr_v with
           | VArray (Arr { a_type = _; values = a_values; number = _ }) -> (
               match ind_v with
-              | VInt i when i < 0 || i > List.length a_values ->
+              | VInt i when i < 0 || i >= List.length a_values ->
                   error "ArrayOutOfBoundsException"
               | VInt i ->
                   return

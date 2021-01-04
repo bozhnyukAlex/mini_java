@@ -285,7 +285,7 @@ public class Main {
 
 let () = test_interp test_val
 
-(* let () =
+let () =
   print_string
     "------------------- MANY CYCLES TEST + ARRAY SORTING ------------------\n"
 
@@ -296,32 +296,22 @@ let test_val =
         
 public class Main {
     public static void main() {
-        int[] arr = new int[] {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
-        BubbleSorter bubbleSorter = new BubbleSorter();
-        bubbleSorter.sort(arr, 16);
-    }
-}
-
-class BubbleSorter {
-    public void sort(int[] arr, int n) {
-    	int i = 0;
-    	while (i < n - 1) {
-    		int j = 0;
-    		while (j < n - i - 1) {
-    			if (arr[j] > arr[j + 1]) {
-               		int temp = arr[j];
+        int[] arr = new int[] {10,9,8,7,6,5,4,3,2,1,0};
+        int n = 11;
+        for (int i = 0; i < n - 1; i = i + 1) {
+            for (int j = 0; j < n - i - 1; j = j + 1) {
+                if (arr[j] > arr[j + 1]) {
+                    int temp = arr[j];
                     arr[j] = arr[j + 1];
                     arr[j + 1] = temp;
                 }
-                j = j + 1;
-    		}  
-    		i = i + 1;
-    	}
+            }
+        }
     }
 }
-        |}) 
+        |})
 
-let () = test_interp test_val *)
+let () = test_interp test_val
 
 (* 
 let () =
