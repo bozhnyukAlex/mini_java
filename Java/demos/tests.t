@@ -1040,3 +1040,33 @@
   constr_affilation = None
   }
   
+  ------------------- MANY CYCLES TEST + ARRAY SORTING ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "n" ->
+     { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
+       v_value = VInt (11); scope_level = 0 }
+    
+  "arr" ->
+   { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+     assignment_count = 1;
+     v_value =
+     VArray (Arr ({ a_type = Int;
+                    values =
+                    [VInt (0); VInt (1); VInt (2); VInt (3); VInt (4);
+                     VInt (5); VInt (6); VInt (7); VInt (8); VInt (9);
+                     VInt (10)];
+                    number = 1 }));
+     scope_level = 0 }
+  
+  "i" ->
+   { v_type = Int; v_key = "i"; is_mutable = false; assignment_count = 11;
+     v_value = VInt (10); scope_level = 1 }
+  
+  ; last_expr_result = Some (VBool (false)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = -11; scope_level = 2; is_constructor = false;
+  main_context = None; obj_created_cnt = 1; is_creation = false;
+  constr_affilation = None
+  }
+  

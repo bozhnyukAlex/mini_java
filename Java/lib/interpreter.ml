@@ -1157,7 +1157,7 @@ module Main (M : MONADERROR) = struct
         )
         >>= fun dec_ctx ->
         let rec loop bs afs ctx =
-          let _ = print_endline ("LOOP CTX: " ^ show_context ctx) in
+          (* let _ = print_endline ("LOOP CTX: " ^ show_context ctx) in *)
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
             delete_scope_var
