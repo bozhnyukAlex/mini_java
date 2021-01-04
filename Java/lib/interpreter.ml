@@ -1018,6 +1018,21 @@ module Main (M : MONADERROR) = struct
 
   let dec_scope_level ctx = { ctx with scope_level = ctx.scope_level - 1 }
 
+  let delete_scope_var : context -> context M.t =
+   fun ctx ->
+    let delete : key_t -> variable -> unit =
+     fun key el ->
+      (* let _ =
+           print_endline
+             ( "CTX SCOPE LVL: "
+             ^ string_of_int ctx.scope_level
+             ^ "\n" ^ show_variable el )
+         in *)
+      if el.scope_level = ctx.scope_level then Hashtbl.remove ctx.var_table key
+    in
+    Hashtbl.iter delete ctx.var_table;
+    return ctx
+
   let rec eval_stmt : stmt -> context -> context M.t =
    fun stmt sctx ->
     (* let _ = print_endline ("STMT: " ^ show_stmt stmt) in *)
@@ -1040,22 +1055,13 @@ module Main (M : MONADERROR) = struct
                   eval_stmt st hctx >>= fun head_ctx -> helper_eval sts head_ctx
               )
         in
-        let delete_scope_var : context -> context M.t =
-         fun ctx ->
-          let delete : key_t -> variable -> unit =
-           fun key el ->
-            if el.scope_level <> ctx.scope_level then
-              Hashtbl.remove ctx.var_table key
-          in
-          Hashtbl.iter delete ctx.var_table;
-          return ctx
-        in
         (* let _ =
              print_string ("HELPER_EVAL SCTX: " ^ show_context sctx ^ "\n")
            in *)
         helper_eval st_list sctx >>= fun sbctx ->
         if sbctx.is_main then return sbctx else delete_scope_var sbctx
     | While (bexpr, lstmt) -> (
+        let was_main = sctx.is_main in
         let rec loop s ctx =
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
@@ -1080,7 +1086,11 @@ module Main (M : MONADERROR) = struct
                 | StmtBlock _ ->
                     return
                       (dec_scope_level
-                         { bectx with cycle_cnt = ctx.cycle_cnt - 1 })
+                         {
+                           bectx with
+                           cycle_cnt = ctx.cycle_cnt - 1;
+                           is_main = (if was_main then true else false);
+                         })
                 | _ -> return { bectx with cycle_cnt = ctx.cycle_cnt - 1 } )
             | Some (VBool true) ->
                 eval_stmt s bectx >>= fun lctx ->
@@ -1095,7 +1105,8 @@ module Main (M : MONADERROR) = struct
         match lstmt with
         | StmtBlock _ ->
             loop lstmt
-              (inc_scope_level { sctx with cycle_cnt = sctx.cycle_cnt + 1 })
+              (inc_scope_level
+                 { sctx with cycle_cnt = sctx.cycle_cnt + 1; is_main = false })
         | _ -> loop lstmt { sctx with cycle_cnt = sctx.cycle_cnt + 1 } )
     | Break ->
         (* Break не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
@@ -1107,38 +1118,54 @@ module Main (M : MONADERROR) = struct
         else return { sctx with was_continue = true }
     | If (bexpr, then_stmt, else_stmt_o) -> (
         eval_expr bexpr sctx >>= fun bectx ->
+        let was_main = bectx.is_main in
         match bectx.last_expr_result with
         | Some (VBool true) -> (
             match then_stmt with
             | StmtBlock _ ->
-                eval_stmt then_stmt (inc_scope_level bectx) >>= fun tctx ->
-                return (dec_scope_level tctx)
+                eval_stmt then_stmt
+                  (inc_scope_level { bectx with is_main = false })
+                >>= fun tctx ->
+                return
+                  (dec_scope_level
+                     { tctx with is_main = (if was_main then true else false) })
             | _ -> eval_stmt then_stmt bectx )
         | Some (VBool false) -> (
             match else_stmt_o with
             | Some else_stmt -> (
                 match else_stmt with
                 | StmtBlock _ ->
-                    eval_stmt else_stmt (inc_scope_level bectx) >>= fun ectx ->
-                    return (dec_scope_level ectx)
+                    eval_stmt else_stmt
+                      (inc_scope_level { bectx with is_main = false })
+                    >>= fun ectx ->
+                    return
+                      (dec_scope_level
+                         {
+                           ectx with
+                           is_main = (if was_main then true else false);
+                         })
                 | _ -> eval_stmt else_stmt bectx )
             | None -> return sctx )
         | _ -> error "Wrong type for condition statement" )
     | For (dec_stmt_o, bexpr_o, after_expr_list, body_stmt) ->
         (* С циклом for scope_level всегда увеличивается, не смотря на наличие/отсутствие блока тела *)
+        let was_main = sctx.is_main in
         ( match dec_stmt_o with
-        | None -> return (inc_scope_level sctx)
-        | Some dec_stmt -> eval_stmt dec_stmt (inc_scope_level sctx) )
+        | None -> return (inc_scope_level { sctx with is_main = false })
+        | Some dec_stmt ->
+            eval_stmt dec_stmt (inc_scope_level { sctx with is_main = false })
+        )
         >>= fun dec_ctx ->
         let rec loop bs afs ctx =
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
-            return
+            delete_scope_var
               {
                 ctx with
                 was_break = false;
                 cycle_cnt = ctx.cycle_cnt - 1;
                 scope_level = ctx.scope_level - 1;
+                is_main = (if was_main then true else false);
               }
           else
             (*Стандартно: смотрим результат бул-выражения, если true - вычислить тело и инкременты после*)
@@ -1149,11 +1176,15 @@ module Main (M : MONADERROR) = struct
             match bectx.last_expr_result with
             (* Увидели false - значит уже не циклимся, возвращаем контекст с уменьшенным счетчиком вложенных циклов и scope*)
             | Some (VBool false) ->
-                return
+                (* let _ =
+                     print_endline ("SCL : " ^ string_of_int bectx.scope_level)
+                   in *)
+                delete_scope_var
                   {
                     bectx with
                     cycle_cnt = bectx.cycle_cnt - 1;
                     scope_level = bectx.scope_level - 1;
+                    is_main = (if was_main then true else false);
                   }
             | Some (VBool true) ->
                 let rec eval_inc_expr_list e_list c =
@@ -1170,14 +1201,21 @@ module Main (M : MONADERROR) = struct
                           eval_inc_expr_list es ehctx
                       | _ -> error "Wrong expression for after body list" )
                 in
-                eval_stmt bs bectx >>= fun bdctx ->
+                (* let _ = print_endline ("BECTX: " ^ show_context bectx) in *)
+                (* Переменные внутри самого блока будут находиться в большем scope level, чем из инициализатора *)
+                eval_stmt bs
+                  { bectx with scope_level = dec_ctx.scope_level + 1 }
+                >>= fun bdctx ->
                 (* Вылетел return - все прерываем, возвращаем контекст *)
-                if bdctx.was_return then return bdctx
+                if bdctx.was_return then
+                  return
+                    { bdctx with is_main = (if was_main then true else false) }
                   (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
                 else if bdctx.was_continue then
                   loop bs afs { bdctx with was_continue = false }
                 else
                   (* Иначе можем просто вычислить инкременты после и сделать цикл *)
+                  (* let _ = print_endline ("BDCTX: " ^ show_context bdctx) in *)
                   eval_inc_expr_list afs bdctx >>= fun after_ctx ->
                   loop bs afs after_ctx
             | _ -> error "Wrong condition type in for statement"

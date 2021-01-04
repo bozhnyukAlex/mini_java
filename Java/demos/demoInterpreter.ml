@@ -182,6 +182,7 @@ public class Main {
         Child childSecond = new Child(person);
         childSecond.setAge(20);
         childFirst.setAge(4);
+        person.setAge(27);
     }
 }
 
@@ -235,6 +236,92 @@ class Child extends Person {
         |})
 
 let () = test_interp test_val
+
+let () = print_string "------------------- SCOPE TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+public class Main {
+    public static void main() {
+        int a = 2;
+        int b = 3;
+        int c = 4;
+        if (c == 4) {
+           int d = 7;
+           a = a + 1;
+           int e = 10;
+           int g = 42;
+        }
+        b = 5;
+        c = 6;
+        a = 15;
+        int i = 0;
+        while (i < 3) {
+      	   int m = 2;
+      	   int n = 3;
+      	   int z = 4;
+      	   int f = 5;
+      	   i = i + 1;
+      	 }
+      	a = 100;
+      	b = 200;
+        c = 300;
+        for (int k = 0, p = 0; k < 6; k = k + 1) {
+            int m = 2;
+      	    int n = 3;
+      	    int z = 4;
+      	    int f = 5;
+            p = p + 1;
+        }
+        a = 1000;
+        b = 2000;
+        c = 3000;
+    }
+}   
+
+        |})
+
+let () = test_interp test_val
+
+(* let () =
+  print_string
+    "------------------- MANY CYCLES TEST + ARRAY SORTING ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        int[] arr = new int[] {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+        BubbleSorter bubbleSorter = new BubbleSorter();
+        bubbleSorter.sort(arr, 16);
+    }
+}
+
+class BubbleSorter {
+    public void sort(int[] arr, int n) {
+    	int i = 0;
+    	while (i < n - 1) {
+    		int j = 0;
+    		while (j < n - i - 1) {
+    			if (arr[j] > arr[j + 1]) {
+               		int temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+                j = j + 1;
+    		}  
+    		i = i + 1;
+    	}
+    }
+}
+        |}) 
+
+let () = test_interp test_val *)
 
 (* 
 let () =

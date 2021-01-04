@@ -922,9 +922,9 @@
                                                   field_ref_table =
                                                   "age" ->
                                                    { key = "age"; f_type = Int;
-                                                     f_value = VInt (25);
+                                                     f_value = VInt (27);
                                                      is_mutable = false;
-                                                     assignment_count = 0 }
+                                                     assignment_count = 1 }
                                                   
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
@@ -951,8 +951,8 @@
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (25);
-                            is_mutable = false; assignment_count = 0 }
+                          { key = "age"; f_type = Int; f_value = VInt (27);
+                            is_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
@@ -998,38 +998,45 @@
   
   ;
   last_expr_result =
-  Some (VObjectRef (RObj ({ class_key = "Child";
+  Some (VObjectRef (RObj ({ class_key = "Person";
                             field_ref_table =
-                            "parent" ->
-                             { key = "parent"; f_type = ClassName ("Person");
-                               f_value =
-                               VObjectRef (RObj ({ class_key = "Person";
-                                                   field_ref_table =
-                                                   "age" ->
-                                                    { key = "age";
-                                                      f_type = Int;
-                                                      f_value = VInt (40);
-                                                      is_mutable = false;
-                                                      assignment_count = 0 }
-                                                   
+                            "age" ->
+                             { key = "age"; f_type = Int; f_value = VInt (27);
+                               is_mutable = false; assignment_count = 1 }
+                            
   "name" ->
-   { key = "name"; f_type = String; f_value = VString ("Flexer");
+   { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
-  ; number = 3 })); is_mutable = false; assignment_count = 0
-  }
-  
-  "age" ->
-   { key = "age"; f_type = Int; f_value = VInt (4); is_mutable = false;
-     assignment_count = 1 }
-  
-  "name" ->
-   { key = "name"; f_type = String; f_value = VString ("Alice");
-     is_mutable = false; assignment_count = 0 }
-  
-  ; number = 2 }))); was_break = false; was_continue = false;
+  ; number = 1 }))); was_break = false; was_continue = false;
   was_return = false; curr_method_type = Void; is_main = true; cycle_cnt = 0;
   scope_level = 0; is_constructor = false; main_context = None;
   obj_created_cnt = 4; is_creation = false; constr_affilation = None
+  }
+  
+  ------------------- SCOPE TEST ------------------
+  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+    var_table =
+    "a" ->
+     { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 5;
+       v_value = VInt (1000); scope_level = 0 }
+    
+  "b" ->
+   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 4;
+     v_value = VInt (2000); scope_level = 0 }
+  
+  "c" ->
+   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 4;
+     v_value = VInt (3000); scope_level = 0 }
+  
+  "i" ->
+   { v_type = Int; v_key = "i"; is_mutable = false; assignment_count = 4;
+     v_value = VInt (3); scope_level = 0 }
+  
+  ; last_expr_result = Some (VInt (3000)); was_break = false;
+  was_continue = false; was_return = false; curr_method_type = Void;
+  is_main = true; cycle_cnt = -1; scope_level = 1; is_constructor = false;
+  main_context = None; obj_created_cnt = 0; is_creation = false;
+  constr_affilation = None
   }
   
