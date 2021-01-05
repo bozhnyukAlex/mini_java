@@ -505,13 +505,14 @@ module Main (M : MONADERROR) = struct
   }
   [@@deriving show { with_path = false }]
 
+  type signal = WasBreak | WasContinue | WasReturn | NoSignal
+  [@@deriving show { with_path = false }]
+
   type context = {
     cur_object : obj_ref;
     var_table : (key_t, variable) Hashtbl_p.t;
     last_expr_result : value option;
-    was_break : bool;
-    was_continue : bool;
-    was_return : bool;
+    runtime_signal : signal;
     curr_method_type : type_t;
     is_main_scope : bool;
     (* Считаем вложенные циклы *)
@@ -532,9 +533,7 @@ module Main (M : MONADERROR) = struct
         cur_object;
         var_table;
         last_expr_result = None;
-        was_break = false;
-        was_continue = false;
-        was_return = false;
+        runtime_signal = NoSignal;
         curr_method_type = Void;
         is_main_scope = true;
         cycle_cnt = 0;
@@ -968,9 +967,12 @@ module Main (M : MONADERROR) = struct
               match st with
               | (Break | Continue | Return _) when sts <> [] ->
                   error "There are unreachable statements"
-              | _ when hctx.cycle_cnt >= 1 && hctx.was_break -> return hctx
-              | _ when hctx.cycle_cnt >= 1 && hctx.was_continue -> return hctx
-              | _ when hctx.was_return ->
+              | _ when hctx.cycle_cnt >= 1 && hctx.runtime_signal = WasBreak ->
+                  return hctx
+              | _ when hctx.cycle_cnt >= 1 && hctx.runtime_signal = WasContinue
+                ->
+                  return hctx
+              | _ when hctx.runtime_signal = WasReturn ->
                   return hctx
                   (*Счетчик return обновляется после выхода из метода*)
               | _ ->
@@ -983,7 +985,7 @@ module Main (M : MONADERROR) = struct
         let was_main = sctx.is_main_scope in
         let rec loop s ctx =
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
-          if ctx.was_break then
+          if ctx.runtime_signal = WasBreak then
             match s with
             (* Если был блок - то еще надо уровень видимости понизить *)
             | StmtBlock _ ->
@@ -991,12 +993,16 @@ module Main (M : MONADERROR) = struct
                   (dec_scope_level
                      {
                        ctx with
-                       was_break = false;
+                       runtime_signal = NoSignal;
                        cycle_cnt = ctx.cycle_cnt - 1;
                      })
             | _ ->
                 return
-                  { ctx with was_break = false; cycle_cnt = ctx.cycle_cnt - 1 }
+                  {
+                    ctx with
+                    runtime_signal = NoSignal;
+                    cycle_cnt = ctx.cycle_cnt - 1;
+                  }
           else
             eval_expr bexpr ctx class_table >>= fun bectx ->
             match bectx.last_expr_result with
@@ -1014,10 +1020,10 @@ module Main (M : MONADERROR) = struct
             | Some (VBool true) ->
                 eval_stmt s bectx class_table >>= fun lctx ->
                 (* Вылетел return - все прерываем, возвращаем контекст *)
-                if lctx.was_return then return lctx
+                if lctx.runtime_signal = WasReturn then return lctx
                   (*Может вылететь continue - значит циклимся заново*)
-                else if lctx.was_continue then
-                  loop s { lctx with was_continue = false }
+                else if lctx.runtime_signal = WasContinue then
+                  loop s { lctx with runtime_signal = NoSignal }
                 else loop s lctx
             | _ -> error "Wrong expression type for while stametent"
         in
@@ -1034,11 +1040,11 @@ module Main (M : MONADERROR) = struct
     | Break ->
         (* Break не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
         if sctx.cycle_cnt <= 0 then error "No loop for break"
-        else return { sctx with was_break = true }
+        else return { sctx with runtime_signal = WasBreak }
     | Continue ->
         (* Continue не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
         if sctx.cycle_cnt <= 0 then error "No loop for continue"
-        else return { sctx with was_continue = true }
+        else return { sctx with runtime_signal = WasContinue }
     | If (bexpr, then_stmt, else_stmt_o) -> (
         eval_expr bexpr sctx class_table >>= fun bectx ->
         let was_main = bectx.is_main_scope in
@@ -1078,11 +1084,11 @@ module Main (M : MONADERROR) = struct
         >>= fun dec_ctx ->
         let rec loop bs afs ctx =
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
-          if ctx.was_break then
+          if ctx.runtime_signal = WasBreak then
             delete_scope_var
               {
                 ctx with
-                was_break = false;
+                runtime_signal = NoSignal;
                 cycle_cnt = ctx.cycle_cnt - 1;
                 scope_level = ctx.scope_level - 1;
                 is_main_scope = was_main;
@@ -1124,12 +1130,12 @@ module Main (M : MONADERROR) = struct
                   class_table
                 >>= fun bdctx ->
                 (* Вылетел return - все прерываем, возвращаем контекст *)
-                if bdctx.was_return then
+                if bdctx.runtime_signal = WasReturn then
                   return { bdctx with is_main_scope = was_main }
                   (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
-                else if bdctx.was_continue then
+                else if bdctx.runtime_signal = WasContinue then
                   eval_inc_expr_list afs bdctx >>= fun after_ctx ->
-                  loop bs afs { after_ctx with was_continue = false }
+                  loop bs afs { after_ctx with runtime_signal = NoSignal }
                 else
                   (* Иначе можем просто вычислить инкременты после и сделать цикл *)
                   eval_inc_expr_list afs bdctx >>= fun after_ctx ->
@@ -1144,7 +1150,11 @@ module Main (M : MONADERROR) = struct
         | None when sctx.curr_method_type = Void ->
             (* Если тип Void - выходим со значением VVoid поставленным флагом, что был return *)
             return
-              { sctx with last_expr_result = Some VVoid; was_return = true }
+              {
+                sctx with
+                last_expr_result = Some VVoid;
+                runtime_signal = WasReturn;
+              }
         | None -> error "Return value type mismatch"
         (* Если есть выражение - смотрим, чтобы тип совпадал с типом, возвращаемым методом *)
         | Some rexpr ->
@@ -1154,7 +1164,7 @@ module Main (M : MONADERROR) = struct
             else
               (* Возвращаем контекст, в котором есть результат выражения, но не забываем поставить флаг, что был return *)
               eval_expr rexpr sctx class_table >>= fun rectx ->
-              return { rectx with was_return = true } )
+              return { rectx with runtime_signal = WasReturn } )
     | Expression sexpr -> (
         match sexpr with
         | PostDec _ | PostInc _ | PrefDec _ | PrefInc _
@@ -1414,9 +1424,7 @@ module Main (M : MONADERROR) = struct
                           cur_object = obj_ref;
                           var_table = new_vt;
                           last_expr_result = None;
-                          was_break = false;
-                          was_continue = false;
-                          was_return = false;
+                          runtime_signal = NoSignal;
                           curr_method_type = mr.m_type;
                           is_main_scope = false;
                           cycle_cnt = 0;
@@ -1627,9 +1635,7 @@ module Main (M : MONADERROR) = struct
                 cur_object = new_object;
                 var_table = Hashtbl.create 100;
                 last_expr_result = None;
-                was_break = false;
-                was_continue = false;
-                was_return = false;
+                runtime_signal = NoSignal;
                 curr_method_type = Void;
                 is_main_scope = false;
                 cycle_cnt = 0;
@@ -1667,7 +1673,7 @@ module Main (M : MONADERROR) = struct
               {
                 ctx with
                 last_expr_result = Some (VObjectRef c_ctx.cur_object);
-                was_return = false;
+                runtime_signal = NoSignal;
                 obj_created_cnt = c_ctx.obj_created_cnt;
               }
       | Assign (Identifier var_key, val_expr) ->

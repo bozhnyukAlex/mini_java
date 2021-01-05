@@ -1138,11 +1138,10 @@
      v_value = VInt (3); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (3)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 0; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VInt (3)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 0; is_creation = false; constr_affilation = None
   }
   
   ------------------- LITTLE ARITHMETIC TEST ------------------
@@ -1211,11 +1210,10 @@
      v_value = VInt (3); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VString ("2b")); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 0; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VString ("2b")); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 0; is_creation = false; constr_affilation = None
   }
   
   ------------------- BOOLEAN EXPRESSIONS TEST ------------------
@@ -1354,11 +1352,10 @@
      assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (1)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 2; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VInt (1)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
   
   ------------------- SIMPLE METHOD CALL TEST ------------------
@@ -1397,11 +1394,10 @@
   }
   
   ]]
-  ; last_expr_result = Some (VInt (30)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 1; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VInt (30)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
   
   ------------------- UPDATE OBJECT STATE IN MAIN TEST ------------------
@@ -1487,11 +1483,10 @@
   }
   
   ]]
-  ; last_expr_result = Some (VInt (55)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 1; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VInt (55)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
   
   ------------------- CHILD WORKING TEST ------------------
@@ -1611,10 +1606,10 @@
      is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 }))); was_break = false; was_continue = false;
-  was_return = false; curr_method_type = Void; is_main_scope = true;
-  cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
-  obj_created_cnt = 4; is_creation = false; constr_affilation = None
+  ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
+  prev_context = None; obj_created_cnt = 4; is_creation = false;
+  constr_affilation = None
   }
   
   ------------------- SCOPE TEST ------------------
@@ -1639,11 +1634,10 @@
      v_value = VInt (3); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (3000)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 1; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 0; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VInt (3000)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 1; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 0; is_creation = false; constr_affilation = None
   }
   
   ------------------- MANY CYCLES TEST + ARRAY SORTING ------------------
@@ -1672,11 +1666,10 @@
      v_value = VInt (10); scope_level = 1 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 1; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 2; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
   
   ------------------- BREAK AND CONTINUE TEST ------------------
@@ -1709,11 +1702,10 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (16)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 2; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VInt (16)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 2; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
   
   ------------------- ARRAY SORT AS FUNCTION (CHECKING CHANGE OF ARRAY STATE IN OTHER CONTEXT) ------------------
@@ -1744,11 +1736,10 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 2; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
   
   ------------------- CHANGE OF OBJECT STATE IN OTHER CONTEXT ------------------
@@ -1830,10 +1821,10 @@
      is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 }))); was_break = false; was_continue = false;
-  was_return = false; curr_method_type = Void; is_main_scope = true;
-  cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
-  obj_created_cnt = 2; is_creation = false; constr_affilation = None
+  ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
+  prev_context = None; obj_created_cnt = 2; is_creation = false;
+  constr_affilation = None
   }
   
   ------------------- PATTERN VISITOR TEST ------------------
@@ -1922,11 +1913,10 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 8; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 2; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 8; is_creation = false; constr_affilation = None
   }
   
   ------------------- RECURSION TEST (FACTORIAL) ------------------
@@ -1948,11 +1938,10 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (120)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 1; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VInt (120)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
   
   ------------------- RECURSION TEST (QUICK SORT) ------------------
@@ -1995,11 +1984,10 @@
      v_value = VInt (0); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); was_break = false;
-  was_continue = false; was_return = false; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 2; is_creation = false;
-  constr_affilation = None
+  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
   
   ------------------- ARRAY_TYPE_MISMATCH_EXCEPTION ERROR ------------------
@@ -2050,10 +2038,10 @@
      is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 }))); was_break = false; was_continue = false;
-  was_return = false; curr_method_type = Void; is_main_scope = true;
-  cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
-  obj_created_cnt = 1; is_creation = false; constr_affilation = None
+  ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
+  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
+  prev_context = None; obj_created_cnt = 1; is_creation = false;
+  constr_affilation = None
   }
   
   ------------------- CONSTRUCTOR CHAINING RECURSION ------------------
