@@ -1,5 +1,6 @@
 open Ast
 open Parser
+open Hashtbl_p
 
 module type MONAD = sig
   type 'a t
@@ -14,8 +15,6 @@ end
 module type MONADERROR = sig
   include MONAD
 
-  val get : 'a t -> 'a
-
   val error : string -> 'a t
 end
 
@@ -29,8 +28,6 @@ module Result = struct
   let error = Result.error
 
   let ( >> ) x f = x >>= fun _ -> f
-
-  let get = Result.get_ok
 end
 
 type key_t = string [@@deriving show]
@@ -83,8 +80,6 @@ let class_table : (key_t, class_r) Hashtbl_p.t = Hashtbl.create 1024
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
-let get_elem_if_present ht key = Hashtbl.find_opt ht key
-
 module ClassLoader (M : MONADERROR) = struct
   open M
 
@@ -99,9 +94,8 @@ module ClassLoader (M : MONADERROR) = struct
   let is_public = List.mem Public
 
   let monadic_update_hash_table ht old_key new_val =
-    return
-      ( Hashtbl.replace ht old_key new_val;
-        ht )
+    Hashtbl.replace ht old_key new_val;
+    return ht
 
   let rec monadic_list_iter list action base =
     match list with
@@ -113,10 +107,23 @@ module ClassLoader (M : MONADERROR) = struct
     | Seq.Nil -> return base
     | Seq.Cons (x, next) -> action x >> monadic_seq_iter next action base
 
+  let get_type_list = List.map fst
+
+  let make_method_key m_name args =
+    String.concat "" (m_name :: List.map show_type_t (get_type_list args))
+    ^ "@@"
+
+  let make_constr_key c_name args =
+    String.concat "" (c_name :: List.map show_type_t (get_type_list args))
+    ^ "$$"
+
   let prepare_object ht =
     let constructor_table = Hashtbl.create 20 in
     let field_table = Hashtbl.create 20 in
     let method_table = Hashtbl.create 20 in
+    let equals_key =
+      make_method_key "equals" [ (ClassName "Object", Name "obj") ]
+    in
     let equals : method_r =
       {
         m_type = Int;
@@ -124,7 +131,7 @@ module ClassLoader (M : MONADERROR) = struct
         is_overridable = true;
         has_override_annotation = false;
         args = [ (ClassName "Object", Name "obj") ];
-        key = "equalsClassName Object@@";
+        key = equals_key;
         body =
           apply Stmt.stat_block
             {| 
@@ -135,6 +142,7 @@ module ClassLoader (M : MONADERROR) = struct
     |};
       }
     in
+    let to_string_key = make_method_key "toString" [] in
     let to_string : method_r =
       {
         m_type = String;
@@ -142,7 +150,7 @@ module ClassLoader (M : MONADERROR) = struct
         is_overridable = true;
         has_override_annotation = false;
         args = [];
-        key = "toString@@";
+        key = to_string_key;
         body =
           apply Stmt.stat_block
             {|
@@ -152,23 +160,22 @@ module ClassLoader (M : MONADERROR) = struct
         |};
       }
     in
-    return
-      ( Hashtbl.add method_table "equalsClassName Object@@" equals;
-        Hashtbl.add method_table "toString@@" to_string;
-        Hashtbl.add ht "Object"
-          {
-            this_key = "Object";
-            field_table;
-            method_table;
-            constructor_table;
-            children_keys = [];
-            is_abstract = false;
-            is_inheritable = true;
-            parent_key = None;
-            dec_tree =
-              Option.get
-                (apply class_declaration
-                   {|public class Object {
+    Hashtbl.add method_table equals_key equals;
+    Hashtbl.add method_table to_string_key to_string;
+    Hashtbl.add ht "Object"
+      {
+        this_key = "Object";
+        field_table;
+        method_table;
+        constructor_table;
+        children_keys = [];
+        is_abstract = false;
+        is_inheritable = true;
+        parent_key = None;
+        dec_tree =
+          Option.get
+            (apply class_declaration
+               {|public class Object {
                         public int equals(Object obj) {
                             if (this == obj) return 1;
                             else return 0;
@@ -179,8 +186,8 @@ module ClassLoader (M : MONADERROR) = struct
                         }
                     }
 |});
-          };
-        ht )
+      };
+    return ht
 
   (*Функция для проверки полей, методов и конструкторов на наличие бредовых модификаторов*)
   let check_modifiers_f pair =
@@ -225,15 +232,12 @@ module ClassLoader (M : MONADERROR) = struct
         return ()
     | Class (_, _, _, _) -> error "Wrong class modifiers"
 
-  let get_type_list = List.map fst
-
   (* Отдельная функция для добавления в таблицу с проверкой на существование *)
   let add_with_check ht key value e_message =
     match get_elem_if_present ht key with
     | None ->
-        return
-          ( Hashtbl.add ht key value;
-            ht )
+        Hashtbl.add ht key value;
+        return ht
     | _ -> error e_message
 
   (* Сначала надо просто заполнить таблицу классов *)
@@ -264,11 +268,7 @@ module ClassLoader (M : MONADERROR) = struct
               check_modifiers_f field_elem >> helper pairs
           | m_ms, Method (m_type, Name name, args, body) ->
               (* Формирование ключа: method_key = name ++ type1 ++ type2 ++ ... ++ typen *)
-              let key =
-                String.concat ""
-                  (name :: List.map show_type_t (get_type_list args))
-                ^ "@@"
-              in
+              let key = make_method_key name args in
               let is_class_abstract = is_abstract ml in
               (* Является ли метод абстрактным *)
               let is_abstract = is_abstract m_ms in
@@ -304,11 +304,7 @@ module ClassLoader (M : MONADERROR) = struct
                    "Method with this type exists"
               >> return ()
           | _, Constructor (Name name, args, body) ->
-              let constr_key =
-                String.concat ""
-                  (name :: List.map show_type_t (get_type_list args))
-                ^ "$$"
-              in
+              let constr_key = make_constr_key name args in
               (*Смотрим, чтобы имя конструктора совпадало с классом*)
               let check_names_match =
                 if name = this_key then return ()
@@ -350,8 +346,9 @@ module ClassLoader (M : MONADERROR) = struct
     Hashtbl.iter
       (fun k cr ->
         if Hashtbl.length cr.constructor_table = 0 then
-          Hashtbl.add cr.constructor_table (k ^ "$$")
-            { key = k ^ "$$"; args = []; body = StmtBlock [] })
+          let c_key = make_constr_key k [] in
+          Hashtbl.add cr.constructor_table c_key
+            { key = c_key; args = []; body = StmtBlock [] })
       ht;
     return ht
 
@@ -1296,7 +1293,7 @@ module Main (M : MONADERROR) = struct
       | NotEqual (left, right) -> eval_op left right ( !=! )
       | Const v -> return { ctx with last_expr_result = Some v }
       | Identifier id -> (
-          match Hashtbl_p.get_elem_if_present ctx.var_table id with
+          match get_elem_if_present ctx.var_table id with
           | Some var_by_id ->
               return { ctx with last_expr_result = Some var_by_id.v_value }
           | None -> (

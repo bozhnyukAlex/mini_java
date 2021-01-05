@@ -18,4 +18,4 @@ let filter : ('a, 'b) t -> ('a -> 'b -> bool) -> ('a, 'b) t =
   Hashtbl.iter (fun k v -> if f k v then Hashtbl.add new_table k v) ht;
   new_table
 
-let get_elem_if_present key = Hashtbl.find_opt key
+let get_elem_if_present ht key = Hashtbl.find_opt ht key
