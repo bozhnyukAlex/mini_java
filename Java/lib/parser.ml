@@ -360,9 +360,6 @@ module Stmt = struct
           token ";" >> return (VarDec (None, type_specifier, dec_pairs)) );
       ]
 
-  (* type_spec_array >>= fun type_specifier ->
-     sep_by1 var_declarator (token ",") >>= fun dec_pairs ->
-     token ";" >> return (VarDec (type_specifier, dec_pairs)) *)
   and for_stat input =
     ( token "for" >> token "("
     >> choice

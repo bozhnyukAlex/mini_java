@@ -148,16 +148,6 @@ let not_v = function
   | VBool x -> VBool (not x)
   | _ -> raise (Invalid_argument "Wrong types for NOT operator!")
 
-(* let equal_value v1 v2 =
-  match (v1, v2) with
-  | VInt x, VInt y -> x = y
-  | VBool x, VBool y -> x = y
-  | VVoid, VVoid -> true
-  | VString s, VString t -> s = t
-  | VObjectRef x, VObjectRef y -> x = y
-  | VArray x, VArray y -> x = y
-  | _ -> raise (Invalid_argument "Wrong types for equality!") *)
-
 let ( === ) v1 v2 =
   match (v1, v2) with
   | VInt x, VInt y -> VBool (x = y)
