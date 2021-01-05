@@ -1139,7 +1139,7 @@
   
   ]]
   ; last_expr_result = Some (VInt (3)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 0; is_creation = false; constr_affilation = None
   }
@@ -1211,7 +1211,7 @@
   
   ]]
   ; last_expr_result = Some (VString ("2b")); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 0; is_creation = false; constr_affilation = None
   }
@@ -1353,7 +1353,7 @@
   
   ]]
   ; last_expr_result = Some (VInt (1)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
@@ -1395,7 +1395,7 @@
   
   ]]
   ; last_expr_result = Some (VInt (30)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
@@ -1484,7 +1484,7 @@
   
   ]]
   ; last_expr_result = Some (VInt (55)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
@@ -1607,9 +1607,9 @@
   
   ]]
   ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 4; is_creation = false;
-  constr_affilation = None
+  is_main_scope = true; nested_loops_cnt = 0; scope_level = 0;
+  cur_constr_key = None; prev_context = None; obj_created_cnt = 4;
+  is_creation = false; constr_affilation = None
   }
   
   ------------------- SCOPE TEST ------------------
@@ -1635,7 +1635,7 @@
   
   ]]
   ; last_expr_result = Some (VInt (3000)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 1; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 0; is_creation = false; constr_affilation = None
   }
@@ -1667,7 +1667,7 @@
   
   ]]
   ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 2; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
@@ -1703,7 +1703,7 @@
   
   ]]
   ; last_expr_result = Some (VInt (16)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 2; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
@@ -1737,7 +1737,7 @@
   
   ]]
   ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
@@ -1822,9 +1822,9 @@
   
   ]]
   ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 2; is_creation = false;
-  constr_affilation = None
+  is_main_scope = true; nested_loops_cnt = 0; scope_level = 0;
+  cur_constr_key = None; prev_context = None; obj_created_cnt = 2;
+  is_creation = false; constr_affilation = None
   }
   
   ------------------- PATTERN VISITOR TEST ------------------
@@ -1914,7 +1914,7 @@
   
   ]]
   ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 2; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 8; is_creation = false; constr_affilation = None
   }
@@ -1939,7 +1939,7 @@
   
   ]]
   ; last_expr_result = Some (VInt (120)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
   }
@@ -1985,7 +1985,7 @@
   
   ]]
   ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
-  curr_method_type = Void; is_main_scope = true; cycle_cnt = 0;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
   }
@@ -2039,9 +2039,9 @@
   
   ]]
   ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
-  is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
-  prev_context = None; obj_created_cnt = 1; is_creation = false;
-  constr_affilation = None
+  is_main_scope = true; nested_loops_cnt = 0; scope_level = 0;
+  cur_constr_key = None; prev_context = None; obj_created_cnt = 1;
+  is_creation = false; constr_affilation = None
   }
   
   ------------------- CONSTRUCTOR CHAINING RECURSION ------------------

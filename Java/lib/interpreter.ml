@@ -516,7 +516,7 @@ module Main (M : MONADERROR) = struct
     curr_method_type : type_t;
     is_main_scope : bool;
     (* Считаем вложенные циклы *)
-    cycle_cnt : int;
+    nested_loops_cnt : int;
     scope_level : int;
     (* None - не в конструкторе, Some k -> в конструкторе с ключом k *)
     cur_constr_key : key_t option;
@@ -536,7 +536,7 @@ module Main (M : MONADERROR) = struct
         runtime_signal = NoSignal;
         curr_method_type = Void;
         is_main_scope = true;
-        cycle_cnt = 0;
+        nested_loops_cnt = 0;
         scope_level = 0;
         cur_constr_key = None;
         prev_context = None;
@@ -967,10 +967,13 @@ module Main (M : MONADERROR) = struct
               match st with
               | (Break | Continue | Return _) when sts <> [] ->
                   error "There are unreachable statements"
-              | _ when hctx.cycle_cnt >= 1 && hctx.runtime_signal = WasBreak ->
+              | _
+                when hctx.nested_loops_cnt >= 1
+                     && hctx.runtime_signal = WasBreak ->
                   return hctx
-              | _ when hctx.cycle_cnt >= 1 && hctx.runtime_signal = WasContinue
-                ->
+              | _
+                when hctx.nested_loops_cnt >= 1
+                     && hctx.runtime_signal = WasContinue ->
                   return hctx
               | _ when hctx.runtime_signal = WasReturn ->
                   return hctx
@@ -994,14 +997,14 @@ module Main (M : MONADERROR) = struct
                      {
                        ctx with
                        runtime_signal = NoSignal;
-                       cycle_cnt = ctx.cycle_cnt - 1;
+                       nested_loops_cnt = ctx.nested_loops_cnt - 1;
                      })
             | _ ->
                 return
                   {
                     ctx with
                     runtime_signal = NoSignal;
-                    cycle_cnt = ctx.cycle_cnt - 1;
+                    nested_loops_cnt = ctx.nested_loops_cnt - 1;
                   }
           else
             eval_expr bexpr ctx class_table >>= fun bectx ->
@@ -1013,10 +1016,13 @@ module Main (M : MONADERROR) = struct
                       (dec_scope_level
                          {
                            bectx with
-                           cycle_cnt = ctx.cycle_cnt - 1;
+                           nested_loops_cnt = ctx.nested_loops_cnt - 1;
                            is_main_scope = was_main;
                          })
-                | _ -> return { bectx with cycle_cnt = ctx.cycle_cnt - 1 } )
+                | _ ->
+                    return
+                      { bectx with nested_loops_cnt = ctx.nested_loops_cnt - 1 }
+                )
             | Some (VBool true) ->
                 eval_stmt s bectx class_table >>= fun lctx ->
                 (* Вылетел return - все прерываем, возвращаем контекст *)
@@ -1033,17 +1039,19 @@ module Main (M : MONADERROR) = struct
               (inc_scope_level
                  {
                    sctx with
-                   cycle_cnt = sctx.cycle_cnt + 1;
+                   nested_loops_cnt = sctx.nested_loops_cnt + 1;
                    is_main_scope = false;
                  })
-        | _ -> loop lstmt { sctx with cycle_cnt = sctx.cycle_cnt + 1 } )
+        | _ ->
+            loop lstmt
+              { sctx with nested_loops_cnt = sctx.nested_loops_cnt + 1 } )
     | Break ->
         (* Break не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
-        if sctx.cycle_cnt <= 0 then error "No loop for break"
+        if sctx.nested_loops_cnt <= 0 then error "No loop for break"
         else return { sctx with runtime_signal = WasBreak }
     | Continue ->
         (* Continue не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
-        if sctx.cycle_cnt <= 0 then error "No loop for continue"
+        if sctx.nested_loops_cnt <= 0 then error "No loop for continue"
         else return { sctx with runtime_signal = WasContinue }
     | If (bexpr, then_stmt, else_stmt_o) -> (
         eval_expr bexpr sctx class_table >>= fun bectx ->
@@ -1089,7 +1097,7 @@ module Main (M : MONADERROR) = struct
               {
                 ctx with
                 runtime_signal = NoSignal;
-                cycle_cnt = ctx.cycle_cnt - 1;
+                nested_loops_cnt = ctx.nested_loops_cnt - 1;
                 scope_level = ctx.scope_level - 1;
                 is_main_scope = was_main;
               }
@@ -1105,7 +1113,7 @@ module Main (M : MONADERROR) = struct
                 delete_scope_var
                   {
                     bectx with
-                    cycle_cnt = bectx.cycle_cnt - 1;
+                    nested_loops_cnt = bectx.nested_loops_cnt - 1;
                     scope_level = bectx.scope_level - 1;
                     is_main_scope = was_main;
                   }
@@ -1143,7 +1151,7 @@ module Main (M : MONADERROR) = struct
             | _ -> error "Wrong condition type in for statement"
         in
         loop body_stmt after_expr_list
-          { dec_ctx with cycle_cnt = sctx.cycle_cnt + 1 }
+          { dec_ctx with nested_loops_cnt = sctx.nested_loops_cnt + 1 }
     | Return rexpr_o -> (
         match rexpr_o with
         (* Если нет никакого выражения - метод, в котором мы исполняемся, должен иметь тип Void *)
@@ -1427,7 +1435,7 @@ module Main (M : MONADERROR) = struct
                           runtime_signal = NoSignal;
                           curr_method_type = mr.m_type;
                           is_main_scope = false;
-                          cycle_cnt = 0;
+                          nested_loops_cnt = 0;
                           scope_level = 0;
                           cur_constr_key = None;
                           prev_context = Some ctx;
@@ -1638,7 +1646,7 @@ module Main (M : MONADERROR) = struct
                 runtime_signal = NoSignal;
                 curr_method_type = Void;
                 is_main_scope = false;
-                cycle_cnt = 0;
+                nested_loops_cnt = 0;
                 scope_level = 0;
                 prev_context = Some ctx;
                 obj_created_cnt = ctx.obj_created_cnt + 1;
@@ -1910,12 +1918,8 @@ module Main (M : MONADERROR) = struct
       | None -> ()
       | Some prev_ctx -> helper_update i n_val prev_ctx a_n
     in
-    try
-      get_arr_info_exn arr |> fun (_, _, a_number) ->
-      helper_update index new_value update_ctx a_number
-    with
-    | Invalid_argument m -> raise (Invalid_argument m)
-    | Failure m -> raise (Failure m)
+    get_arr_info_exn arr |> fun (_, _, a_number) ->
+    helper_update index new_value update_ctx a_number
 
   and update_object_state_exn obj field_key new_value update_ctx =
     let rec update_states f_ht f_key n_val o_num assign_cnt =
@@ -2039,24 +2043,20 @@ module Main (M : MONADERROR) = struct
     helper_add ht args_l m_arg_list pr_ctx
 
   and prepare_constructor_block curr_body curr_class_r =
-    match curr_body with
-    | StmtBlock (Expression (CallMethod (Super, _)) :: _) -> (
-        match curr_class_r.parent_key with
-        | None -> error "Super call in constructor on not child class"
-        | Some _ -> return curr_body )
-    | StmtBlock other -> (
-        (* Если увидели, что начало не на супер - то надо просмотреть, есть ли конструкторы у родителя *)
-        match curr_class_r.parent_key with
-        (* Родителя нет - тогда просто возвращаем тот-же конструктор *)
-        | None -> return curr_body
-        (* Есть родитель - делаем вставку super в начало, если нет в начале вызова this(...) *)
-        | Some _ -> (
-            match curr_body with
-            | StmtBlock (Expression (CallMethod (This, _)) :: _) ->
-                return curr_body
-            | _ ->
-                return
-                  (StmtBlock (Expression (CallMethod (Super, [])) :: other)) ) )
+    match (curr_body, curr_class_r.parent_key) with
+    | StmtBlock (Expression (CallMethod (Super, _)) :: _), None ->
+        error "Super call in constructor on not child class"
+    | StmtBlock (Expression (CallMethod (Super, _)) :: _), Some _ ->
+        return curr_body
+    (* Если увидели, что начало не на супер - то надо просмотреть, есть ли конструкторы у родителя *)
+    (* Родителя нет - тогда просто возвращаем тот-же конструктор *)
+    | StmtBlock _, None -> return curr_body
+    (* Есть родитель - делаем вставку super в начало, если нет в начале вызова this(...) *)
+    | StmtBlock other, Some _ -> (
+        match curr_body with
+        | StmtBlock (Expression (CallMethod (This, _)) :: _) -> return curr_body
+        | _ -> return (StmtBlock (Expression (CallMethod (Super, [])) :: other))
+        )
     | _ -> error "Must be statement block!"
 
   let execute : (key_t, class_r) Hashtbl.t -> context M.t =
