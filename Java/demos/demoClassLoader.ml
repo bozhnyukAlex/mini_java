@@ -9,14 +9,14 @@ let show_hashtbl ht pp_k pp_el = pp pp_k pp_el Format.std_formatter ht
 
 let show_class_table ht = show_hashtbl ht pp_key_t pp_class_r
 
-let test_load t_val =
-  match load t_val with
+let test_load t_val cl_tbl =
+  match load t_val cl_tbl with
   | Error m ->
       print_endline m;
-      Hashtbl.clear class_table
-  | Ok _ ->
-      show_class_table class_table;
-      Hashtbl.clear class_table
+      Hashtbl.clear cl_tbl
+  | Ok cl_t ->
+      show_class_table cl_t;
+      Hashtbl.clear cl_t
 
 let () =
   print_string "-------------------TESTING_INHERITANCE-------------------\n\n"
@@ -94,7 +94,7 @@ class Child extends Person{
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let () = print_string "-------------------SIMILAR_FIELDS-------------------\n\n"
 
@@ -172,7 +172,7 @@ class Child extends Person{
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let () =
   print_string "-------------------SIMILAR_METHODS_ERROR-------------------\n\n"
@@ -230,7 +230,7 @@ class Child extends Person{
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let () =
   print_string
@@ -287,7 +287,7 @@ class Child extends Person{
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let () =
   print_string "-------------------ABSTRACTNESS_ERRORS-------------------\n\n"
@@ -325,7 +325,7 @@ class Circle extends Figure {
 
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let test_value =
   Option.get
@@ -359,7 +359,7 @@ class Circle extends Figure {
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let test_value =
   Option.get
@@ -395,7 +395,7 @@ class Circle extends Figure {
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let test_value =
   Option.get
@@ -425,7 +425,7 @@ class Circle extends Figure {
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let () =
   print_string
@@ -477,7 +477,7 @@ class Child extends Person{
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let test_value =
   Option.get
@@ -533,7 +533,7 @@ class Child extends Person{
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)
 
 let () =
   print_string "-------------------@OVERRIDE_ERRORS-------------------\n\n"
@@ -593,4 +593,4 @@ class Child extends Person{
 }
 |})
 
-let () = test_load test_value
+let () = test_load test_value (Hashtbl.create 100)

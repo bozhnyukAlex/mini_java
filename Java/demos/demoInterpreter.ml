@@ -5,19 +5,19 @@ open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 
 open Java_lib.Interpreter.Main (Java_lib.Interpreter.Result)
 
-let test_interp test_val =
-  match load test_val with
+let test_interp test_val cl_t =
+  match load test_val cl_t with
   | Error m ->
       print_endline m;
-      Hashtbl.clear class_table
+      Hashtbl.clear cl_t
   | Ok load_table -> (
       match execute load_table with
       | Error m ->
           print_endline m;
-          Hashtbl.clear class_table
+          Hashtbl.clear load_table
       | Ok res_context ->
           print_endline (show_context res_context ^ "\n");
-          Hashtbl.clear class_table )
+          Hashtbl.clear load_table )
 
 let () = print_string "------------------- FIRST TEST ------------------\n"
 
@@ -35,7 +35,7 @@ let test_val =
         }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string "------------------- LITTLE ARITHMETIC TEST ------------------\n"
@@ -68,7 +68,7 @@ public class Main {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -146,7 +146,7 @@ class Person {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -194,7 +194,7 @@ class Person {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -244,7 +244,7 @@ class Person {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string "------------------- CHILD WORKING TEST ------------------\n"
@@ -315,7 +315,7 @@ class Child extends Person {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () = print_string "------------------- SCOPE TEST ------------------\n"
 
@@ -363,7 +363,7 @@ public class Main {
 
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -390,7 +390,7 @@ public class Main {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -420,7 +420,7 @@ public class Main {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -455,7 +455,7 @@ class BubbleSorter {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -507,7 +507,7 @@ class Child extends Person {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string "------------------- PATTERN VISITOR TEST ------------------\n"
@@ -643,7 +643,7 @@ class Rectangle extends Figure {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -669,7 +669,7 @@ class Factorial {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -728,7 +728,7 @@ class QuickSorter {
 
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 (*Обязательно тест про массивы: я хочу, чтобы все почувствовали какой отстойный это язык, потому что там есть
 вот это: https://docs.microsoft.com/en-us/dotnet/api/system.arraytypemismatchexception?view=net-5.0*)
@@ -772,7 +772,7 @@ class Dog extends Pet {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -812,7 +812,7 @@ class Cat extends Pet {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string
@@ -851,7 +851,7 @@ class Cat extends Pet {
 }
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string "------------------- FINAL FIELDS TEST ------------------\n"
@@ -874,7 +874,7 @@ class Math {
 
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)
 
 let () =
   print_string "------------------- FINAL VARIABLES TEST ------------------\n"
@@ -894,4 +894,4 @@ public class Main {
 
         |})
 
-let () = test_interp test_val
+let () = test_interp test_val (Hashtbl.create 100)

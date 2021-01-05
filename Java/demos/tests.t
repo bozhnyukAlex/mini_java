@@ -591,6 +591,107 @@
                                       Some (StmtBlock ([Continue])))]))]))))])
   }
   
+  "Main" ->
+   { this_key = "Main"; field_table = [[]]
+                        ;
+     method_table =
+     [["equalsClassName (\"Object\")@@" ->
+        { m_type = Int; is_abstract = false; is_overridable = true;
+          has_override_annotation = false;
+          args = [(ClassName ("Object"), Name ("obj"))];
+          key = "equalsClassName (\"Object\")@@";
+          body =
+          Some (StmtBlock ([If
+                            (Equal (This, Identifier ("obj")),
+                             Return (Some (Const (VInt (1)))),
+                             Some (Return (Some (Const (VInt (0))))))]))
+          }
+     
+  "toString@@" ->
+   { m_type = String; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "toString@@";
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  
+  "main@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "main@@";
+     body =
+     Some (StmtBlock ([VarDec
+                       (None, ClassName ("Person"),
+                        [(Name ("p"),
+                          Some (ClassCreate
+                                (Name ("Person"),
+                                 [Const (VInt (80)); Const (VInt (45))])))])]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Main$$" -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = []; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Object");
+  dec_tree =
+  Class
+  ([Public], Name ("Main"), None,
+   [([Public; Static],
+     Method
+     (Void, Name ("main"), [],
+      Some (StmtBlock ([VarDec
+                        (None, ClassName ("Person"),
+                         [(Name ("p"),
+                           Some (ClassCreate
+                                 (Name ("Person"),
+                                  [Const (VInt (80)); Const (VInt (45))])))])]))))])
+  }
+  
+  "Object" ->
+   { this_key = "Object"; field_table = [[]]
+                          ;
+     method_table =
+     [["toString@@" ->
+        { m_type = String; is_abstract = false; is_overridable = true;
+          has_override_annotation = false; args = []; key = "toString@@";
+          body =
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     
+  "equalsClassName (\"Object\")@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName (\"Object\")@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = ["Main"; "Person"]; is_abstract = false;
+  is_inheritable = true; parent_key = None;
+  dec_tree =
+  Class
+  ([Public], Name ("Object"), None,
+   [([Public],
+     Method
+     (Int, Name ("equals"), [(ClassName ("Object"), Name ("obj"))],
+      Some (StmtBlock ([If
+                        (Equal (This, Identifier ("obj")),
+                         Return (Some (Const (VInt (1)))),
+                         Some (Return (Some (Const (VInt (0))))))]))));
+    ([Public],
+     Method
+     (String, Name ("toString"), [],
+      Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]))))])
+  }
+  
   "Person" ->
    { this_key = "Person";
      field_table =
@@ -702,107 +803,6 @@
       Some (StmtBlock ([Expression (Assign
                                     (FieldAccess (This, Identifier ("age")),
                                      Identifier ("a")))]))))])
-  }
-  
-  "Object" ->
-   { this_key = "Object"; field_table = [[]]
-                          ;
-     method_table =
-     [["toString@@" ->
-        { m_type = String; is_abstract = false; is_overridable = true;
-          has_override_annotation = false; args = []; key = "toString@@";
-          body =
-          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-     
-  "equalsClassName (\"Object\")@@" ->
-   { m_type = Int; is_abstract = false; is_overridable = true;
-     has_override_annotation = false;
-     args = [(ClassName ("Object"), Name ("obj"))];
-     key = "equalsClassName (\"Object\")@@";
-     body =
-     Some (StmtBlock ([If
-                       (Equal (This, Identifier ("obj")),
-                        Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
-  
-  ]]
-  ;
-  constructor_table =
-  [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
-  
-  ]]
-  ; children_keys = ["Person"; "Main"]; is_abstract = false;
-  is_inheritable = true; parent_key = None;
-  dec_tree =
-  Class
-  ([Public], Name ("Object"), None,
-   [([Public],
-     Method
-     (Int, Name ("equals"), [(ClassName ("Object"), Name ("obj"))],
-      Some (StmtBlock ([If
-                        (Equal (This, Identifier ("obj")),
-                         Return (Some (Const (VInt (1)))),
-                         Some (Return (Some (Const (VInt (0))))))]))));
-    ([Public],
-     Method
-     (String, Name ("toString"), [],
-      Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]))))])
-  }
-  
-  "Main" ->
-   { this_key = "Main"; field_table = [[]]
-                        ;
-     method_table =
-     [["equalsClassName (\"Object\")@@" ->
-        { m_type = Int; is_abstract = false; is_overridable = true;
-          has_override_annotation = false;
-          args = [(ClassName ("Object"), Name ("obj"))];
-          key = "equalsClassName (\"Object\")@@";
-          body =
-          Some (StmtBlock ([If
-                            (Equal (This, Identifier ("obj")),
-                             Return (Some (Const (VInt (1)))),
-                             Some (Return (Some (Const (VInt (0))))))]))
-          }
-     
-  "toString@@" ->
-   { m_type = String; is_abstract = false; is_overridable = true;
-     has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  
-  "main@@" ->
-   { m_type = Void; is_abstract = false; is_overridable = true;
-     has_override_annotation = false; args = []; key = "main@@";
-     body =
-     Some (StmtBlock ([VarDec
-                       (None, ClassName ("Person"),
-                        [(Name ("p"),
-                          Some (ClassCreate
-                                (Name ("Person"),
-                                 [Const (VInt (80)); Const (VInt (45))])))])]))
-     }
-  
-  ]]
-  ;
-  constructor_table =
-  [["Main$$" -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
-  
-  ]]
-  ; children_keys = []; is_abstract = false; is_inheritable = true;
-  parent_key = Some ("Object");
-  dec_tree =
-  Class
-  ([Public], Name ("Main"), None,
-   [([Public; Static],
-     Method
-     (Void, Name ("main"), [],
-      Some (StmtBlock ([VarDec
-                        (None, ClassName ("Person"),
-                         [(Name ("p"),
-                           Some (ClassCreate
-                                 (Name ("Person"),
-                                  [Const (VInt (80)); Const (VInt (45))])))])]))))])
   }
   
   -------------------SIMILAR_FIELDS-------------------
@@ -929,6 +929,107 @@
                   Expression (Assign (Identifier ("cash"), Identifier ("c")))])))])
   }
   
+  "Main" ->
+   { this_key = "Main"; field_table = [[]]
+                        ;
+     method_table =
+     [["equalsClassName (\"Object\")@@" ->
+        { m_type = Int; is_abstract = false; is_overridable = true;
+          has_override_annotation = false;
+          args = [(ClassName ("Object"), Name ("obj"))];
+          key = "equalsClassName (\"Object\")@@";
+          body =
+          Some (StmtBlock ([If
+                            (Equal (This, Identifier ("obj")),
+                             Return (Some (Const (VInt (1)))),
+                             Some (Return (Some (Const (VInt (0))))))]))
+          }
+     
+  "toString@@" ->
+   { m_type = String; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "toString@@";
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  
+  "main@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "main@@";
+     body =
+     Some (StmtBlock ([VarDec
+                       (None, ClassName ("Person"),
+                        [(Name ("p"),
+                          Some (ClassCreate
+                                (Name ("Person"),
+                                 [Const (VInt (80)); Const (VInt (45))])))])]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Main$$" -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = []; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Object");
+  dec_tree =
+  Class
+  ([Public], Name ("Main"), None,
+   [([Public; Static],
+     Method
+     (Void, Name ("main"), [],
+      Some (StmtBlock ([VarDec
+                        (None, ClassName ("Person"),
+                         [(Name ("p"),
+                           Some (ClassCreate
+                                 (Name ("Person"),
+                                  [Const (VInt (80)); Const (VInt (45))])))])]))))])
+  }
+  
+  "Object" ->
+   { this_key = "Object"; field_table = [[]]
+                          ;
+     method_table =
+     [["toString@@" ->
+        { m_type = String; is_abstract = false; is_overridable = true;
+          has_override_annotation = false; args = []; key = "toString@@";
+          body =
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     
+  "equalsClassName (\"Object\")@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName (\"Object\")@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = ["Main"; "Person"]; is_abstract = false;
+  is_inheritable = true; parent_key = None;
+  dec_tree =
+  Class
+  ([Public], Name ("Object"), None,
+   [([Public],
+     Method
+     (Int, Name ("equals"), [(ClassName ("Object"), Name ("obj"))],
+      Some (StmtBlock ([If
+                        (Equal (This, Identifier ("obj")),
+                         Return (Some (Const (VInt (1)))),
+                         Some (Return (Some (Const (VInt (0))))))]))));
+    ([Public],
+     Method
+     (String, Name ("toString"), [],
+      Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]))))])
+  }
+  
   "Person" ->
    { this_key = "Person";
      field_table =
@@ -1008,107 +1109,6 @@
      Method
      (Int, Name ("getAge"), [],
       Some (StmtBlock ([Return (Some (Identifier ("age")))]))))])
-  }
-  
-  "Object" ->
-   { this_key = "Object"; field_table = [[]]
-                          ;
-     method_table =
-     [["toString@@" ->
-        { m_type = String; is_abstract = false; is_overridable = true;
-          has_override_annotation = false; args = []; key = "toString@@";
-          body =
-          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-     
-  "equalsClassName (\"Object\")@@" ->
-   { m_type = Int; is_abstract = false; is_overridable = true;
-     has_override_annotation = false;
-     args = [(ClassName ("Object"), Name ("obj"))];
-     key = "equalsClassName (\"Object\")@@";
-     body =
-     Some (StmtBlock ([If
-                       (Equal (This, Identifier ("obj")),
-                        Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
-  
-  ]]
-  ;
-  constructor_table =
-  [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
-  
-  ]]
-  ; children_keys = ["Person"; "Main"]; is_abstract = false;
-  is_inheritable = true; parent_key = None;
-  dec_tree =
-  Class
-  ([Public], Name ("Object"), None,
-   [([Public],
-     Method
-     (Int, Name ("equals"), [(ClassName ("Object"), Name ("obj"))],
-      Some (StmtBlock ([If
-                        (Equal (This, Identifier ("obj")),
-                         Return (Some (Const (VInt (1)))),
-                         Some (Return (Some (Const (VInt (0))))))]))));
-    ([Public],
-     Method
-     (String, Name ("toString"), [],
-      Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]))))])
-  }
-  
-  "Main" ->
-   { this_key = "Main"; field_table = [[]]
-                        ;
-     method_table =
-     [["equalsClassName (\"Object\")@@" ->
-        { m_type = Int; is_abstract = false; is_overridable = true;
-          has_override_annotation = false;
-          args = [(ClassName ("Object"), Name ("obj"))];
-          key = "equalsClassName (\"Object\")@@";
-          body =
-          Some (StmtBlock ([If
-                            (Equal (This, Identifier ("obj")),
-                             Return (Some (Const (VInt (1)))),
-                             Some (Return (Some (Const (VInt (0))))))]))
-          }
-     
-  "toString@@" ->
-   { m_type = String; is_abstract = false; is_overridable = true;
-     has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  
-  "main@@" ->
-   { m_type = Void; is_abstract = false; is_overridable = true;
-     has_override_annotation = false; args = []; key = "main@@";
-     body =
-     Some (StmtBlock ([VarDec
-                       (None, ClassName ("Person"),
-                        [(Name ("p"),
-                          Some (ClassCreate
-                                (Name ("Person"),
-                                 [Const (VInt (80)); Const (VInt (45))])))])]))
-     }
-  
-  ]]
-  ;
-  constructor_table =
-  [["Main$$" -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
-  
-  ]]
-  ; children_keys = []; is_abstract = false; is_inheritable = true;
-  parent_key = Some ("Object");
-  dec_tree =
-  Class
-  ([Public], Name ("Main"), None,
-   [([Public; Static],
-     Method
-     (Void, Name ("main"), [],
-      Some (StmtBlock ([VarDec
-                        (None, ClassName ("Person"),
-                         [(Name ("p"),
-                           Some (ClassCreate
-                                 (Name ("Person"),
-                                  [Const (VInt (80)); Const (VInt (45))])))])]))))])
   }
   
   -------------------@OVERRIDE_ERRORS-------------------
