@@ -1575,3 +1575,7 @@
   
   ------------------- CONSTRUCTOR CHAINING RECURSION ------------------
   Constructor recursion!
+  ------------------- FINAL FIELDS TEST ------------------
+  Assignment to a constant field
+  ------------------- FINAL VARIABLES TEST ------------------
+  Assignment to a constant variable

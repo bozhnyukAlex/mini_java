@@ -1008,12 +1008,6 @@ module Main (M : MONADERROR) = struct
            List.length cr.args = List.length expr_list))
       0 expr_list check_ctx
 
-  let get_int_value = function VInt x -> x | _ -> 0
-
-  let get_string_value = function VString s -> s | _ -> ""
-
-  let get_bool_value = function VBool b -> b | _ -> false
-
   let get_obj_value = function VObjectRef o -> o | _ -> RNull
 
   let make_list_of_elem el size =
@@ -1025,6 +1019,19 @@ module Main (M : MONADERROR) = struct
   let inc_scope_level ctx = { ctx with scope_level = ctx.scope_level + 1 }
 
   let dec_scope_level ctx = { ctx with scope_level = ctx.scope_level - 1 }
+
+  let check_assign_cnt_f : field_ref -> unit M.t =
+   fun fld ->
+    match fld.assignment_count with
+    | 0 -> return ()
+    | _ when not fld.is_mutable -> return ()
+    | _ -> error "Assignment to a constant field"
+
+  let check_assign_cnt_v var =
+    match var.assignment_count with
+    | 0 -> return ()
+    | _ when not var.is_mutable -> return ()
+    | _ -> error "Assignment to a constant variable"
 
   let delete_scope_var : context -> context M.t =
    fun ctx ->
@@ -1347,7 +1354,6 @@ module Main (M : MONADERROR) = struct
         in
         helper_vardec var_list sctx
 
-  (*TODO: PostInc, PostDec, PrefInc, PrefDec remaining! *)
   and eval_expr : expr -> context -> context M.t =
    fun expr ectx ->
     let rec eval_e e_expr ctx =
@@ -1584,7 +1590,6 @@ module Main (M : MONADERROR) = struct
                 {
                   szctx with
                   last_expr_result =
-                    (* Some (VArray (make_list_of_elem init_v size)); *)
                     Some
                       (VArray
                          (Arr
@@ -1825,6 +1830,44 @@ module Main (M : MONADERROR) = struct
                   with Invalid_argument m | Failure m -> error m )
               | _ -> error "Wrong type for array index!" )
           | _ -> error "Wrong type for array asssignment!" )
+      | PostInc (FieldAccess (obj_expr, Identifier f))
+      | PrefInc (FieldAccess (obj_expr, Identifier f)) ->
+          eval_expr
+            (Assign
+               ( FieldAccess (obj_expr, Identifier f),
+                 Add (FieldAccess (obj_expr, Identifier f), Const (VInt 1)) ))
+            ctx
+      | PostInc (Identifier var_key) | PrefInc (Identifier var_key) ->
+          eval_expr
+            (Assign
+               (Identifier var_key, Add (Identifier var_key, Const (VInt 1))))
+            ctx
+      | PostInc (ArrayAccess (arr_expr, index_expr))
+      | PrefInc (ArrayAccess (arr_expr, index_expr)) ->
+          eval_expr
+            (Assign
+               ( ArrayAccess (arr_expr, index_expr),
+                 Add (ArrayAccess (arr_expr, index_expr), Const (VInt 1)) ))
+            ctx
+      | PostDec (FieldAccess (obj_expr, Identifier f))
+      | PrefDec (FieldAccess (obj_expr, Identifier f)) ->
+          eval_expr
+            (Assign
+               ( FieldAccess (obj_expr, Identifier f),
+                 Sub (FieldAccess (obj_expr, Identifier f), Const (VInt 1)) ))
+            ctx
+      | PostDec (Identifier var_key) | PrefDec (Identifier var_key) ->
+          eval_expr
+            (Assign
+               (Identifier var_key, Sub (Identifier var_key, Const (VInt 1))))
+            ctx
+      | PostDec (ArrayAccess (arr_expr, index_expr))
+      | PrefDec (ArrayAccess (arr_expr, index_expr)) ->
+          eval_expr
+            (Assign
+               ( ArrayAccess (arr_expr, index_expr),
+                 Sub (ArrayAccess (arr_expr, index_expr), Const (VInt 1)) ))
+            ctx
       | _ -> error "Wrong expression construction!"
     in
     (* let _ = print_endline ("EXPR: " ^ show_expr expr) in *)
@@ -1849,12 +1892,6 @@ module Main (M : MONADERROR) = struct
       let old_var =
         Option.get (get_elem_if_present val_evaled_ctx.var_table var_key)
       in
-      let check_assign_cnt_v var =
-        match var.assignment_count with
-        | 0 -> return ()
-        | _ when not var.is_mutable -> return ()
-        | _ -> error "Assignment to a constant variable"
-      in
       check_assign_cnt_v old_var >>= fun _ ->
       Hashtbl.replace val_evaled_ctx.var_table var_key
         {
@@ -1873,13 +1910,6 @@ module Main (M : MONADERROR) = struct
           if Hashtbl.mem cur_frt var_key then
             (* Мы обновляем состояние объекта во всей системе + помним про final*)
             let old_field = Option.get (get_elem_if_present cur_frt var_key) in
-            let check_assign_cnt_f : field_ref -> unit M.t =
-             fun fld ->
-              match fld.assignment_count with
-              | 0 -> return ()
-              | _ when not fld.is_mutable -> return ()
-              | _ -> error "Assignment to a constant field"
-            in
             check_assign_cnt_f old_field >>= fun _ ->
             if val_evaled_ctx.is_creation then
               Hashtbl.replace cur_frt var_key
@@ -1904,8 +1934,9 @@ module Main (M : MONADERROR) = struct
     try
       get_obj_info_exn obj_r |> fun (_, frt, _) ->
       if Hashtbl.mem frt f_name then
+        let old_field = Option.get (get_elem_if_present frt f_name) in
+        check_assign_cnt_f old_field >>= fun _ ->
         if obj_evaled_ctx.is_creation then
-          let old_field = Option.get (get_elem_if_present frt f_name) in
           Hashtbl.replace frt f_name
             {
               old_field with

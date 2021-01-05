@@ -11,15 +11,15 @@ open Java_lib.Interpreter.Main (Java_lib.Interpreter.Result)
 let test_interp test_val =
   match load test_val with
   | Error m ->
-      print_string (m ^ "\n");
+      print_endline m;
       Hashtbl.clear class_table
   | Ok load_table -> (
       match execute load_table with
       | Error m ->
-          print_string (m ^ "\n");
+          print_endline m;
           Hashtbl.clear class_table
       | Ok res_context ->
-          print_string (show_context res_context ^ "\n\n");
+          print_endline (show_context res_context ^ "\n");
           Hashtbl.clear class_table )
 
 let () = print_string "------------------- FIRST TEST ------------------\n"
@@ -351,7 +351,7 @@ public class Main {
       	a = 100;
       	b = 200;
         c = 300;
-        for (int k = 0, p = 0; k < 6; k = k + 1) {
+        for (int k = 0, p = 0; k < 6; k++) {
             int m = 2;
       	    int n = 3;
       	    int z = 4;
@@ -380,8 +380,8 @@ public class Main {
     public static void main() {
         int[] arr = new int[] {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
         int n = 11;
-        for (int i = 0; i < n - 1; i = i + 1) {
-            for (int j = 0; j < n - i - 1; j = j + 1) {
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
                 if (arr[j] > arr[j + 1]) {
                     int temp = arr[j];
                     arr[j] = arr[j + 1];
@@ -406,14 +406,14 @@ let test_val =
 public class Main {
     public static void main() {
         int[] arr = new int[10];
-        for (int i = 0; i < 10; i = i + 1) {
+        for (int i = 0; i < 10; ++i) {
             if (i % 2 == 0) {
                 continue;
             }
             arr[i] = 1;
         }
         int[] b = new int[20];
-        for (int i = 0; i < 20; i = i + 1) {
+        for (int i = 0; i < 20; ++i) {
             if (i == 15) {
                 break;
             }
@@ -445,8 +445,8 @@ public class Main {
 
 class BubbleSorter {
     public void sort(int[] arr, int n) {
-        for (int i = 0; i < n - 1; i = i + 1) {
-            for (int j = 0; j < n - i - 1; j = j + 1) {
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
                 if (arr[j] > arr[j + 1]) {
                     int temp = arr[j];
                     arr[j] = arr[j + 1];
@@ -529,10 +529,10 @@ public class Main {
         PerimeterVisitor perimeterVisitor = new PerimeterVisitor();
         int[] resPerimeter = new int[3];
         int[] resArea = new int[3];
-        for (int i = 0; i < 3; i = i + 1) {
+        for (int i = 0; i < 3; i++) {
             resPerimeter[i] = list[i].accept(areaVisitor);
         }
-        for(int j = 0; j < 3; j = j + 1) {
+        for(int j = 0; j < 3; j++) {
             resArea[j] = list[j].accept(perimeterVisitor);
         }
         
@@ -707,17 +707,17 @@ class QuickSorter {
         int i = low, j = high;
         while (i <= j) {
             while (array[i] < pivot) {
-                i = i + 1;
+                i++;
             }
             while (array[j] > pivot) {
-                j = j - 1;
+                j--;
             }
             if (i <= j) {
                 int temp = array[i];
                 array[i] = array[j];
                 array[j] = temp;
-                i = i + 1;
-                j = j - 1;
+                i++;
+                j--;
             }
         }
         if (low < j) 
@@ -852,6 +852,49 @@ class Cat extends Pet {
         this(age, name, hairLevel);
     }
 }
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string "------------------- FINAL FIELDS TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        Math m = new Math();
+        m.PI = 4;
+    }
+}
+
+class Math {
+    final int PI = 3;
+}
+
+        |})
+
+let () = test_interp test_val
+
+let () =
+  print_string "------------------- FINAL VARIABLES TEST ------------------\n"
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        final int a = 25;
+        a = a + 1;
+    }
+}
+
+
         |})
 
 let () = test_interp test_val
