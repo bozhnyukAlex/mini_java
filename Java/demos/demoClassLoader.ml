@@ -1,8 +1,5 @@
 open Java_lib.Parser
-open Opal
-open Java_lib.Ast
 open Java_lib.Interpreter
-open Java_lib.Interpreter.Result
 
 open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 

@@ -1,7 +1,5 @@
 open Ast
 open Parser
-open Hashtbl
-open Str
 
 module type MONAD = sig
   type 'a t
@@ -1350,7 +1348,7 @@ module Main (M : MONADERROR) = struct
 
   and eval_expr : expr -> context -> context M.t =
    fun expr ectx ->
-    let rec eval_e e_expr ctx =
+    let eval_e e_expr ctx =
       let eval_op left right op =
         eval_expr left ctx >>= fun lctx ->
         eval_expr right lctx >>= fun rctx ->

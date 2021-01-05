@@ -1,7 +1,6 @@
 open Parser
 open Parser.Stmt
 open Parser.Expr
-open Opal
 open Interpreter
 
 open Interpreter.ClassLoader (Result)

@@ -1,5 +1,4 @@
 open Java_lib.Parser
-open Opal
 open Java_lib.Ast
 
 let print_list =
