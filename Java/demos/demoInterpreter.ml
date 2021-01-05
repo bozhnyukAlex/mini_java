@@ -1,5 +1,4 @@
 open Java_lib.Parser
-open Java_lib.Interpreter
 
 open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 

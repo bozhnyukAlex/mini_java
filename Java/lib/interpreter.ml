@@ -395,12 +395,7 @@ module ClassLoader (M : MONADERROR) = struct
     | _ -> false
 
   let body_starts_with_this : constructor_r -> bool = function
-    | {
-        key = _;
-        args = _;
-        body = StmtBlock (Expression (CallMethod (This, _)) :: _);
-      } ->
-        true
+    | { body = StmtBlock (Expression (CallMethod (This, _)) :: _); _ } -> true
     | _ -> false
 
   (* Надо у текущего класса проверять, чтобы если в его конструкторах есть вызов this(...), то он должен быть первым и единственным *)
@@ -556,13 +551,12 @@ module Main (M : MONADERROR) = struct
     with Invalid_argument m -> error m
 
   let find_class_with_main ht =
-    let filtered = Seq.filter (fun c -> Hashtbl.mem c.method_table "main@@") in
-    match filtered (convert_table_to_seq ht) () with
-    | Seq.Cons (x, next) -> (
-        match next () with
-        | Seq.Nil -> return x
-        | _ -> error "Must be one main method" )
-    | _ -> error "Must be one main method!"
+    Hashtbl_p.filter ht (fun _ c -> Hashtbl.mem c.method_table "main@@")
+    |> fun fht ->
+    match Hashtbl.length fht with
+    | 0 -> error "Must be one main method"
+    | 1 -> return (seq_hd_exn (convert_table_to_seq fht))
+    | _ -> error "Must be one main method"
 
   let rec expr_type_check t_expr ctx class_table =
     match t_expr with
@@ -673,7 +667,7 @@ module Main (M : MONADERROR) = struct
         let curr_obj_key =
           match ctx.cur_object with
           | RNull -> "null"
-          | RObj { class_key = key; field_ref_table = _; number = _ } -> key
+          | RObj { class_key = key; _ } -> key
         in
         let curr_class =
           Option.get (get_elem_if_present class_table curr_obj_key)
@@ -760,7 +754,7 @@ module Main (M : MONADERROR) = struct
         (* Нет, а вдруг есть среди полей объекта текущего класса? *)
         | None -> (
             match ctx.cur_object with
-            | RObj { class_key = _; field_ref_table = ft; number = _ } -> (
+            | RObj { field_ref_table = ft; _ } -> (
                 (* Смотрим в таблице полей конкретного объекта *)
                 match get_elem_if_present ft key with
                 | None ->
@@ -775,12 +769,9 @@ module Main (M : MONADERROR) = struct
         | VInt _ -> return Int
         | VString _ -> return String
         | VObjectRef RNull -> return (ClassName "null")
-        | VObjectRef (RObj { class_key = ck; field_ref_table = _; number = _ })
-          ->
-            return (ClassName ck)
+        | VObjectRef (RObj { class_key = ck; _ }) -> return (ClassName ck)
         | VArray ANull -> return (Array Void)
-        | VArray (Arr { a_type = t; values = _; number = _ }) ->
-            return (Array t)
+        | VArray (Arr { a_type = t; _ }) -> return (Array t)
         | _ -> error "Wrong const value" )
     | Assign (left, right) -> (
         expr_type_check left ctx class_table >>= fun lt ->
@@ -1017,7 +1008,7 @@ module Main (M : MONADERROR) = struct
                          {
                            bectx with
                            cycle_cnt = ctx.cycle_cnt - 1;
-                           is_main_scope = (if was_main then true else false);
+                           is_main_scope = was_main;
                          })
                 | _ -> return { bectx with cycle_cnt = ctx.cycle_cnt - 1 } )
             | Some (VBool true) ->
@@ -1071,11 +1062,7 @@ module Main (M : MONADERROR) = struct
                       class_table
                     >>= fun ectx ->
                     return
-                      (dec_scope_level
-                         {
-                           ectx with
-                           is_main_scope = (if was_main then true else false);
-                         })
+                      (dec_scope_level { ectx with is_main_scope = was_main })
                 | _ -> eval_stmt else_stmt bectx class_table )
             | None -> return sctx )
         | _ -> error "Wrong type for condition statement" )
@@ -1138,11 +1125,7 @@ module Main (M : MONADERROR) = struct
                 >>= fun bdctx ->
                 (* Вылетел return - все прерываем, возвращаем контекст *)
                 if bdctx.was_return then
-                  return
-                    {
-                      bdctx with
-                      is_main_scope = (if was_main then true else false);
-                    }
+                  return { bdctx with is_main_scope = was_main }
                   (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
                 else if bdctx.was_continue then
                   eval_inc_expr_list afs bdctx >>= fun after_ctx ->
@@ -1191,7 +1174,7 @@ module Main (M : MONADERROR) = struct
           | (Name name, var_expr_o) :: vs -> (
               match vctx.cur_object with
               | RNull -> error "Must be non-null object!"
-              | RObj { class_key = _; field_ref_table = frt; number = _ } ->
+              | RObj { field_ref_table = frt; _ } ->
                   ( if
                     (* Смотрим, чтобы подобного имени не было ни среди локальных переменных, ни среди полей класса *)
                     Hashtbl.mem vctx.var_table name || Hashtbl.mem frt name
@@ -1317,8 +1300,7 @@ module Main (M : MONADERROR) = struct
           let get_cur_class_key =
             match ctx.cur_object with
             | RNull -> error "NullPointerException"
-            | RObj { class_key = key; field_ref_table = _; number = _ } ->
-                return key
+            | RObj { class_key = key; _ } -> return key
           in
           get_cur_class_key >>= fun curr_class_key ->
           let cur_class_r =
@@ -1397,8 +1379,7 @@ module Main (M : MONADERROR) = struct
           eval_expr obj_expr ctx class_table >>= fun octx ->
           let obj = Option.get octx.last_expr_result in
           match obj with
-          | VObjectRef
-              (RObj { class_key = _; field_ref_table = frt; number = _ }) ->
+          | VObjectRef (RObj { field_ref_table = frt; _ }) ->
               (* Смело пользуемся Option.get, потому что перед этим была проверка типов, в ней проверяется наличие этого поля у класса*)
               let fld = Option.get (Hashtbl.find_opt frt f_key) in
               return { octx with last_expr_result = Some fld.f_value }
@@ -1410,7 +1391,7 @@ module Main (M : MONADERROR) = struct
           | VObjectRef obj_ref -> (
               match obj_ref with
               | RNull -> error "NullPointerException"
-              | RObj { class_key = cl_k; field_ref_table = _; number = _ } -> (
+              | RObj { class_key = cl_k; _ } -> (
                   (* Смотрим класс, к которому принадлежит объект, с проверкой на существование *)
                   match get_elem_if_present class_table cl_k with
                   | None -> error "No such object in class!"
@@ -1472,7 +1453,7 @@ module Main (M : MONADERROR) = struct
           let arr_v = Option.get arrctx.last_expr_result in
           let ind_v = Option.get indctx.last_expr_result in
           match arr_v with
-          | VArray (Arr { a_type = _; values = a_values; number = _ }) -> (
+          | VArray (Arr { values = a_values; _ }) -> (
               match ind_v with
               | VInt i when i < 0 || i >= List.length a_values ->
                   error "ArrayOutOfBoundsException"
@@ -1791,7 +1772,7 @@ module Main (M : MONADERROR) = struct
     else
       match val_evaled_ctx.cur_object with
       | RNull -> error "NullPointerException"
-      | RObj { class_key = _; field_ref_table = cur_frt; number = _ } ->
+      | RObj { field_ref_table = cur_frt; _ } ->
           if Hashtbl.mem cur_frt var_key then
             (* Мы обновляем состояние объекта во всей системе + помним про final*)
             let old_field = Option.get (get_elem_if_present cur_frt var_key) in
@@ -1840,13 +1821,7 @@ module Main (M : MONADERROR) = struct
         (fun _ field_ref ->
           (* Перебираем все поля из таблицы *)
           match field_ref with
-          | {
-           key = f_key;
-           f_type = _;
-           f_value = f_val;
-           is_not_mutable = _;
-           assignment_count = _;
-          } -> (
+          | { key = f_key; f_value = f_val; _ } -> (
               match f_val with
               (* Если массив - смотрим, если номер совпал - обновляем элемент по индексу.
                  + смотрим, если у нас массив объектов - то надо по нему тоже пробежаться, у каждого объекта сделать рекурсивный запуск обхода *)
@@ -1875,20 +1850,13 @@ module Main (M : MONADERROR) = struct
                         List.iter
                           (fun v ->
                             match v with
-                            | VObjectRef
-                                (RObj
-                                  {
-                                    class_key = _;
-                                    field_ref_table = frt;
-                                    number = _;
-                                  }) ->
+                            | VObjectRef (RObj { field_ref_table = frt; _ }) ->
                                 update_states frt i n_val a_n
                             | _ -> ())
                           cur_values
                     | _ -> () )
               (* Если не-null объект - рекурсивный запуск по его таблице полей  *)
-              | VObjectRef
-                  (RObj { class_key = _; field_ref_table = frt; number = _ }) ->
+              | VObjectRef (RObj { field_ref_table = frt; _ }) ->
                   update_states frt i n_val a_n
               | _ -> () ))
         f_ht
@@ -1898,8 +1866,7 @@ module Main (M : MONADERROR) = struct
       Hashtbl.iter
         (fun v_key var ->
           match var.v_value with
-          | VObjectRef
-              (RObj { class_key = _; field_ref_table = frt; number = _ }) ->
+          | VObjectRef (RObj { field_ref_table = frt; _ }) ->
               update_states frt i n_val a_n
           | VArray (Arr { a_type = at; values = cur_values; number = cur_num })
             -> (
@@ -1925,13 +1892,7 @@ module Main (M : MONADERROR) = struct
                     List.iter
                       (fun v ->
                         match v with
-                        | VObjectRef
-                            (RObj
-                              {
-                                class_key = _;
-                                field_ref_table = frt;
-                                number = _;
-                              }) ->
+                        | VObjectRef (RObj { field_ref_table = frt; _ }) ->
                             update_states frt i n_val a_n
                         | _ -> ())
                       cur_values
@@ -1956,18 +1917,10 @@ module Main (M : MONADERROR) = struct
       Hashtbl.iter
         (fun _ field_ref ->
           match field_ref with
-          | {
-           key = _;
-           f_type = _;
-           f_value = f_val;
-           is_not_mutable = _;
-           assignment_count = _;
-          } -> (
+          | { f_value = f_val; _ } -> (
               match f_val with
               (* Если значение поля - какой-то не-null объект, то... *)
-              | VObjectRef
-                  (RObj { class_key = _; field_ref_table = frt; number = fnum })
-                ->
+              | VObjectRef (RObj { field_ref_table = frt; number = fnum; _ }) ->
                   (* Смотрим, если номера совпадают - обновляем поле. В любом случае делаем запуск по полям этого объекта *)
                   ( if fnum = o_num then
                     Option.get (get_elem_if_present frt f_key)
@@ -1980,18 +1933,12 @@ module Main (M : MONADERROR) = struct
                       } );
                   update_states frt f_key n_val o_num assign_cnt
               (* Массив объектов - бежим по нему, если объект - бежим по его полям. При совпадении номера еще и обновляем *)
-              | VArray
-                  (Arr { a_type = ClassName _; values = v_list; number = _ }) ->
+              | VArray (Arr { a_type = ClassName _; values = v_list; _ }) ->
                   List.iter
                     (fun v ->
                       match v with
                       | VObjectRef
-                          (RObj
-                            {
-                              class_key = _;
-                              field_ref_table = frt;
-                              number = c_num;
-                            }) ->
+                          (RObj { field_ref_table = frt; number = c_num; _ }) ->
                           ( if c_num = o_num then
                             Option.get (get_elem_if_present frt f_key)
                             |> fun old_field ->
@@ -2014,8 +1961,7 @@ module Main (M : MONADERROR) = struct
         (fun _ var ->
           match var.v_value with
           (*  Если значение - какой-то объект *)
-          | VObjectRef
-              (RObj { class_key = _; field_ref_table = frt; number = fnum }) ->
+          | VObjectRef (RObj { field_ref_table = frt; number = fnum; _ }) ->
               if o_num = fnum then (
                 Option.get (get_elem_if_present frt f_key) |> fun old_field ->
                 Hashtbl.replace frt f_key
@@ -2029,15 +1975,12 @@ module Main (M : MONADERROR) = struct
                 )
               else update_states frt f_key n_val o_num assign_cnt
           (* Массив объектов - пробегаемся по элементам, видим объект - запускаем обход по его таблице полей с обновлением при совпадении номера *)
-          | VArray (Arr { a_type = ClassName _; values = v_list; number = _ })
-            ->
+          | VArray (Arr { a_type = ClassName _; values = v_list; _ }) ->
               List.iter
                 (fun v ->
                   match v with
                   | VObjectRef
-                      (RObj
-                        { class_key = _; field_ref_table = frt; number = c_num })
-                    ->
+                      (RObj { field_ref_table = frt; number = c_num; _ }) ->
                       ( if c_num = o_num then
                         Option.get (get_elem_if_present frt f_key)
                         |> fun old_field ->
