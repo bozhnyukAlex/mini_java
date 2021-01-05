@@ -42,10 +42,15 @@ let startswith test_str sub_str =
   let sub = String.sub test_str 0 (String.length sub_str) in
   String.equal sub sub_str
 
+let convert_table_to_seq = Hashtbl.to_seq_values
+
+let seq_hd_exn s =
+  match s () with Seq.Nil -> raise Not_found | Seq.Cons (x, _) -> x
+
 type field_r = {
   f_type : type_t;
   key : key_t;
-  is_mutable : bool;
+  is_not_mutable : bool;
   sub_tree : expr option;
 }
 [@@deriving show { with_path = false }]
@@ -78,9 +83,6 @@ let class_table : (key_t, class_r) Hashtbl_p.t = Hashtbl.create 1024
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
-(* TODO: Не уверен, что стоит жрать память для списка, если там есть Hashtbl.to_seq_values. Потом исправите, если что *)
-let convert_table_to_list ht = Hashtbl.fold (fun _ v acc -> v :: acc) ht []
-
 let get_elem_if_present ht key = Hashtbl.find_opt ht key
 
 module ClassLoader (M : MONADERROR) = struct
@@ -105,6 +107,11 @@ module ClassLoader (M : MONADERROR) = struct
     match list with
     | [] -> return base
     | x :: xs -> action x >> monadic_list_iter xs action base
+
+  let rec monadic_seq_iter seq action base =
+    match seq () with
+    | Seq.Nil -> return base
+    | Seq.Cons (x, next) -> action x >> monadic_seq_iter next action base
 
   let prepare_object ht =
     let constructor_table = Hashtbl.create 20 in
@@ -247,10 +254,10 @@ module ClassLoader (M : MONADERROR) = struct
               let rec helper = function
                 | [] -> return ()
                 | (Name key, sub_tree) :: ps ->
-                    let is_mutable = is_final f_ms in
+                    let is_not_mutable = is_final f_ms in
                     (* В качестве ключа выступает имя поля *)
                     add_with_check field_table key
-                      { f_type; key; is_mutable; sub_tree }
+                      { f_type; key; is_not_mutable; sub_tree }
                       "Similar fields"
                     >> helper ps
               in
@@ -369,7 +376,7 @@ module ClassLoader (M : MONADERROR) = struct
               monadic_update_hash_table ht p_key new_val >> return new_val
           | Some _ -> error "Final class cannot be inherited" )
     in
-    monadic_list_iter (convert_table_to_list ht) update ht
+    monadic_seq_iter (convert_table_to_seq ht) update ht
 
   (* Мелкие функции по обработке отдельных частей для transfert *)
 
@@ -384,55 +391,9 @@ module ClassLoader (M : MONADERROR) = struct
     | _ -> return ()
 
   let process_fields par ch =
-    monadic_list_iter
-      (convert_table_to_list par.field_table)
+    monadic_seq_iter
+      (convert_table_to_seq par.field_table)
       (process_field ch) ()
-
-  let is_super : stmt -> bool = function
-    | Expression (CallMethod (Super, _)) -> true
-    | _ -> false
-
-  let body_starts_with_super : constructor_r -> bool = function
-    | {
-        key = _;
-        args = _;
-        body = StmtBlock (Expression (CallMethod (Super, _)) :: _);
-      } ->
-        true
-    | _ -> false
-
-  (* Конструкторы не переносим, но у конструкторов ребенка первый стейтмент - вызов super(...). Проверяем это *)
-  let check_child_constructors par ch =
-    let check_constructor : constructor_r -> unit t =
-     fun constr_r ->
-      match constr_r with
-      | { key = _; args = _; body = StmtBlock stlist } -> (
-          match List.filter is_super stlist with
-          | [] -> error "No super statement in inherited constructor"
-          | [ _ ] ->
-              if body_starts_with_super constr_r then return ()
-              else error "Super statement must br first in constructor"
-          | _ -> error "Only one super statement must be in constructor" )
-      | _ -> error "Constructor body must be in block!"
-    in
-    (* Проверяем super в том случае, если конструкторов больше одного или он один и c аргументами*)
-    match Hashtbl.length par.constructor_table with
-    | 0 -> return ()
-    | 1 -> (
-        match
-          get_elem_if_present par.constructor_table (par.this_key ^ "$$")
-        with
-        (* Один конструктор, но с аргументами *)
-        | None ->
-            monadic_list_iter
-              (convert_table_to_list ch.constructor_table)
-              check_constructor ()
-        (* Один конструктор, без аргументов. super() в таком случае будет вызываться автоматически в начале *)
-        | _ -> return () )
-    | _ ->
-        monadic_list_iter
-          (convert_table_to_list ch.constructor_table)
-          check_constructor ()
 
   let is_this : stmt -> bool = function
     | Expression (CallMethod (This, _)) -> true
@@ -461,8 +422,8 @@ module ClassLoader (M : MONADERROR) = struct
           | _ -> error "More then one constructor calls!" )
       | _ -> error "Constructor body must be in block!"
     in
-    monadic_list_iter
-      (convert_table_to_list cur.constructor_table)
+    monadic_seq_iter
+      (convert_table_to_seq cur.constructor_table)
       check_constructor ()
 
   (* Перенос метода. Тут надо много всего проверять на абстрактность *)
@@ -482,8 +443,8 @@ module ClassLoader (M : MONADERROR) = struct
     | _ -> return ()
 
   let process_methods par ch =
-    monadic_list_iter
-      (convert_table_to_list par.method_table)
+    monadic_seq_iter
+      (convert_table_to_seq par.method_table)
       (process_method ch) ()
 
   (* Проверка на то, что аннотации @Override у ребенка стоят только у переопределенных методов*)
@@ -499,8 +460,8 @@ module ClassLoader (M : MONADERROR) = struct
           | None -> error "@Override annotation on not overriden method"
           | _ -> return () )
     in
-    monadic_list_iter
-      (convert_table_to_list ch.method_table)
+    monadic_seq_iter
+      (convert_table_to_seq ch.method_table)
       (check_override_ann par) ()
 
   (* Отдельная функция, которая берет родителя и ребенка,
@@ -511,7 +472,6 @@ module ClassLoader (M : MONADERROR) = struct
     >> process_methods parent child
     >> check_override_annotations parent child
     >> check_cur_constructors parent
-    (* >> check_child_constructors parent child *)
     >>= fun _ -> run_transfert_on_children class_table child
 
   (* Запуск transfert на ребенке и детях ребенка *)
@@ -548,7 +508,7 @@ module Main (M : MONADERROR) = struct
   type variable = {
     v_type : type_t;
     v_key : key_t;
-    is_mutable : bool;
+    is_not_mutable : bool;
     assignment_count : int;
     v_value : value;
     scope_level : int;
@@ -601,10 +561,13 @@ module Main (M : MONADERROR) = struct
     with Invalid_argument m -> error m
 
   let find_class_with_main ht =
-    return
-      (List.find
-         (fun c -> Hashtbl.mem c.method_table "main@@")
-         (convert_table_to_list ht))
+    let filtered = Seq.filter (fun c -> Hashtbl.mem c.method_table "main@@") in
+    match filtered (convert_table_to_seq ht) () with
+    | Seq.Cons (x, next) -> (
+        match next () with
+        | Seq.Nil -> return x
+        | _ -> error "Must be one main method" )
+    | _ -> error "Must be one main method!"
 
   let rec expr_type_check : expr -> context -> type_t M.t =
    fun t_expr ctx ->
@@ -745,9 +708,7 @@ module Main (M : MONADERROR) = struct
             let obj_class =
               Option.get (get_elem_if_present class_table obj_key)
             in
-            (* let _ = print_string ("CHECK_METHOD: " ^ m_ident ^ "\n") in *)
             check_method obj_class m_ident args ctx >>= fun m_r ->
-            (* let _ = print_endline ("CHECK_RES: " ^ show_method_r m_r) in *)
             return m_r.m_type
         | _ -> error "Wrong type: must be object reference" )
     | ArrayAccess (arr_expr, index_expr) -> (
@@ -807,9 +768,6 @@ module Main (M : MONADERROR) = struct
                 (* Смотрим в таблице полей конкретного объекта *)
                 match get_elem_if_present ft key with
                 | None ->
-                    (* let _ =
-                         print_string ("ERROR CTX: " ^ show_context ctx ^ "\n")
-                       in *)
                     error ("No such variable or field with this name : " ^ key)
                 | Some fr -> return fr.f_type )
             | _ -> error "NullPointerException" )
@@ -910,10 +868,6 @@ module Main (M : MONADERROR) = struct
           | _ -> found_type = curr_type )
     in
     let rec helper_checker curr_ht pos e_list ctx =
-      (* let _ =
-           print_endline
-             ("HELPER_CHECKER_HT: " ^ show_hashtbl curr_ht show_method_r)
-         in *)
       match Hashtbl.length curr_ht with
       (* 0 осталось методов - значит ни один не подошел. Ошибка *)
       | 0 -> error "No such method!"
@@ -923,31 +877,18 @@ module Main (M : MONADERROR) = struct
           | [] -> (
               match other with
               (* 1 - берем единственный подходящий *)
-              | 1 -> return (List.hd (convert_table_to_list curr_ht))
+              | 1 -> return (seq_hd_exn (convert_table_to_seq curr_ht))
               (* Методов с точно такими или полиморфными типами больше одного. Значит надо смотреть по имени *)
               | _ -> (
-                  (* let _ =
-                       print_string (show_hashtbl curr_ht show_method_r ^ "\n")
-                     in *)
                   Hashtbl_p.filter curr_ht (fun _ m_v ->
                       startswith m_v.key m_name)
                   |> fun filtered_by_name_table ->
-                  (* let _ =
-                       print_endline
-                         ( "FILTERED HT_END: "
-                         ^ show_hashtbl filtered_by_name_table show_method_r )
-                     in *)
                   match Hashtbl.length filtered_by_name_table with
                   | 1 ->
                       return
-                        (List.hd (convert_table_to_list filtered_by_name_table))
-                  | _ ->
-                      (* let _ =
-                           print_string
-                             ( show_hashtbl curr_ht show_method_r
-                             ^ "\n" ^ m_name ^ "\n" )
-                         in *)
-                      error "Cannot resolve method" ) )
+                        (seq_hd_exn
+                           (convert_table_to_seq filtered_by_name_table))
+                  | _ -> error "Cannot resolve method" ) )
           | e :: es ->
               expr_type_check e ctx >>= fun e_type ->
               helper_checker
@@ -977,17 +918,12 @@ module Main (M : MONADERROR) = struct
     in
     let rec helper_checker_c curr_ht pos e_list ctx =
       match Hashtbl.length curr_ht with
-      | 0 ->
-          (* let _ =
-               print_endline
-                 ("ERROR_CTX: " ^ show_hashtbl curr_ht show_constructor_r)
-             in *)
-          error "No such constructor!"
+      | 0 -> error "No such constructor!"
       | other -> (
           match e_list with
           | [] -> (
               match other with
-              | 1 -> return (List.hd (convert_table_to_list curr_ht))
+              | 1 -> return (seq_hd_exn (convert_table_to_seq curr_ht))
               | _ -> error "Cannot resolve constructor!" )
           | e :: es ->
               expr_type_check e ctx >>= fun e_type ->
@@ -1016,25 +952,19 @@ module Main (M : MONADERROR) = struct
    fun fld ->
     match fld.assignment_count with
     | 0 -> return ()
-    | _ when not fld.is_mutable -> return ()
+    | _ when not fld.is_not_mutable -> return ()
     | _ -> error "Assignment to a constant field"
 
   let check_assign_cnt_v var =
     match var.assignment_count with
     | 0 -> return ()
-    | _ when not var.is_mutable -> return ()
+    | _ when not var.is_not_mutable -> return ()
     | _ -> error "Assignment to a constant variable"
 
   let delete_scope_var : context -> context M.t =
    fun ctx ->
     let delete : key_t -> variable -> unit =
      fun key el ->
-      (* let _ =
-           print_endline
-             ( "CTX SCOPE LVL: "
-             ^ string_of_int ctx.scope_level
-             ^ "\n" ^ show_variable el )
-         in *)
       if el.scope_level = ctx.scope_level then Hashtbl.remove ctx.var_table key
     in
     Hashtbl.iter delete ctx.var_table;
@@ -1042,7 +972,6 @@ module Main (M : MONADERROR) = struct
 
   let rec eval_stmt : stmt -> context -> context M.t =
    fun stmt sctx ->
-    (* let _ = print_endline ("STMT: " ^ show_stmt stmt) in *)
     match stmt with
     | StmtBlock st_list ->
         let rec helper_eval : stmt list -> context -> context M.t =
@@ -1062,9 +991,6 @@ module Main (M : MONADERROR) = struct
                   eval_stmt st hctx >>= fun head_ctx -> helper_eval sts head_ctx
               )
         in
-        (* let _ =
-             print_string ("HELPER_EVAL SCTX: " ^ show_context sctx ^ "\n")
-           in *)
         helper_eval st_list sctx >>= fun sbctx ->
         if sbctx.is_main_scope then return sbctx else delete_scope_var sbctx
     | While (bexpr, lstmt) -> (
@@ -1125,9 +1051,7 @@ module Main (M : MONADERROR) = struct
         else return { sctx with was_break = true }
     | Continue ->
         (* Continue не может быть в цикле - проверяем это, если все ок - то просто возвращаем контекст с установленным флагом *)
-        if sctx.cycle_cnt <= 0 then
-          (* let _ = print_endline ("CONTINUE CTX: " ^ show_context sctx) in *)
-          error "No loop for continue"
+        if sctx.cycle_cnt <= 0 then error "No loop for continue"
         else return { sctx with was_continue = true }
     | If (bexpr, then_stmt, else_stmt_o) -> (
         eval_expr bexpr sctx >>= fun bectx ->
@@ -1168,7 +1092,6 @@ module Main (M : MONADERROR) = struct
               (inc_scope_level { sctx with is_main_scope = false }) )
         >>= fun dec_ctx ->
         let rec loop bs afs ctx =
-          (* let _ = print_endline ("LOOP CTX: " ^ show_context ctx) in *)
           (* Сразу проверяем брейк, случился ли он, случился - выходим из цикла*)
           if ctx.was_break then
             delete_scope_var
@@ -1188,9 +1111,6 @@ module Main (M : MONADERROR) = struct
             match bectx.last_expr_result with
             (* Увидели false - значит уже не циклимся, возвращаем контекст с уменьшенным счетчиком вложенных циклов и scope*)
             | Some (VBool false) ->
-                (* let _ =
-                     print_endline ("SCL : " ^ string_of_int bectx.scope_level)
-                   in *)
                 delete_scope_var
                   {
                     bectx with
@@ -1213,7 +1133,6 @@ module Main (M : MONADERROR) = struct
                           eval_inc_expr_list es ehctx
                       | _ -> error "Wrong expression for after body list" )
                 in
-                (* let _ = print_endline ("BECTX: " ^ show_context bectx) in *)
                 (* Переменные внутри самого блока будут находиться в большем scope level, чем из инициализатора *)
                 eval_stmt bs
                   { bectx with scope_level = dec_ctx.scope_level + 1 }
@@ -1231,7 +1150,6 @@ module Main (M : MONADERROR) = struct
                   loop bs afs { after_ctx with was_continue = false }
                 else
                   (* Иначе можем просто вычислить инкременты после и сделать цикл *)
-                  (* let _ = print_endline ("BDCTX: " ^ show_context bdctx) in *)
                   eval_inc_expr_list afs bdctx >>= fun after_ctx ->
                   loop bs afs after_ctx
             | _ -> error "Wrong condition type in for statement"
@@ -1261,11 +1179,6 @@ module Main (M : MONADERROR) = struct
         | CallMethod (_, _)
         | FieldAccess (_, CallMethod (_, _))
         | Assign (_, _) ->
-            (* let _ =
-                 print_string
-                   ( "EXPRESSION EVAL SCTX: " ^ show_context sctx ^ "\n" ^ "EXPR: "
-                   ^ show_expr sexpr ^ "\n" )
-               in *)
             eval_expr sexpr sctx >>= fun ectx -> return ectx
         | _ -> error "Wrong expression for statement" )
     | VarDec (final_mod_o, vars_type, var_list) ->
@@ -1292,7 +1205,7 @@ module Main (M : MONADERROR) = struct
                           {
                             v_type = vars_type;
                             v_key = name;
-                            is_mutable = is_final final_mod_o;
+                            is_not_mutable = is_final final_mod_o;
                             assignment_count = 0;
                             v_value = get_init_value_of_type vars_type;
                             scope_level = vctx.scope_level;
@@ -1308,7 +1221,7 @@ module Main (M : MONADERROR) = struct
                             {
                               v_type = var_expr_type;
                               v_key = name;
-                              is_mutable = is_final final_mod_o;
+                              is_not_mutable = is_final final_mod_o;
                               assignment_count = 1;
                               v_value = Option.get vare_ctx.last_expr_result;
                               scope_level = vare_ctx.scope_level;
@@ -1438,7 +1351,6 @@ module Main (M : MONADERROR) = struct
           | Some k -> return k )
           >>= fun _ ->
           let curr_class_key = Option.get ctx.constr_affilation in
-          (* let _ = print_endline ("CUR_KEY: " ^ curr_class_key) in *)
           let cur_class_r =
             Option.get (get_elem_if_present class_table curr_class_key)
           in
@@ -1456,9 +1368,6 @@ module Main (M : MONADERROR) = struct
                 (* ctx - включает в себя текущий объект внешнего конструктора, таблицу переменных в аргументах внешнего конструктора *)
                 ctx
               >>= fun (vt, vctx) ->
-              (* let _ =
-                   print_endline ("SUPER_VT: " ^ show_hashtbl vt show_variable)
-                 in *)
               eval_stmt par_constr_body
                 {
                   vctx with
@@ -1513,10 +1422,6 @@ module Main (M : MONADERROR) = struct
                       in
                       prepare_table_with_args new_var_table args mr.args octx
                       >>= fun (new_vt, new_ctx) ->
-                      (* let _ =
-                           print_string
-                             ("new_vt: " ^ show_hashtbl new_vt show_variable ^ "\n")
-                         in *)
                       (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
                       eval_stmt m_body
                         {
@@ -1640,7 +1545,7 @@ module Main (M : MONADERROR) = struct
                         Option.get
                           (get_elem_if_present obj_class.field_table f_key)
                       in
-                      test_field.is_mutable
+                      test_field.is_not_mutable
                     in
                     ( match f_expr_o with
                     (* Сверяем, если есть выражение - сверяем типы, вычисляем, если нет, берем значение по умолчанию *)
@@ -1653,7 +1558,7 @@ module Main (M : MONADERROR) = struct
                               key = f_name;
                               f_type = curr_f_type;
                               f_value = Option.get fe_ctx.last_expr_result;
-                              is_mutable = is_mutable_field f_name;
+                              is_not_mutable = is_mutable_field f_name;
                               assignment_count = 1;
                             };
                           return (fe_ctx, acc_ht)
@@ -1685,7 +1590,7 @@ module Main (M : MONADERROR) = struct
                             key = f_name;
                             f_type = curr_f_type;
                             f_value = get_init_value_of_type curr_f_type;
-                            is_mutable = is_mutable_field f_name;
+                            is_not_mutable = is_mutable_field f_name;
                             assignment_count = 0;
                           };
                         return (help_ctx, acc_ht) )
@@ -1713,10 +1618,6 @@ module Main (M : MONADERROR) = struct
                     Option.get (get_elem_if_present class_table par_key)
                   in
                   init_object parent_r init_ctx >>= fun par_ctx ->
-                  (* let _ =
-                       print_endline
-                         ("PAR_CTX_OBJECT " ^ show_obj_ref par_ctx.cur_object)
-                     in *)
                   helper_init
                     (get_obj_fields_exn par_ctx.cur_object)
                     par_ctx field_tuples
@@ -1751,21 +1652,12 @@ module Main (M : MONADERROR) = struct
             (* Внутри initres_ctx лежит объект с проинициализированными полями, готовый к обработке конструктором *)
             >>=
             fun initres_ctx ->
-            (* let _ =
-                 print_endline
-                   ("NEW OBJECT: " ^ show_obj_ref initres_ctx.cur_object)
-               in *)
-
             (* Контекст, в котором должна готовиться таблица аргументов - текущий!!!!*)
             let get_new_var_table =
               prepare_table_with_args (Hashtbl.create 100) c_args constr_r.args
                 ctx
             in
             get_new_var_table >>= fun (vt, _) ->
-            (* let _ =
-                 print_endline
-                   ("VT IN CONSTRUCTOR EVAL: " ^ show_hashtbl vt show_variable)
-               in *)
             prepare_constructor_block constr_r.body obj_class >>= fun c_body ->
             (* Контекст, в котором исполняется блок - получившийся объект + таблица переменных - аргументы конструктора *)
             eval_stmt c_body
@@ -1792,21 +1684,10 @@ module Main (M : MONADERROR) = struct
             (Option.get val_evaled_ctx.last_expr_result)
             val_evaled_ctx
       | Assign (FieldAccess (obj_expr, Identifier f_name), val_expr) ->
-          (* let _ =
-               print_endline
-                 ( "FIELD ASSIGNMENT CTX: " ^ show_context ctx ^ "EXPR: "
-                 ^ show_expr expr )
-             in *)
           eval_expr val_expr ctx >>= fun val_evaled_ctx ->
           update_field_v obj_expr f_name val_evaled_ctx
       | Assign (ArrayAccess (arr_expr, index_expr), val_expr) -> (
-          (* let _ =
-               print_endline
-                 ( "ARREXPR: " ^ show_expr expr ^ "\n" ^ "E_CTX: "
-                 ^ show_context ctx )
-             in *)
-          eval_expr val_expr ctx
-          >>= fun val_evaled_ctx ->
+          eval_expr val_expr ctx >>= fun val_evaled_ctx ->
           eval_expr arr_expr val_evaled_ctx >>= fun arr_evaled_ctx ->
           eval_expr index_expr arr_evaled_ctx >>= fun index_evaled_ctx ->
           match Option.get arr_evaled_ctx.last_expr_result with
@@ -1862,7 +1743,6 @@ module Main (M : MONADERROR) = struct
             ctx
       | _ -> error "Wrong expression construction!"
     in
-    (* let _ = print_endline ("EXPR: " ^ show_expr expr) in *)
     expr_type_check expr ectx >>= fun _ -> eval_e expr ectx
 
   and get_old_arr arr_n g_ctx =
@@ -1936,12 +1816,6 @@ module Main (M : MONADERROR) = struct
             }
           |> fun _ -> return obj_evaled_ctx
         else
-          (* let _ =
-               print_endline
-                 ( "OBJ_EVALED_CTX BEFORE UPDATE STATE: "
-                 ^ show_context obj_evaled_ctx
-                 ^ "\n" )
-             in *)
           update_object_state_exn obj_r f_name new_val obj_evaled_ctx
           |> fun _ -> return obj_evaled_ctx
       else error "No such field in class"
@@ -1957,7 +1831,7 @@ module Main (M : MONADERROR) = struct
            key = f_key;
            f_type = _;
            f_value = f_val;
-           is_mutable = _;
+           is_not_mutable = _;
            assignment_count = _;
           } -> (
               match f_val with
@@ -2073,7 +1947,7 @@ module Main (M : MONADERROR) = struct
            key = _;
            f_type = _;
            f_value = f_val;
-           is_mutable = _;
+           is_not_mutable = _;
            assignment_count = _;
           } -> (
               match f_val with
@@ -2122,9 +1996,6 @@ module Main (M : MONADERROR) = struct
         f_ht
     in
     let rec helper_update f_key n_val u_ctx o_num assign_cnt =
-      (* let _ =
-           print_endline ("F_KEY" ^ f_key ^ "\nU_CTX: " ^ show_context u_ctx ^ "\nNUM: ")
-         in *)
       (* Пробегаемся по переменным контекста как по вершинам дерева, если объект с нужным номером - обновляем состояние и запускает рекурсивный алгоритм обновления *)
       Hashtbl.iter
         (fun _ var ->
@@ -2201,7 +2072,7 @@ module Main (M : MONADERROR) = struct
             {
               v_type = head_type;
               v_key = head_name;
-              is_mutable = true;
+              is_not_mutable = true;
               assignment_count = 1;
               v_value = Option.get he_ctx.last_expr_result;
               scope_level = 0;

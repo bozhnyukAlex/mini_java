@@ -24,7 +24,7 @@ and field_ref = {
   key : string;
   f_type : type_t;
   f_value : value;
-  is_mutable : bool;
+  is_not_mutable : bool;
   assignment_count : int;
 }
 

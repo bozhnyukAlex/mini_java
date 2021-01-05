@@ -407,12 +407,14 @@
      { this_key = "Child";
        field_table =
        [["cash" ->
-          { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
+          { f_type = Int; key = "cash"; is_not_mutable = false; sub_tree = None
+            }
        
   "weight" ->
-   { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+   { f_type = Int; key = "weight"; is_not_mutable = false; sub_tree = None }
   
-  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  "age" ->
+   { f_type = Int; key = "age"; is_not_mutable = false; sub_tree = None }
   
   ]]
   ;
@@ -593,9 +595,11 @@
    { this_key = "Person";
      field_table =
      [["weight" ->
-        { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+        { f_type = Int; key = "weight"; is_not_mutable = false; sub_tree = None
+          }
      
-  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  "age" ->
+   { f_type = Int; key = "age"; is_not_mutable = false; sub_tree = None }
   
   ]]
   ;
@@ -728,7 +732,7 @@
   [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
   
   ]]
-  ; children_keys = ["Main"; "Person"]; is_abstract = false;
+  ; children_keys = ["Person"; "Main"]; is_abstract = false;
   is_inheritable = true; parent_key = None;
   dec_tree =
   Class
@@ -825,12 +829,14 @@
      { this_key = "Child";
        field_table =
        [["cash" ->
-          { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
+          { f_type = Int; key = "cash"; is_not_mutable = false; sub_tree = None
+            }
        
   "weight" ->
-   { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+   { f_type = Int; key = "weight"; is_not_mutable = false; sub_tree = None }
   
-  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  "age" ->
+   { f_type = Int; key = "age"; is_not_mutable = false; sub_tree = None }
   
   ]]
   ;
@@ -928,9 +934,11 @@
    { this_key = "Person";
      field_table =
      [["weight" ->
-        { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+        { f_type = Int; key = "weight"; is_not_mutable = false; sub_tree = None
+          }
      
-  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  "age" ->
+   { f_type = Int; key = "age"; is_not_mutable = false; sub_tree = None }
   
   ]]
   ;
@@ -1031,7 +1039,7 @@
   [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
   
   ]]
-  ; children_keys = ["Main"; "Person"]; is_abstract = false;
+  ; children_keys = ["Person"; "Main"]; is_abstract = false;
   is_inheritable = true; parent_key = None;
   dec_tree =
   Class
@@ -1120,15 +1128,15 @@
                                 ; number = 0 });
     var_table =
     [["a" ->
-       { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 1;
-         v_value = VInt (1); scope_level = 0 }
+       { v_type = Int; v_key = "a"; is_not_mutable = false;
+         assignment_count = 1; v_value = VInt (1); scope_level = 0 }
     
   "b" ->
-   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "b"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (2); scope_level = 0 }
   
   "c" ->
-   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "c"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (3); scope_level = 0 }
   
   ]]
@@ -1145,63 +1153,63 @@
                                 ; number = 0 });
     var_table =
     [["val2" ->
-       { v_type = Int; v_key = "val2"; is_mutable = false;
+       { v_type = Int; v_key = "val2"; is_not_mutable = false;
          assignment_count = 1; v_value = VInt (3); scope_level = 0 }
     
   "s1" ->
-   { v_type = String; v_key = "s1"; is_mutable = false; assignment_count = 1;
-     v_value = VString ("a"); scope_level = 0 }
+   { v_type = String; v_key = "s1"; is_not_mutable = false;
+     assignment_count = 1; v_value = VString ("a"); scope_level = 0 }
   
   "a" ->
-   { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 2;
+   { v_type = Int; v_key = "a"; is_not_mutable = false; assignment_count = 2;
      v_value = VInt (2); scope_level = 0 }
   
   "s3" ->
-   { v_type = String; v_key = "s3"; is_mutable = false; assignment_count = 1;
-     v_value = VString ("ab"); scope_level = 0 }
+   { v_type = String; v_key = "s3"; is_not_mutable = false;
+     assignment_count = 1; v_value = VString ("ab"); scope_level = 0 }
   
   "val7" ->
-   { v_type = Int; v_key = "val7"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (124); scope_level = 0 }
+   { v_type = Int; v_key = "val7"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (124); scope_level = 0 }
   
   "val1" ->
-   { v_type = Int; v_key = "val1"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (15); scope_level = 0 }
+   { v_type = Int; v_key = "val1"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (15); scope_level = 0 }
   
   "s4" ->
-   { v_type = String; v_key = "s4"; is_mutable = false; assignment_count = 1;
-     v_value = VString ("a2"); scope_level = 0 }
+   { v_type = String; v_key = "s4"; is_not_mutable = false;
+     assignment_count = 1; v_value = VString ("a2"); scope_level = 0 }
   
   "val3" ->
-   { v_type = Int; v_key = "val3"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (101); scope_level = 0 }
+   { v_type = Int; v_key = "val3"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (101); scope_level = 0 }
   
   "b" ->
-   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "b"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (2); scope_level = 0 }
   
   "s5" ->
-   { v_type = String; v_key = "s5"; is_mutable = false; assignment_count = 1;
-     v_value = VString ("2b"); scope_level = 0 }
+   { v_type = String; v_key = "s5"; is_not_mutable = false;
+     assignment_count = 1; v_value = VString ("2b"); scope_level = 0 }
   
   "val4" ->
-   { v_type = Int; v_key = "val4"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (5); scope_level = 0 }
+   { v_type = Int; v_key = "val4"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (5); scope_level = 0 }
   
   "s2" ->
-   { v_type = String; v_key = "s2"; is_mutable = false; assignment_count = 1;
-     v_value = VString ("b"); scope_level = 0 }
+   { v_type = String; v_key = "s2"; is_not_mutable = false;
+     assignment_count = 1; v_value = VString ("b"); scope_level = 0 }
   
   "val5" ->
-   { v_type = Int; v_key = "val5"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (0); scope_level = 0 }
+   { v_type = Int; v_key = "val5"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (0); scope_level = 0 }
   
   "val6" ->
-   { v_type = Int; v_key = "val6"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (300); scope_level = 0 }
+   { v_type = Int; v_key = "val6"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (300); scope_level = 0 }
   
   "c" ->
-   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "c"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (3); scope_level = 0 }
   
   ]]
@@ -1218,134 +1226,134 @@
                                 ; number = 0 });
     var_table =
     [["s1" ->
-       { v_type = String; v_key = "s1"; is_mutable = false;
+       { v_type = String; v_key = "s1"; is_not_mutable = false;
          assignment_count = 1; v_value = VString ("a"); scope_level = 0 }
     
   "a" ->
-   { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "a"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (10); scope_level = 0 }
   
   "d" ->
-   { v_type = Int; v_key = "d"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "d"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (10); scope_level = 0 }
   
   "meVal" ->
-   { v_type = Int; v_key = "meVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "meVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "p2" ->
-   { v_type = ClassName ("Person"); v_key = "p2"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "p2"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (30);
-                              is_mutable = false; assignment_count = 0 }
+                              is_not_mutable = false; assignment_count = 0 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Alice");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 2 })); scope_level = 0
   }
   
   "b" ->
-   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "b"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (50); scope_level = 0 }
   
   "objNEq" ->
-   { v_type = Int; v_key = "objNEq"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "objNEq"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "eVal" ->
-   { v_type = Int; v_key = "eVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "eVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "p3" ->
-   { v_type = ClassName ("Person"); v_key = "p3"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "p3"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (20);
-                              is_mutable = false; assignment_count = 0 }
+                              is_not_mutable = false; assignment_count = 0 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
   }
   
   "p1" ->
-   { v_type = ClassName ("Person"); v_key = "p1"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "p1"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (20);
-                              is_mutable = false; assignment_count = 0 }
+                              is_not_mutable = false; assignment_count = 0 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
   }
   
   "s2" ->
-   { v_type = String; v_key = "s2"; is_mutable = false; assignment_count = 1;
-     v_value = VString ("b"); scope_level = 0 }
+   { v_type = String; v_key = "s2"; is_not_mutable = false;
+     assignment_count = 1; v_value = VString ("b"); scope_level = 0 }
   
   "lVal" ->
-   { v_type = Int; v_key = "lVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "lVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "sEq" ->
-   { v_type = Int; v_key = "sEq"; is_mutable = false; assignment_count = 2;
+   { v_type = Int; v_key = "sEq"; is_not_mutable = false; assignment_count = 2;
      v_value = VInt (1); scope_level = 0 }
   
   "notVal" ->
-   { v_type = Int; v_key = "notVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "notVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "objEq" ->
-   { v_type = Int; v_key = "objEq"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "objEq"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "leVal" ->
-   { v_type = Int; v_key = "leVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "leVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "mVal" ->
-   { v_type = Int; v_key = "mVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "mVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "orVal" ->
-   { v_type = Int; v_key = "orVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "orVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "c" ->
-   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "c"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (100); scope_level = 0 }
   
   "sNEQ" ->
-   { v_type = Int; v_key = "sNEQ"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "sNEQ"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (1); scope_level = 0 }
   
   "neVal" ->
-   { v_type = Int; v_key = "neVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "neVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   "andVal" ->
-   { v_type = Int; v_key = "andVal"; is_mutable = false; assignment_count = 2;
-     v_value = VInt (1); scope_level = 0 }
+   { v_type = Int; v_key = "andVal"; is_not_mutable = false;
+     assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   ]]
   ; last_expr_result = Some (VInt (1)); was_break = false;
@@ -1361,30 +1369,30 @@
                                 ; number = 0 });
     var_table =
     [["a2" ->
-       { v_type = Int; v_key = "a2"; is_mutable = false; assignment_count = 1;
-         v_value = VInt (30); scope_level = 0 }
+       { v_type = Int; v_key = "a2"; is_not_mutable = false;
+         assignment_count = 1; v_value = VInt (30); scope_level = 0 }
     
   "a1" ->
-   { v_type = Int; v_key = "a1"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "a1"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (25); scope_level = 0 }
   
   "res" ->
-   { v_type = Int; v_key = "res"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "res"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (125); scope_level = 0 }
   
   "person" ->
-   { v_type = ClassName ("Person"); v_key = "person"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "person"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (30);
-                              is_mutable = false; assignment_count = 1 }
+                              is_not_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
@@ -1404,77 +1412,77 @@
                                 ; number = 0 });
     var_table =
     [["p2" ->
-       { v_type = ClassName ("Person"); v_key = "p2"; is_mutable = false;
+       { v_type = ClassName ("Person"); v_key = "p2"; is_not_mutable = false;
          assignment_count = 1;
          v_value =
          VObjectRef (RObj ({ class_key = "Person";
                              field_ref_table =
                              [["age" ->
                                 { key = "age"; f_type = Int;
-                                  f_value = VInt (55); is_mutable = false;
+                                  f_value = VInt (55); is_not_mutable = false;
                                   assignment_count = 1 }
                              
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
   }
   
   "p3" ->
-   { v_type = ClassName ("Person"); v_key = "p3"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "p3"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (55);
-                              is_mutable = false; assignment_count = 1 }
+                              is_not_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
   }
   
   "res" ->
-   { v_type = Int; v_key = "res"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "res"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (55); scope_level = 0 }
   
   "p1" ->
-   { v_type = ClassName ("Person"); v_key = "p1"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "p1"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (55);
-                              is_mutable = false; assignment_count = 1 }
+                              is_not_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
   }
   
   "person" ->
-   { v_type = ClassName ("Person"); v_key = "person"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "person"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (55);
-                              is_mutable = false; assignment_count = 1 }
+                              is_not_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
@@ -1495,7 +1503,7 @@
     var_table =
     [["childSecond" ->
        { v_type = ClassName ("Child"); v_key = "childSecond";
-         is_mutable = false; assignment_count = 1;
+         is_not_mutable = false; assignment_count = 1;
          v_value =
          VObjectRef (RObj ({ class_key = "Child";
                              field_ref_table =
@@ -1509,51 +1517,52 @@
                                                          { key = "age";
                                                            f_type = Int;
                                                            f_value = VInt (27);
-                                                           is_mutable = false;
+                                                           is_not_mutable =
+                                                           false;
                                                            assignment_count = 1
                                                            }
                                                       
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 })); is_mutable = false; assignment_count = 0
+  ; number = 1 })); is_not_mutable = false; assignment_count = 0
   }
   
   "age" ->
-   { key = "age"; f_type = Int; f_value = VInt (20); is_mutable = false;
+   { key = "age"; f_type = Int; f_value = VInt (20); is_not_mutable = false;
      assignment_count = 1 }
   
   "name" ->
-   { key = "name"; f_type = String; f_value = VString (""); is_mutable = false;
-     assignment_count = 0 }
+   { key = "name"; f_type = String; f_value = VString ("");
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 4 })); scope_level = 0
   }
   
   "person" ->
-   { v_type = ClassName ("Person"); v_key = "person"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "person"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (27);
-                              is_mutable = false; assignment_count = 1 }
+                              is_not_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
   }
   
   "childFirst" ->
-   { v_type = ClassName ("Child"); v_key = "childFirst"; is_mutable = false;
-     assignment_count = 1;
+   { v_type = ClassName ("Child"); v_key = "childFirst";
+     is_not_mutable = false; assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Child";
                          field_ref_table =
@@ -1566,24 +1575,24 @@
                                                      { key = "age";
                                                        f_type = Int;
                                                        f_value = VInt (40);
-                                                       is_mutable = false;
+                                                       is_not_mutable = false;
                                                        assignment_count = 0 }
                                                   
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Flexer");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 3 })); is_mutable = false; assignment_count = 0
+  ; number = 3 })); is_not_mutable = false; assignment_count = 0
   }
   
   "age" ->
-   { key = "age"; f_type = Int; f_value = VInt (4); is_mutable = false;
+   { key = "age"; f_type = Int; f_value = VInt (4); is_not_mutable = false;
      assignment_count = 1 }
   
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Alice");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 2 })); scope_level = 0
@@ -1596,12 +1605,12 @@
                             field_ref_table =
                             [["age" ->
                                { key = "age"; f_type = Int;
-                                 f_value = VInt (27); is_mutable = false;
+                                 f_value = VInt (27); is_not_mutable = false;
                                  assignment_count = 1 }
                             
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 }))); was_break = false; was_continue = false;
@@ -1616,19 +1625,19 @@
                                 ; number = 0 });
     var_table =
     [["a" ->
-       { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 5;
-         v_value = VInt (1000); scope_level = 0 }
+       { v_type = Int; v_key = "a"; is_not_mutable = false;
+         assignment_count = 5; v_value = VInt (1000); scope_level = 0 }
     
   "b" ->
-   { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 4;
+   { v_type = Int; v_key = "b"; is_not_mutable = false; assignment_count = 4;
      v_value = VInt (2000); scope_level = 0 }
   
   "c" ->
-   { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 4;
+   { v_type = Int; v_key = "c"; is_not_mutable = false; assignment_count = 4;
      v_value = VInt (3000); scope_level = 0 }
   
   "i" ->
-   { v_type = Int; v_key = "i"; is_mutable = false; assignment_count = 4;
+   { v_type = Int; v_key = "i"; is_not_mutable = false; assignment_count = 4;
      v_value = VInt (3); scope_level = 0 }
   
   ]]
@@ -1645,11 +1654,11 @@
                                 ; number = 0 });
     var_table =
     [["n" ->
-       { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
-         v_value = VInt (11); scope_level = 0 }
+       { v_type = Int; v_key = "n"; is_not_mutable = false;
+         assignment_count = 1; v_value = VInt (11); scope_level = 0 }
     
   "arr" ->
-   { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+   { v_type = Array (Int); v_key = "arr"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VArray (Arr ({ a_type = Int;
@@ -1661,7 +1670,7 @@
      scope_level = 0 }
   
   "i" ->
-   { v_type = Int; v_key = "i"; is_mutable = false; assignment_count = 11;
+   { v_type = Int; v_key = "i"; is_not_mutable = false; assignment_count = 11;
      v_value = VInt (10); scope_level = 1 }
   
   ]]
@@ -1678,7 +1687,7 @@
                                 ; number = 0 });
     var_table =
     [["b" ->
-       { v_type = Array (Int); v_key = "b"; is_mutable = false;
+       { v_type = Array (Int); v_key = "b"; is_not_mutable = false;
          assignment_count = 1;
          v_value =
          VArray (Arr ({ a_type = Int;
@@ -1691,7 +1700,7 @@
          scope_level = 1 }
     
   "arr" ->
-   { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+   { v_type = Array (Int); v_key = "arr"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VArray (Arr ({ a_type = Int;
@@ -1716,7 +1725,7 @@
     var_table =
     [["bubbleSorter" ->
        { v_type = ClassName ("BubbleSorter"); v_key = "bubbleSorter";
-         is_mutable = false; assignment_count = 1;
+         is_not_mutable = false; assignment_count = 1;
          v_value =
          VObjectRef (RObj ({ class_key = "BubbleSorter";
                              field_ref_table = [[]]
@@ -1724,7 +1733,7 @@
          scope_level = 0 }
     
   "arr" ->
-   { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+   { v_type = Array (Int); v_key = "arr"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VArray (Arr ({ a_type = Int;
@@ -1750,7 +1759,7 @@
                                 ; number = 0 });
     var_table =
     [["child" ->
-       { v_type = ClassName ("Child"); v_key = "child"; is_mutable = false;
+       { v_type = ClassName ("Child"); v_key = "child"; is_not_mutable = false;
          assignment_count = 1;
          v_value =
          VObjectRef (RObj ({ class_key = "Child";
@@ -1765,43 +1774,44 @@
                                                          { key = "age";
                                                            f_type = Int;
                                                            f_value = VInt (30);
-                                                           is_mutable = false;
+                                                           is_not_mutable =
+                                                           false;
                                                            assignment_count = 1
                                                            }
                                                       
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 })); is_mutable = false; assignment_count = 0
+  ; number = 1 })); is_not_mutable = false; assignment_count = 0
   }
   
   "age" ->
-   { key = "age"; f_type = Int; f_value = VInt (0); is_mutable = false;
+   { key = "age"; f_type = Int; f_value = VInt (0); is_not_mutable = false;
      assignment_count = 0 }
   
   "name" ->
-   { key = "name"; f_type = String; f_value = VString (""); is_mutable = false;
-     assignment_count = 0 }
+   { key = "name"; f_type = String; f_value = VString ("");
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 2 })); scope_level = 0
   }
   
   "person" ->
-   { v_type = ClassName ("Person"); v_key = "person"; is_mutable = false;
+   { v_type = ClassName ("Person"); v_key = "person"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
                          [["age" ->
                             { key = "age"; f_type = Int; f_value = VInt (30);
-                              is_mutable = false; assignment_count = 1 }
+                              is_not_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
@@ -1814,12 +1824,12 @@
                             field_ref_table =
                             [["age" ->
                                { key = "age"; f_type = Int;
-                                 f_value = VInt (30); is_mutable = false;
+                                 f_value = VInt (30); is_not_mutable = false;
                                  assignment_count = 1 }
                             
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 }))); was_break = false; was_continue = false;
@@ -1834,7 +1844,7 @@
                                 ; number = 0 });
     var_table =
     [["resPerimeter" ->
-       { v_type = Array (Int); v_key = "resPerimeter"; is_mutable = false;
+       { v_type = Array (Int); v_key = "resPerimeter"; is_not_mutable = false;
          assignment_count = 1;
          v_value =
          VArray (Arr ({ a_type = Int; values = [VInt (75); VInt (8); VInt (0)];
@@ -1843,7 +1853,7 @@
     
   "areaVisitor" ->
    { v_type = ClassName ("AreaVisitor"); v_key = "areaVisitor";
-     is_mutable = false; assignment_count = 1;
+     is_not_mutable = false; assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "AreaVisitor"; field_ref_table = [[]]
                                                     ;
@@ -1851,8 +1861,8 @@
      scope_level = 0 }
   
   "list" ->
-   { v_type = Array (ClassName ("Figure")); v_key = "list"; is_mutable = false;
-     assignment_count = 1;
+   { v_type = Array (ClassName ("Figure")); v_key = "list";
+     is_not_mutable = false; assignment_count = 1;
      v_value =
      VArray (Arr ({ a_type = ClassName ("Figure");
                     values =
@@ -1861,7 +1871,7 @@
                                          [["radius" ->
                                             { key = "radius"; f_type = Int;
                                               f_value = VInt (5);
-                                              is_mutable = false;
+                                              is_not_mutable = false;
                                               assignment_count = 0 }
                                          
   ]]
@@ -1870,10 +1880,10 @@
                       field_ref_table =
                       [["a" ->
                          { key = "a"; f_type = Int; f_value = VInt (2);
-                           is_mutable = false; assignment_count = 0 }
+                           is_not_mutable = false; assignment_count = 0 }
                       
   "b" ->
-   { key = "b"; f_type = Int; f_value = VInt (4); is_mutable = false;
+   { key = "b"; f_type = Int; f_value = VInt (4); is_not_mutable = false;
      assignment_count = 0 }
   
   ]]
@@ -1882,14 +1892,14 @@
                       field_ref_table =
                       [["a" ->
                          { key = "a"; f_type = Int; f_value = VInt (1);
-                           is_mutable = false; assignment_count = 0 }
+                           is_not_mutable = false; assignment_count = 0 }
                       
   "b" ->
-   { key = "b"; f_type = Int; f_value = VInt (1); is_mutable = false;
+   { key = "b"; f_type = Int; f_value = VInt (1); is_not_mutable = false;
      assignment_count = 0 }
   
   "c" ->
-   { key = "c"; f_type = Int; f_value = VInt (1); is_mutable = false;
+   { key = "c"; f_type = Int; f_value = VInt (1); is_not_mutable = false;
      assignment_count = 0 }
   
   ]]
@@ -1897,7 +1907,7 @@
   }
   
   "resArea" ->
-   { v_type = Array (Int); v_key = "resArea"; is_mutable = false;
+   { v_type = Array (Int); v_key = "resArea"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VArray (Arr ({ a_type = Int; values = [VInt (30); VInt (12); VInt (3)];
@@ -1906,7 +1916,7 @@
   
   "perimeterVisitor" ->
    { v_type = ClassName ("PerimeterVisitor"); v_key = "perimeterVisitor";
-     is_mutable = false; assignment_count = 1;
+     is_not_mutable = false; assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "PerimeterVisitor";
                          field_ref_table = [[]]
@@ -1927,12 +1937,12 @@
                                 ; number = 0 });
     var_table =
     [["f" ->
-       { v_type = Int; v_key = "f"; is_mutable = false; assignment_count = 1;
-         v_value = VInt (120); scope_level = 0 }
+       { v_type = Int; v_key = "f"; is_not_mutable = false;
+         assignment_count = 1; v_value = VInt (120); scope_level = 0 }
     
   "factorial" ->
-   { v_type = ClassName ("Factorial"); v_key = "factorial"; is_mutable = false;
-     assignment_count = 1;
+   { v_type = ClassName ("Factorial"); v_key = "factorial";
+     is_not_mutable = false; assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "Factorial"; field_ref_table = [[]]
                                                   ;
@@ -1953,12 +1963,12 @@
                                 ; number = 0 });
     var_table =
     [["n" ->
-       { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
-         v_value = VInt (16); scope_level = 0 }
+       { v_type = Int; v_key = "n"; is_not_mutable = false;
+         assignment_count = 1; v_value = VInt (16); scope_level = 0 }
     
   "quickSorter" ->
    { v_type = ClassName ("QuickSorter"); v_key = "quickSorter";
-     is_mutable = false; assignment_count = 1;
+     is_not_mutable = false; assignment_count = 1;
      v_value =
      VObjectRef (RObj ({ class_key = "QuickSorter"; field_ref_table = [[]]
                                                     ;
@@ -1966,7 +1976,7 @@
      scope_level = 0 }
   
   "arr" ->
-   { v_type = Array (Int); v_key = "arr"; is_mutable = false;
+   { v_type = Array (Int); v_key = "arr"; is_not_mutable = false;
      assignment_count = 1;
      v_value =
      VArray (Arr ({ a_type = Int;
@@ -1979,11 +1989,11 @@
      scope_level = 0 }
   
   "high" ->
-   { v_type = Int; v_key = "high"; is_mutable = false; assignment_count = 1;
-     v_value = VInt (15); scope_level = 0 }
+   { v_type = Int; v_key = "high"; is_not_mutable = false;
+     assignment_count = 1; v_value = VInt (15); scope_level = 0 }
   
   "low" ->
-   { v_type = Int; v_key = "low"; is_mutable = false; assignment_count = 1;
+   { v_type = Int; v_key = "low"; is_not_mutable = false; assignment_count = 1;
      v_value = VInt (0); scope_level = 0 }
   
   ]]
@@ -2002,23 +2012,23 @@
                                 ; number = 0 });
     var_table =
     [["cat" ->
-       { v_type = ClassName ("Cat"); v_key = "cat"; is_mutable = false;
+       { v_type = ClassName ("Cat"); v_key = "cat"; is_not_mutable = false;
          assignment_count = 1;
          v_value =
          VObjectRef (RObj ({ class_key = "Cat";
                              field_ref_table =
                              [["age" ->
                                 { key = "age"; f_type = Int;
-                                  f_value = VInt (2); is_mutable = false;
+                                  f_value = VInt (2); is_not_mutable = false;
                                   assignment_count = 0 }
                              
   "hairLevel" ->
-   { key = "hairLevel"; f_type = Int; f_value = VInt (30); is_mutable = false;
-     assignment_count = 0 }
+   { key = "hairLevel"; f_type = Int; f_value = VInt (30);
+     is_not_mutable = false; assignment_count = 0 }
   
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Mars");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 })); scope_level = 0
@@ -2031,15 +2041,15 @@
                             field_ref_table =
                             [["age" ->
                                { key = "age"; f_type = Int; f_value = VInt (2);
-                                 is_mutable = false; assignment_count = 0 }
+                                 is_not_mutable = false; assignment_count = 0 }
                             
   "hairLevel" ->
-   { key = "hairLevel"; f_type = Int; f_value = VInt (30); is_mutable = false;
-     assignment_count = 0 }
+   { key = "hairLevel"; f_type = Int; f_value = VInt (30);
+     is_not_mutable = false; assignment_count = 0 }
   
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Mars");
-     is_mutable = false; assignment_count = 0 }
+     is_not_mutable = false; assignment_count = 0 }
   
   ]]
   ; number = 1 }))); was_break = false; was_continue = false;
