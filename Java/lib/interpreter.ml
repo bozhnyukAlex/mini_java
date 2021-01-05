@@ -65,24 +65,18 @@ type method_r = {
 
 type class_r = {
   this_key : key_t;
-  field_table : (key_t, field_r) Hashtbl.t;
-  method_table : (key_t, method_r) Hashtbl.t;
-  constructor_table : (key_t, constructor_r) Hashtbl.t;
+  field_table : (key_t, field_r) Hashtbl_p.t;
+  method_table : (key_t, method_r) Hashtbl_p.t;
+  constructor_table : (key_t, constructor_r) Hashtbl_p.t;
   children_keys : key_t list;
   is_abstract : bool;
   is_inheritable : bool;
   parent_key : key_t option;
   dec_tree : class_dec;
 }
+[@@deriving show { with_path = false }]
 
-let show_hashtbl ht show =
-  match Hashtbl.length ht with
-  | 0 -> "[[]]"
-  | _ ->
-      Hashtbl.fold (fun k v acc -> acc ^ k ^ " -> " ^ show v ^ "\n") ht "[["
-      ^ "]]"
-
-let class_table : (key_t, class_r) Hashtbl.t = Hashtbl.create 1024
+let class_table : (key_t, class_r) Hashtbl_p.t = Hashtbl.create 1024
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 

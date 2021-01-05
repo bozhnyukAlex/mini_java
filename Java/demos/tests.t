@@ -403,184 +403,405 @@
   $ (cd ../../../../default && demos/demoClassLoader.exe)
   -------------------TESTING_INHERITANCE-------------------
   
-  [[Child -> { this_key : Child; field_table : [[cash -> { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
-  weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
-  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getAge@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  setAgeInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("a"))];
-    key = "setAgeInt@@";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("age")),
-                                   Identifier ("a")))]))
-    }
-  getCash@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getCash@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
-  setCashInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("c"))];
-    key = "setCashInt@@";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("cash")),
-                                   Identifier ("c")))]))
-    }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  setWeightInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("w"))];
-    key = "setWeightInt@@";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("weight")),
-                                   Identifier ("w")))]))
-    }
-  giveEvenNumbers100@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "giveEvenNumbers100@@";
-    body =
-    Some (StmtBlock ([For
-                      (Some (VarDec
-                             (None, Int,
-                              [(Name ("i"), Some (Const (VInt (0))))])),
-                       Some (Less (Identifier ("i"), Const (VInt (100)))),
-                       [PostInc (Identifier ("i"))],
-                       StmtBlock ([If
-                                   (And
-                                    (Equal
-                                     (Mod (Identifier ("i"), Const (VInt (2))),
-                                      Const (VInt (0))),
-                                     Not (Equal
-                                          (Mod
-                                           (Identifier ("i"), Const (VInt (2))),
-                                           Const (VInt (1))))),
-                                    StmtBlock ([Expression (FieldAccess
-                                                            (FieldAccess
-                                                             (Identifier ("System"),
-                                                              Identifier ("out")),
-                                                             CallMethod
-                                                             (Identifier ("println"),
-                                                              [Identifier ("i")])))]),
-                                    Some (StmtBlock ([Continue])))]))]))
-    }
-  ]]; constructor_table : [[ChildIntIntInt$$ -> { key = "ChildIntIntInt$$";
-    args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
-    body =
-    StmtBlock ([Expression (CallMethod
-                            (Super, [Identifier ("w"); Identifier ("a")]));
-                Expression (Assign (Identifier ("cash"), Identifier ("c")))])
-    }
-  ChildIntInt$$ -> { key = "ChildIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
-    body =
-    StmtBlock ([Expression (CallMethod
-                            (Super, [Identifier ("w"); Identifier ("a")]));
-                Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
-    }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person}
-  Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
-  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getAge@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  setAgeInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("a"))];
-    key = "setAgeInt@@";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("age")),
-                                   Identifier ("a")))]))
-    }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  setWeightInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("w"))];
-    key = "setWeightInt@@";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("weight")),
-                                   Identifier ("w")))]))
-    }
-  ]]; constructor_table : [[PersonIntInt$$ -> { key = "PersonIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
-    body =
-    StmtBlock ([Expression (Assign
-                            (FieldAccess (This, Identifier ("weight")),
-                             Identifier ("w")));
-                Expression (Assign
-                            (FieldAccess (This, Identifier ("age")),
-                             Identifier ("a")))])
-    }
-  ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object}
-  Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  ]]; constructor_table : [[Object$$ -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
-  ]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
-  Main -> { this_key : Main; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  main@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "main@@";
-    body =
-    Some (StmtBlock ([VarDec
-                      (None, ClassName ("Person"),
-                       [(Name ("p"),
-                         Some (ClassCreate
-                               (Name ("Person"),
-                                [Const (VInt (80)); Const (VInt (45))])))])]))
-    }
-  ]]; constructor_table : [[Main$$ -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
+  [["Child" ->
+     { this_key = "Child";
+       field_table =
+       [["cash" ->
+          { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
+       
+  "weight" ->
+   { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+  
+  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  
   ]]
+  ;
+  method_table =
+  [["getWeight@@" ->
+     { m_type = Int; is_abstract = false; is_overridable = true;
+       has_override_annotation = false; args = []; key = "getWeight@@";
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  
+  "getAge@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "getAge@@";
+     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
+  
+  "setAgeInt@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = [(Int, Name ("a"))];
+     key = "setAgeInt@@";
+     body =
+     Some (StmtBlock ([Expression (Assign
+                                   (FieldAccess (This, Identifier ("age")),
+                                    Identifier ("a")))]))
+     }
+  
+  "getCash@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "getCash@@";
+     body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
+  
+  "setCashInt@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = [(Int, Name ("c"))];
+     key = "setCashInt@@";
+     body =
+     Some (StmtBlock ([Expression (Assign
+                                   (FieldAccess (This, Identifier ("cash")),
+                                    Identifier ("c")))]))
+     }
+  
+  "toString@@" ->
+   { m_type = String; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "toString@@";
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  "setWeightInt@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = [(Int, Name ("w"))];
+     key = "setWeightInt@@";
+     body =
+     Some (StmtBlock ([Expression (Assign
+                                   (FieldAccess (This, Identifier ("weight")),
+                                    Identifier ("w")))]))
+     }
+  
+  "giveEvenNumbers100@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "giveEvenNumbers100@@";
+     body =
+     Some (StmtBlock ([For
+                       (Some (VarDec
+                              (None, Int,
+                               [(Name ("i"), Some (Const (VInt (0))))])),
+                        Some (Less (Identifier ("i"), Const (VInt (100)))),
+                        [PostInc (Identifier ("i"))],
+                        StmtBlock ([If
+                                    (And
+                                     (Equal
+                                      (Mod (Identifier ("i"), Const (VInt (2))),
+                                       Const (VInt (0))),
+                                      Not (Equal
+                                           (Mod
+                                            (Identifier ("i"),
+                                             Const (VInt (2))),
+                                            Const (VInt (1))))),
+                                     StmtBlock ([Expression (FieldAccess
+                                                             (FieldAccess
+                                                              (Identifier ("System"),
+                                                               Identifier ("out")),
+                                                              CallMethod
+                                                              (Identifier ("println"),
+                                                               [Identifier ("i")])))]),
+                                     Some (StmtBlock ([Continue])))]))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["ChildIntIntInt$$" ->
+     { key = "ChildIntIntInt$$";
+       args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
+       body =
+       StmtBlock ([Expression (CallMethod
+                               (Super, [Identifier ("w"); Identifier ("a")]));
+                   Expression (Assign (Identifier ("cash"), Identifier ("c")))])
+       }
+  
+  "ChildIntInt$$" ->
+   { key = "ChildIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
+     body =
+     StmtBlock ([Expression (CallMethod
+                             (Super, [Identifier ("w"); Identifier ("a")]));
+                 Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
+     }
+  
+  ]]
+  ; children_keys = []; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Person");
+  dec_tree =
+  Class
+  ([], Name ("Child"), Some (Name ("Person")),
+   [([Public], VarField (Int, [(Name ("cash"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Child"), [(Int, Name ("w")); (Int, Name ("a"))],
+      StmtBlock ([Expression (CallMethod
+                              (Super, [Identifier ("w"); Identifier ("a")]));
+                  Expression (Assign (Identifier ("cash"), Const (VInt (0))))])));
+    ([Public],
+     Method
+     (Int, Name ("getCash"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("cash")))]))));
+    ([Public],
+     Method
+     (Void, Name ("setCash"), [(Int, Name ("c"))],
+      Some (StmtBlock ([Expression (Assign
+                                    (FieldAccess (This, Identifier ("cash")),
+                                     Identifier ("c")))]))));
+    ([Public],
+     Constructor
+     (Name ("Child"),
+      [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))],
+      StmtBlock ([Expression (CallMethod
+                              (Super, [Identifier ("w"); Identifier ("a")]));
+                  Expression (Assign (Identifier ("cash"), Identifier ("c")))])));
+    ([Public],
+     Method
+     (Void, Name ("giveEvenNumbers100"), [],
+      Some (StmtBlock ([For
+                        (Some (VarDec
+                               (None, Int,
+                                [(Name ("i"), Some (Const (VInt (0))))])),
+                         Some (Less (Identifier ("i"), Const (VInt (100)))),
+                         [PostInc (Identifier ("i"))],
+                         StmtBlock ([If
+                                     (And
+                                      (Equal
+                                       (Mod
+                                        (Identifier ("i"), Const (VInt (2))),
+                                        Const (VInt (0))),
+                                       Not (Equal
+                                            (Mod
+                                             (Identifier ("i"),
+                                              Const (VInt (2))),
+                                             Const (VInt (1))))),
+                                      StmtBlock ([Expression (FieldAccess
+                                                              (FieldAccess
+                                                               (Identifier ("System"),
+                                                                Identifier ("out")),
+                                                               CallMethod
+                                                               (Identifier ("println"),
+                                                                [Identifier ("i")])))]),
+                                      Some (StmtBlock ([Continue])))]))]))))])
+  }
+  
+  "Person" ->
+   { this_key = "Person";
+     field_table =
+     [["weight" ->
+        { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+     
+  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  
+  ]]
+  ;
+  method_table =
+  [["getWeight@@" ->
+     { m_type = Int; is_abstract = false; is_overridable = true;
+       has_override_annotation = false; args = []; key = "getWeight@@";
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  
+  "getAge@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "getAge@@";
+     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
+  
+  "setAgeInt@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = [(Int, Name ("a"))];
+     key = "setAgeInt@@";
+     body =
+     Some (StmtBlock ([Expression (Assign
+                                   (FieldAccess (This, Identifier ("age")),
+                                    Identifier ("a")))]))
+     }
+  
+  "toString@@" ->
+   { m_type = String; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "toString@@";
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  "setWeightInt@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = [(Int, Name ("w"))];
+     key = "setWeightInt@@";
+     body =
+     Some (StmtBlock ([Expression (Assign
+                                   (FieldAccess (This, Identifier ("weight")),
+                                    Identifier ("w")))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["PersonIntInt$$" ->
+     { key = "PersonIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
+       body =
+       StmtBlock ([Expression (Assign
+                               (FieldAccess (This, Identifier ("weight")),
+                                Identifier ("w")));
+                   Expression (Assign
+                               (FieldAccess (This, Identifier ("age")),
+                                Identifier ("a")))])
+       }
+  
+  ]]
+  ; children_keys = ["Child"]; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Object");
+  dec_tree =
+  Class
+  ([], Name ("Person"), None,
+   [([Public], VarField (Int, [(Name ("weight"), None)]));
+    ([Public], VarField (Int, [(Name ("age"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Person"), [(Int, Name ("w")); (Int, Name ("a"))],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("weight")),
+                               Identifier ("w")));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("age")),
+                               Identifier ("a")))])));
+    ([Public],
+     Method
+     (Int, Name ("getWeight"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("weight")))]))));
+    ([Public],
+     Method
+     (Int, Name ("getAge"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("age")))]))));
+    ([Public],
+     Method
+     (Void, Name ("setWeight"), [(Int, Name ("w"))],
+      Some (StmtBlock ([Expression (Assign
+                                    (FieldAccess (This, Identifier ("weight")),
+                                     Identifier ("w")))]))));
+    ([Public],
+     Method
+     (Void, Name ("setAge"), [(Int, Name ("a"))],
+      Some (StmtBlock ([Expression (Assign
+                                    (FieldAccess (This, Identifier ("age")),
+                                     Identifier ("a")))]))))])
+  }
+  
+  "Object" ->
+   { this_key = "Object"; field_table = [[]]
+                          ;
+     method_table =
+     [["toString@@" ->
+        { m_type = String; is_abstract = false; is_overridable = true;
+          has_override_annotation = false; args = []; key = "toString@@";
+          body =
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = ["Main"; "Person"]; is_abstract = false;
+  is_inheritable = true; parent_key = None;
+  dec_tree =
+  Class
+  ([Public], Name ("Object"), None,
+   [([Public],
+     Method
+     (Int, Name ("equals"), [(ClassName ("Object"), Name ("obj"))],
+      Some (StmtBlock ([If
+                        (Equal (This, Identifier ("obj")),
+                         Return (Some (Const (VInt (1)))),
+                         Some (Return (Some (Const (VInt (0))))))]))));
+    ([Public],
+     Method
+     (String, Name ("toString"), [],
+      Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]))))])
+  }
+  
+  "Main" ->
+   { this_key = "Main"; field_table = [[]]
+                        ;
+     method_table =
+     [["toString@@" ->
+        { m_type = String; is_abstract = false; is_overridable = true;
+          has_override_annotation = false; args = []; key = "toString@@";
+          body =
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  "main@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "main@@";
+     body =
+     Some (StmtBlock ([VarDec
+                       (None, ClassName ("Person"),
+                        [(Name ("p"),
+                          Some (ClassCreate
+                                (Name ("Person"),
+                                 [Const (VInt (80)); Const (VInt (45))])))])]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Main$$" -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = []; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Object");
+  dec_tree =
+  Class
+  ([Public], Name ("Main"), None,
+   [([Public; Static],
+     Method
+     (Void, Name ("main"), [],
+      Some (StmtBlock ([VarDec
+                        (None, ClassName ("Person"),
+                         [(Name ("p"),
+                           Some (ClassCreate
+                                 (Name ("Person"),
+                                  [Const (VInt (80)); Const (VInt (45))])))])]))))])
+  }
+  
   -------------------SIMILAR_FIELDS-------------------
   
   Similar fields
@@ -599,136 +820,308 @@
   -------------------FINAL_MODIFIERS_ERRORS-------------------
   
   Final class cannot be inherited
-  [[Child -> { this_key : Child; field_table : [[cash -> { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
-  weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
-  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  getCash@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getCash@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
-  setCashInt@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = [(Int, Name ("c"))];
-    key = "setCashInt@@";
-    body =
-    Some (StmtBlock ([Expression (Assign
-                                  (FieldAccess (This, Identifier ("cash")),
-                                   Identifier ("c")))]))
-    }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  ]]; constructor_table : [[ChildIntIntInt$$ -> { key = "ChildIntIntInt$$";
-    args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
-    body =
-    StmtBlock ([Expression (CallMethod
-                            (Super, [Identifier ("w"); Identifier ("a")]));
-                Expression (Assign (Identifier ("cash"), Identifier ("c")))])
-    }
-  ChildIntInt$$ -> { key = "ChildIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
-    body =
-    StmtBlock ([Expression (CallMethod
-                            (Super, [Identifier ("w"); Identifier ("a")]));
-                Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
-    }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Person}
-  Person -> { this_key : Person; field_table : [[weight -> { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
-  age -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
-  ]]; method_table : [[getWeight@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "getWeight@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
-  getAge@@ -> { m_type = Int; is_abstract = false; is_overridable = false;
-    has_override_annotation = false; args = []; key = "getAge@@";
-    body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
-  toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  ]]; constructor_table : [[PersonIntInt$$ -> { key = "PersonIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
-    body =
-    StmtBlock ([Expression (Assign
-                            (FieldAccess (This, Identifier ("weight")),
-                             Identifier ("w")));
-                Expression (Assign
-                            (FieldAccess (This, Identifier ("age")),
-                             Identifier ("a")))])
-    }
-  ]]; children_keys : Child ; is_abstract : false; is_inheritable : true; parent_key : Object}
-  Object -> { this_key : Object; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  ]]; constructor_table : [[Object$$ -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
-  ]]; children_keys : Person Main ; is_abstract : false; is_inheritable : true; parent_key : None}
-  Main -> { this_key : Main; field_table : [[]]; method_table : [[toString@@ -> { m_type = String; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "toString@@";
-    body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
-  equalsClassName Object@@ -> { m_type = Int; is_abstract = false; is_overridable = true;
-    has_override_annotation = false;
-    args = [(ClassName ("Object"), Name ("obj"))];
-    key = "equalsClassName Object@@";
-    body =
-    Some (StmtBlock ([If
-                      (Equal (This, Identifier ("obj")),
-                       Return (Some (Const (VInt (1)))),
-                       Some (Return (Some (Const (VInt (0))))))]))
-    }
-  main@@ -> { m_type = Void; is_abstract = false; is_overridable = true;
-    has_override_annotation = false; args = []; key = "main@@";
-    body =
-    Some (StmtBlock ([VarDec
-                      (None, ClassName ("Person"),
-                       [(Name ("p"),
-                         Some (ClassCreate
-                               (Name ("Person"),
-                                [Const (VInt (80)); Const (VInt (45))])))])]))
-    }
-  ]]; constructor_table : [[Main$$ -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
-  ]]; children_keys : ; is_abstract : false; is_inheritable : true; parent_key : Object}
   ]]
+  [["Child" ->
+     { this_key = "Child";
+       field_table =
+       [["cash" ->
+          { f_type = Int; key = "cash"; is_mutable = false; sub_tree = None }
+       
+  "weight" ->
+   { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+  
+  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  
+  ]]
+  ;
+  method_table =
+  [["getWeight@@" ->
+     { m_type = Int; is_abstract = false; is_overridable = true;
+       has_override_annotation = false; args = []; key = "getWeight@@";
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  
+  "getCash@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "getCash@@";
+     body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
+  
+  "setCashInt@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = [(Int, Name ("c"))];
+     key = "setCashInt@@";
+     body =
+     Some (StmtBlock ([Expression (Assign
+                                   (FieldAccess (This, Identifier ("cash")),
+                                    Identifier ("c")))]))
+     }
+  
+  "toString@@" ->
+   { m_type = String; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "toString@@";
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["ChildIntIntInt$$" ->
+     { key = "ChildIntIntInt$$";
+       args = [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))];
+       body =
+       StmtBlock ([Expression (CallMethod
+                               (Super, [Identifier ("w"); Identifier ("a")]));
+                   Expression (Assign (Identifier ("cash"), Identifier ("c")))])
+       }
+  
+  "ChildIntInt$$" ->
+   { key = "ChildIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
+     body =
+     StmtBlock ([Expression (CallMethod
+                             (Super, [Identifier ("w"); Identifier ("a")]));
+                 Expression (Assign (Identifier ("cash"), Const (VInt (0))))])
+     }
+  
+  ]]
+  ; children_keys = []; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Person");
+  dec_tree =
+  Class
+  ([], Name ("Child"), Some (Name ("Person")),
+   [([Public], VarField (Int, [(Name ("cash"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Child"), [(Int, Name ("w")); (Int, Name ("a"))],
+      StmtBlock ([Expression (CallMethod
+                              (Super, [Identifier ("w"); Identifier ("a")]));
+                  Expression (Assign (Identifier ("cash"), Const (VInt (0))))])));
+    ([Public],
+     Method
+     (Int, Name ("getCash"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("cash")))]))));
+    ([Public],
+     Method
+     (Void, Name ("setCash"), [(Int, Name ("c"))],
+      Some (StmtBlock ([Expression (Assign
+                                    (FieldAccess (This, Identifier ("cash")),
+                                     Identifier ("c")))]))));
+    ([Public],
+     Constructor
+     (Name ("Child"),
+      [(Int, Name ("w")); (Int, Name ("a")); (Int, Name ("c"))],
+      StmtBlock ([Expression (CallMethod
+                              (Super, [Identifier ("w"); Identifier ("a")]));
+                  Expression (Assign (Identifier ("cash"), Identifier ("c")))])))])
+  }
+  
+  "Person" ->
+   { this_key = "Person";
+     field_table =
+     [["weight" ->
+        { f_type = Int; key = "weight"; is_mutable = false; sub_tree = None }
+     
+  "age" -> { f_type = Int; key = "age"; is_mutable = false; sub_tree = None }
+  
+  ]]
+  ;
+  method_table =
+  [["getWeight@@" ->
+     { m_type = Int; is_abstract = false; is_overridable = true;
+       has_override_annotation = false; args = []; key = "getWeight@@";
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+  
+  "getAge@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = false;
+     has_override_annotation = false; args = []; key = "getAge@@";
+     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
+  
+  "toString@@" ->
+   { m_type = String; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "toString@@";
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+  
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["PersonIntInt$$" ->
+     { key = "PersonIntInt$$"; args = [(Int, Name ("w")); (Int, Name ("a"))];
+       body =
+       StmtBlock ([Expression (Assign
+                               (FieldAccess (This, Identifier ("weight")),
+                                Identifier ("w")));
+                   Expression (Assign
+                               (FieldAccess (This, Identifier ("age")),
+                                Identifier ("a")))])
+       }
+  
+  ]]
+  ; children_keys = ["Child"]; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Object");
+  dec_tree =
+  Class
+  ([], Name ("Person"), None,
+   [([Public], VarField (Int, [(Name ("age"), None)]));
+    ([Public], VarField (Int, [(Name ("weight"), None)]));
+    ([Public],
+     Constructor
+     (Name ("Person"), [(Int, Name ("w")); (Int, Name ("a"))],
+      StmtBlock ([Expression (Assign
+                              (FieldAccess (This, Identifier ("weight")),
+                               Identifier ("w")));
+                  Expression (Assign
+                              (FieldAccess (This, Identifier ("age")),
+                               Identifier ("a")))])));
+    ([Public],
+     Method
+     (Int, Name ("getWeight"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("weight")))]))));
+    ([Final; Public],
+     Method
+     (Int, Name ("getAge"), [],
+      Some (StmtBlock ([Return (Some (Identifier ("age")))]))))])
+  }
+  
+  "Object" ->
+   { this_key = "Object"; field_table = [[]]
+                          ;
+     method_table =
+     [["toString@@" ->
+        { m_type = String; is_abstract = false; is_overridable = true;
+          has_override_annotation = false; args = []; key = "toString@@";
+          body =
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Object$$" -> { key = "Object$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = ["Main"; "Person"]; is_abstract = false;
+  is_inheritable = true; parent_key = None;
+  dec_tree =
+  Class
+  ([Public], Name ("Object"), None,
+   [([Public],
+     Method
+     (Int, Name ("equals"), [(ClassName ("Object"), Name ("obj"))],
+      Some (StmtBlock ([If
+                        (Equal (This, Identifier ("obj")),
+                         Return (Some (Const (VInt (1)))),
+                         Some (Return (Some (Const (VInt (0))))))]))));
+    ([Public],
+     Method
+     (String, Name ("toString"), [],
+      Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]))))])
+  }
+  
+  "Main" ->
+   { this_key = "Main"; field_table = [[]]
+                        ;
+     method_table =
+     [["toString@@" ->
+        { m_type = String; is_abstract = false; is_overridable = true;
+          has_override_annotation = false; args = []; key = "toString@@";
+          body =
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     
+  "equalsClassName Object@@" ->
+   { m_type = Int; is_abstract = false; is_overridable = true;
+     has_override_annotation = false;
+     args = [(ClassName ("Object"), Name ("obj"))];
+     key = "equalsClassName Object@@";
+     body =
+     Some (StmtBlock ([If
+                       (Equal (This, Identifier ("obj")),
+                        Return (Some (Const (VInt (1)))),
+                        Some (Return (Some (Const (VInt (0))))))]))
+     }
+  
+  "main@@" ->
+   { m_type = Void; is_abstract = false; is_overridable = true;
+     has_override_annotation = false; args = []; key = "main@@";
+     body =
+     Some (StmtBlock ([VarDec
+                       (None, ClassName ("Person"),
+                        [(Name ("p"),
+                          Some (ClassCreate
+                                (Name ("Person"),
+                                 [Const (VInt (80)); Const (VInt (45))])))])]))
+     }
+  
+  ]]
+  ;
+  constructor_table =
+  [["Main$$" -> { key = "Main$$"; args = []; body = StmtBlock ([]) }
+  
+  ]]
+  ; children_keys = []; is_abstract = false; is_inheritable = true;
+  parent_key = Some ("Object");
+  dec_tree =
+  Class
+  ([Public], Name ("Main"), None,
+   [([Public; Static],
+     Method
+     (Void, Name ("main"), [],
+      Some (StmtBlock ([VarDec
+                        (None, ClassName ("Person"),
+                         [(Name ("p"),
+                           Some (ClassCreate
+                                 (Name ("Person"),
+                                  [Const (VInt (80)); Const (VInt (45))])))])]))))])
+  }
+  
   -------------------@OVERRIDE_ERRORS-------------------
   
   @Override annotation on not overriden method
+  ]]
 
 
 
 
   $ (cd ../../../../default && demos/demoInterpreter.exe)
   ------------------- FIRST TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "a" ->
-     { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 1;
-       v_value = VInt (1); scope_level = 0 }
+    [["a" ->
+       { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 1;
+         v_value = VInt (1); scope_level = 0 }
     
   "b" ->
    { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 1;
@@ -738,6 +1131,7 @@
    { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
      v_value = VInt (3); scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VInt (3)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -746,11 +1140,13 @@
   }
   
   ------------------- LITTLE ARITHMETIC TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "val2" ->
-     { v_type = Int; v_key = "val2"; is_mutable = false; assignment_count = 1;
-       v_value = VInt (3); scope_level = 0 }
+    [["val2" ->
+       { v_type = Int; v_key = "val2"; is_mutable = false;
+         assignment_count = 1; v_value = VInt (3); scope_level = 0 }
     
   "s1" ->
    { v_type = String; v_key = "s1"; is_mutable = false; assignment_count = 1;
@@ -808,6 +1204,7 @@
    { v_type = Int; v_key = "c"; is_mutable = false; assignment_count = 1;
      v_value = VInt (3); scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VString ("2b")); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -816,11 +1213,13 @@
   }
   
   ------------------- BOOLEAN EXPRESSIONS TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "s1" ->
-     { v_type = String; v_key = "s1"; is_mutable = false; assignment_count = 1;
-       v_value = VString ("a"); scope_level = 0 }
+    [["s1" ->
+       { v_type = String; v_key = "s1"; is_mutable = false;
+         assignment_count = 1; v_value = VString ("a"); scope_level = 0 }
     
   "a" ->
    { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 1;
@@ -840,14 +1239,15 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (30);
-                            is_mutable = false; assignment_count = 0 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (30);
+                              is_mutable = false; assignment_count = 0 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Alice");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 2 })); scope_level = 0
   }
   
@@ -869,14 +1269,15 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (20);
-                            is_mutable = false; assignment_count = 0 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (20);
+                              is_mutable = false; assignment_count = 0 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
@@ -886,14 +1287,15 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (20);
-                            is_mutable = false; assignment_count = 0 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (20);
+                              is_mutable = false; assignment_count = 0 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
@@ -945,6 +1347,7 @@
    { v_type = Int; v_key = "andVal"; is_mutable = false; assignment_count = 2;
      v_value = VInt (1); scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VInt (1)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -953,11 +1356,13 @@
   }
   
   ------------------- SIMPLE METHOD CALL TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "a2" ->
-     { v_type = Int; v_key = "a2"; is_mutable = false; assignment_count = 1;
-       v_value = VInt (30); scope_level = 0 }
+    [["a2" ->
+       { v_type = Int; v_key = "a2"; is_mutable = false; assignment_count = 1;
+         v_value = VInt (30); scope_level = 0 }
     
   "a1" ->
    { v_type = Int; v_key = "a1"; is_mutable = false; assignment_count = 1;
@@ -973,17 +1378,19 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (30);
-                            is_mutable = false; assignment_count = 1 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (30);
+                              is_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
+  ]]
   ; last_expr_result = Some (VInt (30)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -992,22 +1399,26 @@
   }
   
   ------------------- UPDATE OBJECT STATE IN MAIN TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "p2" ->
-     { v_type = ClassName ("Person"); v_key = "p2"; is_mutable = false;
-       assignment_count = 1;
-       v_value =
-       VObjectRef (RObj ({ class_key = "Person";
-                           field_ref_table =
-                           "age" ->
-                            { key = "age"; f_type = Int; f_value = VInt (55);
-                              is_mutable = false; assignment_count = 1 }
-                           
+    [["p2" ->
+       { v_type = ClassName ("Person"); v_key = "p2"; is_mutable = false;
+         assignment_count = 1;
+         v_value =
+         VObjectRef (RObj ({ class_key = "Person";
+                             field_ref_table =
+                             [["age" ->
+                                { key = "age"; f_type = Int;
+                                  f_value = VInt (55); is_mutable = false;
+                                  assignment_count = 1 }
+                             
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
@@ -1017,14 +1428,15 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (55);
-                            is_mutable = false; assignment_count = 1 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (55);
+                              is_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
@@ -1038,14 +1450,15 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (55);
-                            is_mutable = false; assignment_count = 1 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (55);
+                              is_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
@@ -1055,17 +1468,19 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (55);
-                            is_mutable = false; assignment_count = 1 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (55);
+                              is_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
+  ]]
   ; last_expr_result = Some (VInt (55)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -1074,29 +1489,35 @@
   }
   
   ------------------- CHILD WORKING TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "childSecond" ->
-     { v_type = ClassName ("Child"); v_key = "childSecond"; is_mutable = false;
-       assignment_count = 1;
-       v_value =
-       VObjectRef (RObj ({ class_key = "Child";
-                           field_ref_table =
-                           "parent" ->
-                            { key = "parent"; f_type = ClassName ("Person");
-                              f_value =
-                              VObjectRef (RObj ({ class_key = "Person";
-                                                  field_ref_table =
-                                                  "age" ->
-                                                   { key = "age"; f_type = Int;
-                                                     f_value = VInt (27);
-                                                     is_mutable = false;
-                                                     assignment_count = 1 }
-                                                  
+    [["childSecond" ->
+       { v_type = ClassName ("Child"); v_key = "childSecond";
+         is_mutable = false; assignment_count = 1;
+         v_value =
+         VObjectRef (RObj ({ class_key = "Child";
+                             field_ref_table =
+                             [["parent" ->
+                                { key = "parent";
+                                  f_type = ClassName ("Person");
+                                  f_value =
+                                  VObjectRef (RObj ({ class_key = "Person";
+                                                      field_ref_table =
+                                                      [["age" ->
+                                                         { key = "age";
+                                                           f_type = Int;
+                                                           f_value = VInt (27);
+                                                           is_mutable = false;
+                                                           assignment_count = 1
+                                                           }
+                                                      
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); is_mutable = false; assignment_count = 0
   }
   
@@ -1108,6 +1529,7 @@
    { key = "name"; f_type = String; f_value = VString (""); is_mutable = false;
      assignment_count = 0 }
   
+  ]]
   ; number = 4 })); scope_level = 0
   }
   
@@ -1117,14 +1539,15 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (27);
-                            is_mutable = false; assignment_count = 1 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (27);
+                              is_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
@@ -1134,21 +1557,23 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Child";
                          field_ref_table =
-                         "parent" ->
-                          { key = "parent"; f_type = ClassName ("Person");
-                            f_value =
-                            VObjectRef (RObj ({ class_key = "Person";
-                                                field_ref_table =
-                                                "age" ->
-                                                 { key = "age"; f_type = Int;
-                                                   f_value = VInt (40);
-                                                   is_mutable = false;
-                                                   assignment_count = 0 }
-                                                
+                         [["parent" ->
+                            { key = "parent"; f_type = ClassName ("Person");
+                              f_value =
+                              VObjectRef (RObj ({ class_key = "Person";
+                                                  field_ref_table =
+                                                  [["age" ->
+                                                     { key = "age";
+                                                       f_type = Int;
+                                                       f_value = VInt (40);
+                                                       is_mutable = false;
+                                                       assignment_count = 0 }
+                                                  
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Flexer");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 3 })); is_mutable = false; assignment_count = 0
   }
   
@@ -1160,21 +1585,25 @@
    { key = "name"; f_type = String; f_value = VString ("Alice");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 2 })); scope_level = 0
   }
   
+  ]]
   ;
   last_expr_result =
   Some (VObjectRef (RObj ({ class_key = "Person";
                             field_ref_table =
-                            "age" ->
-                             { key = "age"; f_type = Int; f_value = VInt (27);
-                               is_mutable = false; assignment_count = 1 }
+                            [["age" ->
+                               { key = "age"; f_type = Int;
+                                 f_value = VInt (27); is_mutable = false;
+                                 assignment_count = 1 }
                             
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 }))); was_break = false; was_continue = false;
   was_return = false; curr_method_type = Void; is_main_scope = true;
   cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
@@ -1182,11 +1611,13 @@
   }
   
   ------------------- SCOPE TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "a" ->
-     { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 5;
-       v_value = VInt (1000); scope_level = 0 }
+    [["a" ->
+       { v_type = Int; v_key = "a"; is_mutable = false; assignment_count = 5;
+         v_value = VInt (1000); scope_level = 0 }
     
   "b" ->
    { v_type = Int; v_key = "b"; is_mutable = false; assignment_count = 4;
@@ -1200,6 +1631,7 @@
    { v_type = Int; v_key = "i"; is_mutable = false; assignment_count = 4;
      v_value = VInt (3); scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VInt (3000)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 1; cur_constr_key = None;
@@ -1208,11 +1640,13 @@
   }
   
   ------------------- MANY CYCLES TEST + ARRAY SORTING ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "n" ->
-     { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
-       v_value = VInt (11); scope_level = 0 }
+    [["n" ->
+       { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
+         v_value = VInt (11); scope_level = 0 }
     
   "arr" ->
    { v_type = Array (Int); v_key = "arr"; is_mutable = false;
@@ -1230,6 +1664,7 @@
    { v_type = Int; v_key = "i"; is_mutable = false; assignment_count = 11;
      v_value = VInt (10); scope_level = 1 }
   
+  ]]
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
@@ -1238,20 +1673,22 @@
   }
   
   ------------------- BREAK AND CONTINUE TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "b" ->
-     { v_type = Array (Int); v_key = "b"; is_mutable = false;
-       assignment_count = 1;
-       v_value =
-       VArray (Arr ({ a_type = Int;
-                      values =
-                      [VInt (0); VInt (1); VInt (2); VInt (3); VInt (4);
-                       VInt (5); VInt (6); VInt (7); VInt (8); VInt (9);
-                       VInt (10); VInt (11); VInt (12); VInt (13); VInt (14);
-                       VInt (0); VInt (0); VInt (0); VInt (0); VInt (0)];
-                      number = 2 }));
-       scope_level = 1 }
+    [["b" ->
+       { v_type = Array (Int); v_key = "b"; is_mutable = false;
+         assignment_count = 1;
+         v_value =
+         VArray (Arr ({ a_type = Int;
+                        values =
+                        [VInt (0); VInt (1); VInt (2); VInt (3); VInt (4);
+                         VInt (5); VInt (6); VInt (7); VInt (8); VInt (9);
+                         VInt (10); VInt (11); VInt (12); VInt (13); VInt (14);
+                         VInt (0); VInt (0); VInt (0); VInt (0); VInt (0)];
+                        number = 2 }));
+         scope_level = 1 }
     
   "arr" ->
    { v_type = Array (Int); v_key = "arr"; is_mutable = false;
@@ -1264,6 +1701,7 @@
                     number = 1 }));
      scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VInt (16)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
@@ -1272,15 +1710,18 @@
   }
   
   ------------------- ARRAY SORT AS FUNCTION (CHECKING CHANGE OF ARRAY STATE IN OTHER CONTEXT) ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "bubbleSorter" ->
-     { v_type = ClassName ("BubbleSorter"); v_key = "bubbleSorter";
-       is_mutable = false; assignment_count = 1;
-       v_value =
-       VObjectRef (RObj ({ class_key = "BubbleSorter"; field_ref_table = ;
-                           number = 2 }));
-       scope_level = 0 }
+    [["bubbleSorter" ->
+       { v_type = ClassName ("BubbleSorter"); v_key = "bubbleSorter";
+         is_mutable = false; assignment_count = 1;
+         v_value =
+         VObjectRef (RObj ({ class_key = "BubbleSorter";
+                             field_ref_table = [[]]
+                             ; number = 2 }));
+         scope_level = 0 }
     
   "arr" ->
    { v_type = Array (Int); v_key = "arr"; is_mutable = false;
@@ -1295,6 +1736,7 @@
                     number = 1 }));
      scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -1303,29 +1745,35 @@
   }
   
   ------------------- CHANGE OF OBJECT STATE IN OTHER CONTEXT ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "child" ->
-     { v_type = ClassName ("Child"); v_key = "child"; is_mutable = false;
-       assignment_count = 1;
-       v_value =
-       VObjectRef (RObj ({ class_key = "Child";
-                           field_ref_table =
-                           "parent" ->
-                            { key = "parent"; f_type = ClassName ("Person");
-                              f_value =
-                              VObjectRef (RObj ({ class_key = "Person";
-                                                  field_ref_table =
-                                                  "age" ->
-                                                   { key = "age"; f_type = Int;
-                                                     f_value = VInt (30);
-                                                     is_mutable = false;
-                                                     assignment_count = 1 }
-                                                  
+    [["child" ->
+       { v_type = ClassName ("Child"); v_key = "child"; is_mutable = false;
+         assignment_count = 1;
+         v_value =
+         VObjectRef (RObj ({ class_key = "Child";
+                             field_ref_table =
+                             [["parent" ->
+                                { key = "parent";
+                                  f_type = ClassName ("Person");
+                                  f_value =
+                                  VObjectRef (RObj ({ class_key = "Person";
+                                                      field_ref_table =
+                                                      [["age" ->
+                                                         { key = "age";
+                                                           f_type = Int;
+                                                           f_value = VInt (30);
+                                                           is_mutable = false;
+                                                           assignment_count = 1
+                                                           }
+                                                      
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); is_mutable = false; assignment_count = 0
   }
   
@@ -1337,6 +1785,7 @@
    { key = "name"; f_type = String; f_value = VString (""); is_mutable = false;
      assignment_count = 0 }
   
+  ]]
   ; number = 2 })); scope_level = 0
   }
   
@@ -1346,29 +1795,33 @@
      v_value =
      VObjectRef (RObj ({ class_key = "Person";
                          field_ref_table =
-                         "age" ->
-                          { key = "age"; f_type = Int; f_value = VInt (30);
-                            is_mutable = false; assignment_count = 1 }
+                         [["age" ->
+                            { key = "age"; f_type = Int; f_value = VInt (30);
+                              is_mutable = false; assignment_count = 1 }
                          
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
+  ]]
   ;
   last_expr_result =
   Some (VObjectRef (RObj ({ class_key = "Person";
                             field_ref_table =
-                            "age" ->
-                             { key = "age"; f_type = Int; f_value = VInt (30);
-                               is_mutable = false; assignment_count = 1 }
+                            [["age" ->
+                               { key = "age"; f_type = Int;
+                                 f_value = VInt (30); is_mutable = false;
+                                 assignment_count = 1 }
                             
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 }))); was_break = false; was_continue = false;
   was_return = false; curr_method_type = Void; is_main_scope = true;
   cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;
@@ -1376,21 +1829,24 @@
   }
   
   ------------------- PATTERN VISITOR TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "resPerimeter" ->
-     { v_type = Array (Int); v_key = "resPerimeter"; is_mutable = false;
-       assignment_count = 1;
-       v_value =
-       VArray (Arr ({ a_type = Int; values = [VInt (75); VInt (8); VInt (0)];
-                      number = 7 }));
-       scope_level = 0 }
+    [["resPerimeter" ->
+       { v_type = Array (Int); v_key = "resPerimeter"; is_mutable = false;
+         assignment_count = 1;
+         v_value =
+         VArray (Arr ({ a_type = Int; values = [VInt (75); VInt (8); VInt (0)];
+                        number = 7 }));
+         scope_level = 0 }
     
   "areaVisitor" ->
    { v_type = ClassName ("AreaVisitor"); v_key = "areaVisitor";
      is_mutable = false; assignment_count = 1;
      v_value =
-     VObjectRef (RObj ({ class_key = "AreaVisitor"; field_ref_table = ;
+     VObjectRef (RObj ({ class_key = "AreaVisitor"; field_ref_table = [[]]
+                                                    ;
                          number = 5 }));
      scope_level = 0 }
   
@@ -1402,29 +1858,31 @@
                     values =
                     [VObjectRef (RObj ({ class_key = "Circle";
                                          field_ref_table =
-                                         "radius" ->
-                                          { key = "radius"; f_type = Int;
-                                            f_value = VInt (5);
-                                            is_mutable = false;
-                                            assignment_count = 0 }
+                                         [["radius" ->
+                                            { key = "radius"; f_type = Int;
+                                              f_value = VInt (5);
+                                              is_mutable = false;
+                                              assignment_count = 0 }
                                          
+  ]]
   ; number = 1 }));
   VObjectRef (RObj ({ class_key = "Rectangle";
                       field_ref_table =
-                      "a" ->
-                       { key = "a"; f_type = Int; f_value = VInt (2);
-                         is_mutable = false; assignment_count = 0 }
+                      [["a" ->
+                         { key = "a"; f_type = Int; f_value = VInt (2);
+                           is_mutable = false; assignment_count = 0 }
                       
   "b" ->
    { key = "b"; f_type = Int; f_value = VInt (4); is_mutable = false;
      assignment_count = 0 }
   
+  ]]
   ; number = 2 }));
   VObjectRef (RObj ({ class_key = "Triangle";
                       field_ref_table =
-                      "a" ->
-                       { key = "a"; f_type = Int; f_value = VInt (1);
-                         is_mutable = false; assignment_count = 0 }
+                      [["a" ->
+                         { key = "a"; f_type = Int; f_value = VInt (1);
+                           is_mutable = false; assignment_count = 0 }
                       
   "b" ->
    { key = "b"; f_type = Int; f_value = VInt (1); is_mutable = false;
@@ -1434,6 +1892,7 @@
    { key = "c"; f_type = Int; f_value = VInt (1); is_mutable = false;
      assignment_count = 0 }
   
+  ]]
   ; number = 3 }))]; number = 4 })); scope_level = 0
   }
   
@@ -1449,10 +1908,12 @@
    { v_type = ClassName ("PerimeterVisitor"); v_key = "perimeterVisitor";
      is_mutable = false; assignment_count = 1;
      v_value =
-     VObjectRef (RObj ({ class_key = "PerimeterVisitor"; field_ref_table = ;
-                         number = 6 }));
+     VObjectRef (RObj ({ class_key = "PerimeterVisitor";
+                         field_ref_table = [[]]
+                         ; number = 6 }));
      scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 2; cur_constr_key = None;
@@ -1461,20 +1922,24 @@
   }
   
   ------------------- RECURSION TEST (FACTORIAL) ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "f" ->
-     { v_type = Int; v_key = "f"; is_mutable = false; assignment_count = 1;
-       v_value = VInt (120); scope_level = 0 }
+    [["f" ->
+       { v_type = Int; v_key = "f"; is_mutable = false; assignment_count = 1;
+         v_value = VInt (120); scope_level = 0 }
     
   "factorial" ->
    { v_type = ClassName ("Factorial"); v_key = "factorial"; is_mutable = false;
      assignment_count = 1;
      v_value =
-     VObjectRef (RObj ({ class_key = "Factorial"; field_ref_table = ;
+     VObjectRef (RObj ({ class_key = "Factorial"; field_ref_table = [[]]
+                                                  ;
                          number = 1 }));
      scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VInt (120)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -1483,17 +1948,20 @@
   }
   
   ------------------- RECURSION TEST (QUICK SORT) ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "n" ->
-     { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
-       v_value = VInt (16); scope_level = 0 }
+    [["n" ->
+       { v_type = Int; v_key = "n"; is_mutable = false; assignment_count = 1;
+         v_value = VInt (16); scope_level = 0 }
     
   "quickSorter" ->
    { v_type = ClassName ("QuickSorter"); v_key = "quickSorter";
      is_mutable = false; assignment_count = 1;
      v_value =
-     VObjectRef (RObj ({ class_key = "QuickSorter"; field_ref_table = ;
+     VObjectRef (RObj ({ class_key = "QuickSorter"; field_ref_table = [[]]
+                                                    ;
                          number = 2 }));
      scope_level = 0 }
   
@@ -1518,6 +1986,7 @@
    { v_type = Int; v_key = "low"; is_mutable = false; assignment_count = 1;
      v_value = VInt (0); scope_level = 0 }
   
+  ]]
   ; last_expr_result = Some (VBool (false)); was_break = false;
   was_continue = false; was_return = false; curr_method_type = Void;
   is_main_scope = true; cycle_cnt = 0; scope_level = 0; cur_constr_key = None;
@@ -1528,18 +1997,21 @@
   ------------------- ARRAY_TYPE_MISMATCH_EXCEPTION ERROR ------------------
   Wrong assign type!
   ------------------- CONSTRUCTOR CHAINING TEST ------------------
-  { cur_object = RObj ({ class_key = "Main"; field_ref_table = ; number = 0 });
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
     var_table =
-    "cat" ->
-     { v_type = ClassName ("Cat"); v_key = "cat"; is_mutable = false;
-       assignment_count = 1;
-       v_value =
-       VObjectRef (RObj ({ class_key = "Cat";
-                           field_ref_table =
-                           "age" ->
-                            { key = "age"; f_type = Int; f_value = VInt (2);
-                              is_mutable = false; assignment_count = 0 }
-                           
+    [["cat" ->
+       { v_type = ClassName ("Cat"); v_key = "cat"; is_mutable = false;
+         assignment_count = 1;
+         v_value =
+         VObjectRef (RObj ({ class_key = "Cat";
+                             field_ref_table =
+                             [["age" ->
+                                { key = "age"; f_type = Int;
+                                  f_value = VInt (2); is_mutable = false;
+                                  assignment_count = 0 }
+                             
   "hairLevel" ->
    { key = "hairLevel"; f_type = Int; f_value = VInt (30); is_mutable = false;
      assignment_count = 0 }
@@ -1548,16 +2020,18 @@
    { key = "name"; f_type = String; f_value = VString ("Mars");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 })); scope_level = 0
   }
   
+  ]]
   ;
   last_expr_result =
   Some (VObjectRef (RObj ({ class_key = "Cat";
                             field_ref_table =
-                            "age" ->
-                             { key = "age"; f_type = Int; f_value = VInt (2);
-                               is_mutable = false; assignment_count = 0 }
+                            [["age" ->
+                               { key = "age"; f_type = Int; f_value = VInt (2);
+                                 is_mutable = false; assignment_count = 0 }
                             
   "hairLevel" ->
    { key = "hairLevel"; f_type = Int; f_value = VInt (30); is_mutable = false;
@@ -1567,6 +2041,7 @@
    { key = "name"; f_type = String; f_value = VString ("Mars");
      is_mutable = false; assignment_count = 0 }
   
+  ]]
   ; number = 1 }))); was_break = false; was_continue = false;
   was_return = false; curr_method_type = Void; is_main_scope = true;
   cycle_cnt = 0; scope_level = 0; cur_constr_key = None; prev_context = None;

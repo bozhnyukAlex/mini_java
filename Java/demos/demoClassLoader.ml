@@ -6,51 +6,19 @@ open Java_lib.Interpreter.Result
 
 open Java_lib.Interpreter.ClassLoader (Java_lib.Interpreter.Result)
 
-let show_keys_list list = List.fold_left (fun s acc -> acc ^ " " ^ s) "" list
+open Java_lib.Hashtbl_p
 
-(* TODO: Это всё неплохо, но такое сложение строк будет тормозить независимо от того, OCaml это или С#. 
-Тут надо какое-то буферизиванное печатанье в строку, возможно, 
-с использование модуля Buffer (а может до кучи и модуля Format тоже)*)
-let show_hashtbl ht show =
-  match Hashtbl.length ht with
-  | 0 -> "[[]]"
-  | _ ->
-      Hashtbl.fold (fun k v acc -> acc ^ k ^ " -> " ^ show v ^ "\n") ht "[["
-      ^ "]]"
+let show_hashtbl ht pp_k pp_el = pp pp_k pp_el Format.std_formatter ht
 
-let show_field_table ht = show_hashtbl ht show_field_r
-
-let show_method_table ht = show_hashtbl ht show_method_r
-
-let show_constructor_table ht = show_hashtbl ht show_constructor_r
-
-let show_string_option = function Some s -> s | None -> "None"
-
-(* TODO: Ну здесь чуть меньше гавнокода, потому что concat вроде умеет заранее буффер выделять адекватной длины, 
-но всё равно могло быть лучше. В конце исправите.*)
-let show_class_r cr =
-  let th_key = "{ this_key : " ^ cr.this_key ^ "; " in
-  let f_table = "field_table : " ^ show_field_table cr.field_table ^ "; " in
-  let m_table = "method_table : " ^ show_method_table cr.method_table ^ "; " in
-  let c_table =
-    "constructor_table : " ^ show_constructor_table cr.constructor_table ^ "; "
-  in
-  let ch_keys = "children_keys : " ^ show_keys_list cr.children_keys ^ "; " in
-  let is_abstr = "is_abstract : " ^ Bool.to_string cr.is_abstract ^ "; " in
-  let is_inh = "is_inheritable : " ^ Bool.to_string cr.is_inheritable ^ "; " in
-  let par_key_o = "parent_key : " ^ show_string_option cr.parent_key ^ "}" in
-  String.concat ""
-    [ th_key; f_table; m_table; c_table; ch_keys; is_abstr; is_inh; par_key_o ]
-
-let show_class_table ht = show_hashtbl ht show_class_r
+let show_class_table ht = show_hashtbl ht pp_key_t pp_class_r
 
 let test_load t_val =
   match load t_val with
   | Error m ->
-      print_string (m ^ "\n");
+      print_endline m;
       Hashtbl.clear class_table
   | Ok _ ->
-      print_string (show_class_table class_table ^ "\n");
+      show_class_table class_table;
       Hashtbl.clear class_table
 
 let () =
