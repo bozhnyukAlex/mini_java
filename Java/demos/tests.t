@@ -2071,3 +2071,31 @@
   Assignment to a constant field
   ------------------- FINAL VARIABLES TEST ------------------
   Assignment to a constant variable
+  { cur_object =
+    RObj ({ class_key = "Main"; field_ref_table = [[]]
+                                ; number = 0 });
+    var_table =
+    [["summator" ->
+       { v_type = ClassName ("Summator"); v_key = "summator";
+         is_not_mutable = false; assignment_count = 1;
+         v_value =
+         VObjectRef (RObj ({ class_key = "Summator"; field_ref_table = [[]]
+                                                     ;
+                             number = 1 }));
+         scope_level = 0 }
+    
+  "a" ->
+   { v_type = Int; v_key = "a"; is_not_mutable = false; assignment_count = 1;
+     v_value = VInt (8); scope_level = 0 }
+  
+  "s" ->
+   { v_type = String; v_key = "s"; is_not_mutable = false;
+     assignment_count = 1; v_value = VString ("GGWP"); scope_level = 0 }
+  
+  ]]
+  ; last_expr_result = VString ("GGWP"); runtime_signal = NoSignal;
+  curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
+  scope_level = 0; cur_constr_key = None; prev_context = None;
+  obj_created_cnt = 1; is_creation = false; constr_affilation = None
+  }
+  

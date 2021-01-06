@@ -894,3 +894,30 @@ public class Main {
         |})
 
 let () = test_interp test_val (Hashtbl.create 100)
+
+let test_val =
+  Option.get
+    (apply parser
+       {|
+        
+public class Main {
+    public static void main() {
+        Summator summator = new Summator();
+        int a = summator.sum(5, 3);
+        String s = summator.sum("GG", "WP"); 
+    }
+}
+
+public class Summator {
+    public int sum(int a, int b) {
+        return a + b;
+    }
+    public String sum(String a, String b) {
+        return a + b;
+    }
+}
+
+
+        |})
+
+let () = test_interp test_val (Hashtbl.create 100)
