@@ -15,10 +15,6 @@ end
 module type MONADERROR = sig
   include MONAD
 
-  val get_ok : 'a t -> 'a
-
-  val get_error : 'a t -> string
-
   val error : string -> 'a t
 end
 
@@ -174,6 +170,26 @@ module ClassLoader (M : MONADERROR) = struct
         |};
       }
     in
+    let get_dec_tree =
+      match
+        apply class_declaration
+          {|public class Object {
+                        public int equals(Object obj) {
+                            if (this == obj) return 1;
+                            else return 0;
+                        }
+                        
+                        public String toString() {
+                          return "Object";
+                        }
+                    }
+      |}
+      with
+      | Some dt -> return dt
+      | None -> error "Error in parsing Object class!"
+    in
+
+    get_dec_tree >>= fun dec_tree ->
     Hashtbl.add method_table equals_key equals;
     Hashtbl.add method_table to_string_key to_string;
     Hashtbl.add ht "Object"
@@ -186,20 +202,7 @@ module ClassLoader (M : MONADERROR) = struct
         is_abstract = false;
         is_inheritable = true;
         parent_key = None;
-        dec_tree =
-          Option.get
-            (apply class_declaration
-               {|public class Object {
-                        public int equals(Object obj) {
-                            if (this == obj) return 1;
-                            else return 0;
-                        }
-                        
-                        public String toString() {
-                          return "Object";
-                        }
-                    }
-|});
+        dec_tree;
       };
     return ht
 
@@ -696,9 +699,10 @@ module Main (M : MONADERROR) = struct
         match ctx.cur_object with
         | RObj { class_key = k; _ } ->
             get_elem_if_present_m class_table k >>= fun k_clr ->
-            (* Гарантия, что такой элемент будет: при подготовке конструктора идет проверка на наличие родителя *)
-            let par_k = Option.get k_clr.parent_key in
-            return (ClassName par_k)
+            ( match k_clr.parent_key with
+            | Some k -> return k
+            | None -> error "Error: must be parent!" )
+            >>= fun par_k -> return (ClassName par_k)
         | RNull -> error "Null object in context!" )
     | CallMethod (Super, _) -> return Void
     | CallMethod (This, _) -> return Void
@@ -849,13 +853,17 @@ module Main (M : MONADERROR) = struct
   and check_classname_bool cleft_key cright_key class_table =
     (* Среди родителей правого надо найти левый. key - текущий ключ правого *)
     let rec check_parent_tree key =
-      let clr_by_key = get_ok (get_elem_if_present_m class_table key) in
-      (* Смотрим, чтобы было совпадение: смотрим текущий ключ с левым *)
-      if clr_by_key.this_key = cleft_key then true
-      else
-        match clr_by_key.parent_key with
-        | None -> false
-        | Some par_k -> check_parent_tree par_k
+      match get_elem_if_present class_table key with
+      | None -> false
+      | Some clr_by_key -> (
+          if
+            (* Смотрим, чтобы было совпадение: смотрим текущий ключ с левым *)
+            clr_by_key.this_key = cleft_key
+          then true
+          else
+            match clr_by_key.parent_key with
+            | None -> false
+            | Some par_k -> check_parent_tree par_k )
     in
     (* Иерархию перебираем у правого *)
     check_parent_tree cright_key
@@ -1390,7 +1398,10 @@ module Main (M : MONADERROR) = struct
           | None -> error "super(...) call must be in constructor!"
           | Some k -> return k )
           >>= fun _ ->
-          let curr_class_key = Option.get ctx.constr_affilation in
+          ( match ctx.constr_affilation with
+          | None -> error "super(...) call must be in constructor!"
+          | Some c_aff -> return c_aff )
+          >>= fun curr_class_key ->
           get_elem_if_present_m class_table curr_class_key
           >>= fun cur_class_r ->
           match cur_class_r.parent_key with
@@ -1452,9 +1463,10 @@ module Main (M : MONADERROR) = struct
                   (* Смотрим метод у этого класса, опять с проверкой на существование *)
                   check_method obj_class m_name args octx class_table
                   >>= fun mr ->
-                  (* Смотреть тело на None не нужно, это только если метод абстрактный,
-                     а проверка на то, чтобы нельзя было создать абстрактный класс - в вычислении ClassCreate *)
-                  let m_body = Option.get mr.body in
+                  ( match mr.body with
+                  | None -> error "Error: abstract class creation!"
+                  | Some b -> return b )
+                  >>= fun m_body ->
                   let new_var_table : (key_t, variable) Hashtbl_p.t =
                     Hashtbl.create 100
                   in
@@ -1826,7 +1838,9 @@ module Main (M : MONADERROR) = struct
                 update_object_state_exn val_evaled_ctx.cur_object var_key
                   val_evaled_ctx.last_expr_result val_evaled_ctx
                 |> fun _ -> return val_evaled_ctx
-              with Invalid_argument m -> error m
+              with
+              | Invalid_argument m -> error m
+              | Not_found -> error "No such field"
           else error "No such variable"
 
   and update_field_v obj_expr f_name val_evaled_ctx class_table =
@@ -1846,7 +1860,9 @@ module Main (M : MONADERROR) = struct
           update_object_state_exn obj_r f_name new_val obj_evaled_ctx
           |> fun _ -> return obj_evaled_ctx
       else error "No such field in class"
-    with Invalid_argument m | Failure m -> error m
+    with
+    | Invalid_argument m | Failure m -> error m
+    | Not_found -> error "No such field"
 
   and update_array_state_exn arr index new_value update_ctx =
     let rec update_states f_ht i n_val a_n =
@@ -1951,14 +1967,15 @@ module Main (M : MONADERROR) = struct
               | VObjectRef (RObj { field_ref_table = frt; number = fnum; _ }) ->
                   (* Смотрим, если номера совпадают - обновляем поле. В любом случае делаем запуск по полям этого объекта *)
                   ( if fnum = o_num then
-                    (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
-                    get_ok (get_elem_if_present_m frt f_key) |> fun old_field ->
-                    Hashtbl.replace frt f_key
-                      {
-                        old_field with
-                        f_value = n_val;
-                        assignment_count = assign_cnt;
-                      } );
+                    match get_elem_if_present frt f_key with
+                    | None -> raise Not_found
+                    | Some old_field ->
+                        Hashtbl.replace frt f_key
+                          {
+                            old_field with
+                            f_value = n_val;
+                            assignment_count = assign_cnt;
+                          } );
                   update_states frt f_key n_val o_num assign_cnt
               (* Массив объектов - бежим по нему, если объект - бежим по его полям. При совпадении номера еще и обновляем *)
               | VArray (Arr { a_type = ClassName _; values = v_list; _ }) ->
@@ -1968,15 +1985,15 @@ module Main (M : MONADERROR) = struct
                       | VObjectRef
                           (RObj { field_ref_table = frt; number = c_num; _ }) ->
                           ( if c_num = o_num then
-                            (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
-                            get_ok (get_elem_if_present_m frt f_key)
-                            |> fun old_field ->
-                            Hashtbl.replace frt f_key
-                              {
-                                old_field with
-                                f_value = n_val;
-                                assignment_count = assign_cnt;
-                              } );
+                            match get_elem_if_present frt f_key with
+                            | None -> raise Not_found
+                            | Some old_field ->
+                                Hashtbl.replace frt f_key
+                                  {
+                                    old_field with
+                                    f_value = n_val;
+                                    assignment_count = assign_cnt;
+                                  } );
                           update_states frt f_key n_val o_num assign_cnt
                       | _ -> ())
                     v_list
@@ -1992,17 +2009,17 @@ module Main (M : MONADERROR) = struct
           (*  Если значение - какой-то объект *)
           | VObjectRef (RObj { field_ref_table = frt; number = fnum; _ }) ->
               if o_num = fnum then (
-                (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
-                get_ok (get_elem_if_present_m frt f_key)
-                |> fun old_field ->
-                Hashtbl.replace frt f_key
-                  {
-                    old_field with
-                    f_value = n_val;
-                    assignment_count = assign_cnt;
-                  };
-                update_states frt f_key n_val o_num assign_cnt
-                (* Номер не совпал - запускаем рекурсивный обход полей *)
+                match get_elem_if_present frt f_key with
+                | None -> raise Not_found
+                | Some old_field ->
+                    Hashtbl.replace frt f_key
+                      {
+                        old_field with
+                        f_value = n_val;
+                        assignment_count = assign_cnt;
+                      };
+                    update_states frt f_key n_val o_num assign_cnt
+                    (* Номер не совпал - запускаем рекурсивный обход полей *)
                 )
               else update_states frt f_key n_val o_num assign_cnt
           (* Массив объектов - пробегаемся по элементам, видим объект - запускаем обход по его таблице полей с обновлением при совпадении номера *)
@@ -2013,15 +2030,15 @@ module Main (M : MONADERROR) = struct
                   | VObjectRef
                       (RObj { field_ref_table = frt; number = c_num; _ }) ->
                       ( if c_num = o_num then
-                        (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
-                        get_ok (get_elem_if_present_m frt f_key)
-                        |> fun old_field ->
-                        Hashtbl.replace frt f_key
-                          {
-                            old_field with
-                            f_value = n_val;
-                            assignment_count = assign_cnt;
-                          } )
+                        match get_elem_if_present frt f_key with
+                        | None -> raise Not_found
+                        | Some old_field ->
+                            Hashtbl.replace frt f_key
+                              {
+                                old_field with
+                                f_value = n_val;
+                                assignment_count = assign_cnt;
+                              } )
                       |> fun () ->
                       update_states frt f_key n_val o_num assign_cnt
                   | _ -> ())
@@ -2034,10 +2051,10 @@ module Main (M : MONADERROR) = struct
       | Some prev_ctx -> helper_update f_key n_val prev_ctx o_num assign_cnt
     in
     get_obj_info_exn obj |> fun (_, object_frt, object_number) ->
-    let assign_cnt =
-      (*Мы обновляем поле у уже созданного проверенного объекта, а значит поле мы найдем*)
-      (get_ok (get_elem_if_present_m object_frt field_key)).assignment_count + 1
-    in
+    ( match get_elem_if_present object_frt field_key with
+    | None -> raise Not_found
+    | Some f -> f.assignment_count + 1 )
+    |> fun assign_cnt ->
     helper_update field_key new_value update_ctx object_number assign_cnt
 
   and prepare_table_with_args_exn ht args_l m_arg_list pr_ctx class_table =
