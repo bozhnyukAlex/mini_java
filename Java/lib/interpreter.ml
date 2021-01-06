@@ -15,6 +15,10 @@ end
 module type MONADERROR = sig
   include MONAD
 
+  val get_ok : 'a t -> 'a
+
+  val get_error : 'a t -> string
+
   val error : string -> 'a t
 end
 
@@ -26,6 +30,10 @@ module Result = struct
   let return = Result.ok
 
   let error = Result.error
+
+  let get_ok = Result.get_ok
+
+  let get_error = Result.get_error
 
   let ( >> ) x f = x >>= fun _ -> f
 end
@@ -1326,8 +1334,10 @@ module Main (M : MONADERROR) = struct
             prepare_constructor_block constr_r.body cur_class_r
             >>= fun c_body ->
             (*Подготавливаем таблицу аргументов в контексте без локальных переменных, остальное остается прежним*)
-            prepare_table_with_args (Hashtbl.create 100) args constr_r.args ctx
-              class_table
+            ( try
+                prepare_table_with_args_exn (Hashtbl.create 100) args
+                  constr_r.args ctx class_table
+              with Invalid_argument m -> error m )
             >>= fun (vt, vctx) ->
             (* Контекст работы с телом: текущий объект, но посчитаны все аргументы и распиханы по таблице переменных *)
             eval_stmt c_body
@@ -1361,10 +1371,13 @@ module Main (M : MONADERROR) = struct
               check_constructor par_r args ctx class_table >>= fun constr_r ->
               prepare_constructor_block constr_r.body par_r
               >>= fun par_constr_body ->
-              prepare_table_with_args (Hashtbl.create 100) args constr_r.args
-                (* ctx - включает в себя текущий объект внешнего конструктора, таблицу переменных в аргументах внешнего конструктора *)
-                ctx class_table
-              >>= fun (vt, vctx) ->
+              ( try
+                  prepare_table_with_args_exn (Hashtbl.create 100) args
+                    constr_r.args ctx class_table
+                with Invalid_argument m -> error m )
+              (* ctx - включает в себя текущий объект внешнего конструктора, таблицу переменных в аргументах внешнего конструктора *)
+              >>=
+              fun (vt, vctx) ->
               eval_stmt par_constr_body
                 {
                   vctx with
@@ -1416,8 +1429,10 @@ module Main (M : MONADERROR) = struct
                       let new_var_table : (key_t, variable) Hashtbl_p.t =
                         Hashtbl.create 100
                       in
-                      prepare_table_with_args new_var_table args mr.args octx
-                        class_table
+                      ( try
+                          prepare_table_with_args_exn new_var_table args mr.args
+                            octx class_table
+                        with Invalid_argument m -> error m )
                       >>= fun (new_vt, new_ctx) ->
                       (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
                       eval_stmt m_body
@@ -1646,8 +1661,10 @@ module Main (M : MONADERROR) = struct
             fun initres_ctx ->
             (* Контекст, в котором должна готовиться таблица аргументов - текущий!!!!*)
             let get_new_var_table =
-              prepare_table_with_args (Hashtbl.create 100) c_args constr_r.args
-                ctx class_table
+              try
+                prepare_table_with_args_exn (Hashtbl.create 100) c_args
+                  constr_r.args ctx class_table
+              with Invalid_argument m -> error m
             in
             get_new_var_table >>= fun (vt, _) ->
             prepare_constructor_block constr_r.body obj_class >>= fun c_body ->
@@ -1997,27 +2014,31 @@ module Main (M : MONADERROR) = struct
       helper_update field_key new_value update_ctx object_number assign_cnt
     with Invalid_argument m -> raise (Invalid_argument m)
 
-  and prepare_table_with_args ht args_l m_arg_list pr_ctx class_table =
-    let rec helper_add h_ht arg_expr_list arg_mr_list help_ctx =
-      match (arg_expr_list, arg_mr_list) with
-      (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
-         Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
-      | [], [] -> return (h_ht, help_ctx)
-      | arg :: args, (head_type, Name head_name) :: pairs ->
-          eval_expr arg help_ctx class_table >>= fun he_ctx ->
-          Hashtbl.add h_ht head_name
-            {
-              v_type = head_type;
-              v_key = head_name;
-              is_not_mutable = true;
-              assignment_count = 1;
-              v_value = he_ctx.last_expr_result;
-              scope_level = 0;
-            };
-          helper_add h_ht args pairs he_ctx
-      | _ -> error "No such instance in class!"
-    in
-    helper_add ht args_l m_arg_list pr_ctx
+  and prepare_table_with_args_exn ht args_l m_arg_list pr_ctx class_table =
+    (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
+           Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
+    return
+      (List.fold_left2
+         (fun (h_ht, hctx) arg tn_pair ->
+           match tn_pair with
+           | head_type, Name head_name ->
+               eval_expr arg hctx class_table |> fun he_ctx_t ->
+               let he_ctx =
+                 try get_ok he_ctx_t
+                 with Invalid_argument _ ->
+                   raise (Invalid_argument (get_error he_ctx_t))
+               in
+               Hashtbl.add h_ht head_name
+                 {
+                   v_type = head_type;
+                   v_key = head_name;
+                   is_not_mutable = true;
+                   assignment_count = 1;
+                   v_value = he_ctx.last_expr_result;
+                   scope_level = 0;
+                 };
+               (h_ht, he_ctx))
+         (ht, pr_ctx) args_l m_arg_list)
 
   and prepare_constructor_block curr_body curr_class_r =
     match (curr_body, curr_class_r.parent_key) with
