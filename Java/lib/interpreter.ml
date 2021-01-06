@@ -511,7 +511,7 @@ module Main (M : MONADERROR) = struct
   type context = {
     cur_object : obj_ref;
     var_table : (key_t, variable) Hashtbl_p.t;
-    last_expr_result : value option;
+    last_expr_result : value;
     runtime_signal : signal;
     curr_method_type : type_t;
     is_main_scope : bool;
@@ -532,7 +532,7 @@ module Main (M : MONADERROR) = struct
       {
         cur_object;
         var_table;
-        last_expr_result = None;
+        last_expr_result = VVoid;
         runtime_signal = NoSignal;
         curr_method_type = Void;
         is_main_scope = true;
@@ -1009,7 +1009,7 @@ module Main (M : MONADERROR) = struct
           else
             eval_expr bexpr ctx class_table >>= fun bectx ->
             match bectx.last_expr_result with
-            | Some (VBool false) -> (
+            | VBool false -> (
                 match s with
                 | StmtBlock _ ->
                     return
@@ -1023,7 +1023,7 @@ module Main (M : MONADERROR) = struct
                     return
                       { bectx with nested_loops_cnt = ctx.nested_loops_cnt - 1 }
                 )
-            | Some (VBool true) ->
+            | VBool true ->
                 eval_stmt s bectx class_table >>= fun lctx ->
                 (* Вылетел return - все прерываем, возвращаем контекст *)
                 if lctx.runtime_signal = WasReturn then return lctx
@@ -1057,7 +1057,7 @@ module Main (M : MONADERROR) = struct
         eval_expr bexpr sctx class_table >>= fun bectx ->
         let was_main = bectx.is_main_scope in
         match bectx.last_expr_result with
-        | Some (VBool true) -> (
+        | VBool true -> (
             match then_stmt with
             | StmtBlock _ ->
                 eval_stmt then_stmt
@@ -1066,7 +1066,7 @@ module Main (M : MONADERROR) = struct
                 >>= fun tctx ->
                 return (dec_scope_level { tctx with is_main_scope = was_main })
             | _ -> eval_stmt then_stmt bectx class_table )
-        | Some (VBool false) -> (
+        | VBool false -> (
             match else_stmt_o with
             | Some else_stmt -> (
                 match else_stmt with
@@ -1104,12 +1104,12 @@ module Main (M : MONADERROR) = struct
           else
             (*Стандартно: смотрим результат бул-выражения, если true - вычислить тело и инкременты после*)
             ( match bexpr_o with
-            | None -> return { ctx with last_expr_result = Some (VBool true) }
+            | None -> return { ctx with last_expr_result = VBool true }
             | Some bexpr -> eval_expr bexpr ctx class_table )
             >>= fun bectx ->
             match bectx.last_expr_result with
             (* Увидели false - значит уже не циклимся, возвращаем контекст с уменьшенным счетчиком вложенных циклов и scope*)
-            | Some (VBool false) ->
+            | VBool false ->
                 delete_scope_var
                   {
                     bectx with
@@ -1117,7 +1117,7 @@ module Main (M : MONADERROR) = struct
                     scope_level = bectx.scope_level - 1;
                     is_main_scope = was_main;
                   }
-            | Some (VBool true) ->
+            | VBool true ->
                 let rec eval_inc_expr_list e_list c =
                   match e_list with
                   | [] -> return c
@@ -1158,11 +1158,7 @@ module Main (M : MONADERROR) = struct
         | None when sctx.curr_method_type = Void ->
             (* Если тип Void - выходим со значением VVoid поставленным флагом, что был return *)
             return
-              {
-                sctx with
-                last_expr_result = Some VVoid;
-                runtime_signal = WasReturn;
-              }
+              { sctx with last_expr_result = VVoid; runtime_signal = WasReturn }
         | None -> error "Return value type mismatch"
         (* Если есть выражение - смотрим, чтобы тип совпадал с типом, возвращаемым методом *)
         | Some rexpr ->
@@ -1224,7 +1220,7 @@ module Main (M : MONADERROR) = struct
                               v_key = name;
                               is_not_mutable = is_final final_mod_o;
                               assignment_count = 1;
-                              v_value = Option.get vare_ctx.last_expr_result;
+                              v_value = vare_ctx.last_expr_result;
                               scope_level = vare_ctx.scope_level;
                             };
                           return vare_ctx
@@ -1265,18 +1261,18 @@ module Main (M : MONADERROR) = struct
       let eval_op left right op =
         eval_expr left ctx class_table >>= fun lctx ->
         eval_expr right lctx class_table >>= fun rctx ->
-        let l_value = Option.get lctx.last_expr_result in
-        let r_value = Option.get rctx.last_expr_result in
+        let l_value = lctx.last_expr_result in
+        let r_value = rctx.last_expr_result in
         let new_value = op l_value r_value in
-        try return { rctx with last_expr_result = Some new_value } with
+        try return { rctx with last_expr_result = new_value } with
         | Invalid_argument m -> error m
         | Division_by_zero -> error "Division by zero!"
       in
       let eval_un v_expr op =
         eval_expr v_expr ctx class_table >>= fun vctx ->
-        let v = Option.get vctx.last_expr_result in
+        let v = vctx.last_expr_result in
         let new_v = op v in
-        try return { vctx with last_expr_result = Some new_v }
+        try return { vctx with last_expr_result = new_v }
         with Invalid_argument m -> error m
       in
       match e_expr with
@@ -1294,20 +1290,19 @@ module Main (M : MONADERROR) = struct
       | MoreOrEqual (left, right) -> eval_op left right ( >>== )
       | Equal (left, right) -> eval_op left right ( === )
       | NotEqual (left, right) -> eval_op left right ( !=! )
-      | Const v -> return { ctx with last_expr_result = Some v }
+      | Const v -> return { ctx with last_expr_result = v }
       | Identifier id -> (
           match get_elem_if_present ctx.var_table id with
           | Some var_by_id ->
-              return { ctx with last_expr_result = Some var_by_id.v_value }
+              return { ctx with last_expr_result = var_by_id.v_value }
           | None -> (
               try
                 get_obj_info_exn ctx.cur_object |> fun (_, frt, _) ->
                 match get_elem_if_present frt id with
-                | Some f ->
-                    return { ctx with last_expr_result = Some f.f_value }
+                | Some f -> return { ctx with last_expr_result = f.f_value }
                 | None -> error "No such variable or field!"
               with Invalid_argument m | Failure m -> error m ) )
-      | Null -> return { ctx with last_expr_result = Some (VObjectRef RNull) }
+      | Null -> return { ctx with last_expr_result = VObjectRef RNull }
       (* Эта штука исполняется в стейтмент-блоке *)
       | CallMethod (This, args) ->
           (* Должна быть проверка на то, что мы в конструкторе!*)
@@ -1342,7 +1337,7 @@ module Main (M : MONADERROR) = struct
             return
               {
                 res_ctx with
-                last_expr_result = Some VVoid;
+                last_expr_result = VVoid;
                 var_table = ctx.var_table;
                 constr_affilation = ctx.constr_affilation;
                 is_creation = true;
@@ -1385,26 +1380,24 @@ module Main (M : MONADERROR) = struct
               return
                 {
                   res_ctx with
-                  last_expr_result = Some VVoid;
+                  last_expr_result = VVoid;
                   var_table = ctx.var_table;
                   constr_affilation = ctx.constr_affilation;
                   is_creation = true;
                 } )
-      | This ->
-          return
-            { ctx with last_expr_result = Some (VObjectRef ctx.cur_object) }
+      | This -> return { ctx with last_expr_result = VObjectRef ctx.cur_object }
       | FieldAccess (obj_expr, Identifier f_key) -> (
           eval_expr obj_expr ctx class_table >>= fun octx ->
-          let obj = Option.get octx.last_expr_result in
+          let obj = octx.last_expr_result in
           match obj with
           | VObjectRef (RObj { field_ref_table = frt; _ }) ->
               (* Смело пользуемся Option.get, потому что перед этим была проверка типов, в ней проверяется наличие этого поля у класса*)
               let fld = Option.get (Hashtbl.find_opt frt f_key) in
-              return { octx with last_expr_result = Some fld.f_value }
+              return { octx with last_expr_result = fld.f_value }
           | _ -> error "Must be non-null object!" )
       | FieldAccess (obj_expr, CallMethod (Identifier m_name, args)) -> (
           eval_expr obj_expr ctx class_table >>= fun octx ->
-          let obj = Option.get octx.last_expr_result in
+          let obj = octx.last_expr_result in
           match obj with
           | VObjectRef obj_ref -> (
               match obj_ref with
@@ -1431,7 +1424,7 @@ module Main (M : MONADERROR) = struct
                         {
                           cur_object = obj_ref;
                           var_table = new_vt;
-                          last_expr_result = None;
+                          last_expr_result = VVoid;
                           runtime_signal = NoSignal;
                           curr_method_type = mr.m_type;
                           is_main_scope = false;
@@ -1466,25 +1459,21 @@ module Main (M : MONADERROR) = struct
       | ArrayAccess (arr_expr, index_expr) -> (
           eval_expr arr_expr ctx class_table >>= fun arrctx ->
           eval_expr index_expr ctx class_table >>= fun indctx ->
-          let arr_v = Option.get arrctx.last_expr_result in
-          let ind_v = Option.get indctx.last_expr_result in
+          let arr_v = arrctx.last_expr_result in
+          let ind_v = indctx.last_expr_result in
           match arr_v with
           | VArray (Arr { values = a_values; _ }) -> (
               match ind_v with
               | VInt i when i < 0 || i >= List.length a_values ->
                   error "ArrayOutOfBoundsException"
               | VInt i ->
-                  return
-                    {
-                      indctx with
-                      last_expr_result = Some (List.nth a_values i);
-                    }
+                  return { indctx with last_expr_result = List.nth a_values i }
               | _ -> error "Index must be int!" )
           | VArray ANull -> error "NullPointerException"
           | _ -> error "Must be array!" )
       | ArrayCreateSized (arr_type, size_expr) -> (
           eval_expr size_expr ctx class_table >>= fun szctx ->
-          let size_v = Option.get szctx.last_expr_result in
+          let size_v = szctx.last_expr_result in
           let init_v = get_init_value_of_type arr_type in
           match size_v with
           | VInt size ->
@@ -1492,14 +1481,13 @@ module Main (M : MONADERROR) = struct
                 {
                   szctx with
                   last_expr_result =
-                    Some
-                      (VArray
-                         (Arr
-                            {
-                              a_type = arr_type;
-                              values = make_list_of_elem init_v size;
-                              number = szctx.obj_created_cnt + 1;
-                            }));
+                    VArray
+                      (Arr
+                         {
+                           a_type = arr_type;
+                           values = make_list_of_elem init_v size;
+                           number = szctx.obj_created_cnt + 1;
+                         });
                   obj_created_cnt = szctx.obj_created_cnt + 1;
                 }
           | _ -> error "Size must be int!" )
@@ -1510,7 +1498,7 @@ module Main (M : MONADERROR) = struct
               | [] -> return (acc, hctx)
               | e :: es ->
                   eval_expr e hctx class_table >>= fun ectx ->
-                  let head_val = Option.get ectx.last_expr_result in
+                  let head_val = ectx.last_expr_result in
                   helper (acc @ [ head_val ]) es ectx
             in
             helper [] ex_list fctx
@@ -1521,9 +1509,8 @@ module Main (M : MONADERROR) = struct
             {
               ctx with
               last_expr_result =
-                Some
-                  (VArray
-                     (Arr { a_type; values; number = r_ctx.obj_created_cnt + 1 }));
+                VArray
+                  (Arr { a_type; values; number = r_ctx.obj_created_cnt + 1 });
               obj_created_cnt = r_ctx.obj_created_cnt + 1;
             }
       | ClassCreate (Name class_name, c_args) ->
@@ -1564,7 +1551,7 @@ module Main (M : MONADERROR) = struct
                             {
                               key = f_name;
                               f_type = curr_f_type;
-                              f_value = Option.get fe_ctx.last_expr_result;
+                              f_value = fe_ctx.last_expr_result;
                               is_not_mutable = is_mutable_field f_name;
                               assignment_count = 1;
                             };
@@ -1642,7 +1629,7 @@ module Main (M : MONADERROR) = struct
               {
                 cur_object = new_object;
                 var_table = Hashtbl.create 100;
-                last_expr_result = None;
+                last_expr_result = VVoid;
                 runtime_signal = NoSignal;
                 curr_method_type = Void;
                 is_main_scope = false;
@@ -1680,14 +1667,13 @@ module Main (M : MONADERROR) = struct
             return
               {
                 ctx with
-                last_expr_result = Some (VObjectRef c_ctx.cur_object);
+                last_expr_result = VObjectRef c_ctx.cur_object;
                 runtime_signal = NoSignal;
                 obj_created_cnt = c_ctx.obj_created_cnt;
               }
       | Assign (Identifier var_key, val_expr) ->
           eval_expr val_expr ctx class_table >>= fun val_evaled_ctx ->
-          update_identifier_v var_key
-            (Option.get val_evaled_ctx.last_expr_result)
+          update_identifier_v var_key val_evaled_ctx.last_expr_result
             val_evaled_ctx
       | Assign (FieldAccess (obj_expr, Identifier f_name), val_expr) ->
           eval_expr val_expr ctx class_table >>= fun val_evaled_ctx ->
@@ -1698,16 +1684,15 @@ module Main (M : MONADERROR) = struct
           >>= fun arr_evaled_ctx ->
           eval_expr index_expr arr_evaled_ctx class_table
           >>= fun index_evaled_ctx ->
-          match Option.get arr_evaled_ctx.last_expr_result with
+          match arr_evaled_ctx.last_expr_result with
           | VArray arr -> (
-              match Option.get index_evaled_ctx.last_expr_result with
+              match index_evaled_ctx.last_expr_result with
               | VInt i -> (
-                  let new_val = Option.get val_evaled_ctx.last_expr_result in
+                  let new_val = val_evaled_ctx.last_expr_result in
                   try
                     update_array_state_exn arr i new_val index_evaled_ctx
                     |> fun _ ->
-                    return
-                      { index_evaled_ctx with last_expr_result = Some new_val }
+                    return { index_evaled_ctx with last_expr_result = new_val }
                   with Invalid_argument m | Failure m -> error m )
               | _ -> error "Wrong type for array index!" )
           | _ -> error "Wrong type for array asssignment!" )
@@ -1793,24 +1778,20 @@ module Main (M : MONADERROR) = struct
             check_assign_cnt_f old_field >>= fun _ ->
             if val_evaled_ctx.is_creation then
               Hashtbl.replace cur_frt var_key
-                {
-                  old_field with
-                  f_value = Option.get val_evaled_ctx.last_expr_result;
-                }
+                { old_field with f_value = val_evaled_ctx.last_expr_result }
               |> fun _ -> return val_evaled_ctx
             else
               try
                 update_object_state_exn val_evaled_ctx.cur_object var_key
-                  (Option.get val_evaled_ctx.last_expr_result)
-                  val_evaled_ctx
+                  val_evaled_ctx.last_expr_result val_evaled_ctx
                 |> fun _ -> return val_evaled_ctx
               with Invalid_argument m -> error m
           else error "No such variable"
 
   and update_field_v obj_expr f_name val_evaled_ctx class_table =
     eval_expr obj_expr val_evaled_ctx class_table >>= fun obj_evaled_ctx ->
-    let obj_r = get_obj_value (Option.get obj_evaled_ctx.last_expr_result) in
-    let new_val = Option.get val_evaled_ctx.last_expr_result in
+    let obj_r = get_obj_value obj_evaled_ctx.last_expr_result in
+    let new_val = val_evaled_ctx.last_expr_result in
     try
       get_obj_info_exn obj_r |> fun (_, frt, _) ->
       if Hashtbl.mem frt f_name then
@@ -1818,10 +1799,7 @@ module Main (M : MONADERROR) = struct
         check_assign_cnt_f old_field >>= fun _ ->
         if obj_evaled_ctx.is_creation then
           Hashtbl.replace frt f_name
-            {
-              old_field with
-              f_value = Option.get val_evaled_ctx.last_expr_result;
-            }
+            { old_field with f_value = val_evaled_ctx.last_expr_result }
           |> fun _ -> return obj_evaled_ctx
         else
           update_object_state_exn obj_r f_name new_val obj_evaled_ctx
@@ -1857,18 +1835,17 @@ module Main (M : MONADERROR) = struct
                                     number = cur_num;
                                   }))
                             i n_val;
-                      }
-                    |> fun () ->
-                    match at with
-                    | ClassName _ ->
-                        List.iter
-                          (fun v ->
-                            match v with
-                            | VObjectRef (RObj { field_ref_table = frt; _ }) ->
-                                update_states frt i n_val a_n
-                            | _ -> ())
-                          cur_values
-                    | _ -> () )
+                      };
+                  match at with
+                  | ClassName _ ->
+                      List.iter
+                        (fun v ->
+                          match v with
+                          | VObjectRef (RObj { field_ref_table = frt; _ }) ->
+                              update_states frt i n_val a_n
+                          | _ -> ())
+                        cur_values
+                  | _ -> () )
               (* Если не-null объект - рекурсивный запуск по его таблице полей  *)
               | VObjectRef (RObj { field_ref_table = frt; _ }) ->
                   update_states frt i n_val a_n
@@ -2034,7 +2011,7 @@ module Main (M : MONADERROR) = struct
               v_key = head_name;
               is_not_mutable = true;
               assignment_count = 1;
-              v_value = Option.get he_ctx.last_expr_result;
+              v_value = he_ctx.last_expr_result;
               scope_level = 0;
             };
           helper_add h_ht args pairs he_ctx

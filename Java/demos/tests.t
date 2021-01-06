@@ -1138,7 +1138,7 @@
      v_value = VInt (3); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (3)); runtime_signal = NoSignal;
+  ; last_expr_result = VInt (3); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 0; is_creation = false; constr_affilation = None
@@ -1210,7 +1210,7 @@
      v_value = VInt (3); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VString ("2b")); runtime_signal = NoSignal;
+  ; last_expr_result = VString ("2b"); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 0; is_creation = false; constr_affilation = None
@@ -1352,7 +1352,7 @@
      assignment_count = 2; v_value = VInt (1); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (1)); runtime_signal = NoSignal;
+  ; last_expr_result = VInt (1); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
@@ -1394,7 +1394,7 @@
   }
   
   ]]
-  ; last_expr_result = Some (VInt (30)); runtime_signal = NoSignal;
+  ; last_expr_result = VInt (30); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
@@ -1483,7 +1483,7 @@
   }
   
   ]]
-  ; last_expr_result = Some (VInt (55)); runtime_signal = NoSignal;
+  ; last_expr_result = VInt (55); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
@@ -1594,19 +1594,18 @@
   ]]
   ;
   last_expr_result =
-  Some (VObjectRef (RObj ({ class_key = "Person";
-                            field_ref_table =
-                            [["age" ->
-                               { key = "age"; f_type = Int;
-                                 f_value = VInt (27); is_not_mutable = false;
-                                 assignment_count = 1 }
-                            
+  VObjectRef (RObj ({ class_key = "Person";
+                      field_ref_table =
+                      [["age" ->
+                         { key = "age"; f_type = Int; f_value = VInt (27);
+                           is_not_mutable = false; assignment_count = 1 }
+                      
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
+  ; number = 1 })); runtime_signal = NoSignal; curr_method_type = Void;
   is_main_scope = true; nested_loops_cnt = 0; scope_level = 0;
   cur_constr_key = None; prev_context = None; obj_created_cnt = 4;
   is_creation = false; constr_affilation = None
@@ -1634,7 +1633,7 @@
      v_value = VInt (3); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (3000)); runtime_signal = NoSignal;
+  ; last_expr_result = VInt (3000); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 1; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 0; is_creation = false; constr_affilation = None
@@ -1666,7 +1665,7 @@
      v_value = VInt (10); scope_level = 1 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  ; last_expr_result = VBool (false); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 2; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
@@ -1702,7 +1701,7 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (16)); runtime_signal = NoSignal;
+  ; last_expr_result = VInt (16); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 2; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
@@ -1736,7 +1735,7 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  ; last_expr_result = VBool (false); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
@@ -1809,19 +1808,18 @@
   ]]
   ;
   last_expr_result =
-  Some (VObjectRef (RObj ({ class_key = "Person";
-                            field_ref_table =
-                            [["age" ->
-                               { key = "age"; f_type = Int;
-                                 f_value = VInt (30); is_not_mutable = false;
-                                 assignment_count = 1 }
-                            
+  VObjectRef (RObj ({ class_key = "Person";
+                      field_ref_table =
+                      [["age" ->
+                         { key = "age"; f_type = Int; f_value = VInt (30);
+                           is_not_mutable = false; assignment_count = 1 }
+                      
   "name" ->
    { key = "name"; f_type = String; f_value = VString ("Bob");
      is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
+  ; number = 1 })); runtime_signal = NoSignal; curr_method_type = Void;
   is_main_scope = true; nested_loops_cnt = 0; scope_level = 0;
   cur_constr_key = None; prev_context = None; obj_created_cnt = 2;
   is_creation = false; constr_affilation = None
@@ -1913,7 +1911,7 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  ; last_expr_result = VBool (false); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 2; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 8; is_creation = false; constr_affilation = None
@@ -1938,7 +1936,7 @@
      scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VInt (120)); runtime_signal = NoSignal;
+  ; last_expr_result = VInt (120); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 1; is_creation = false; constr_affilation = None
@@ -1984,7 +1982,7 @@
      v_value = VInt (0); scope_level = 0 }
   
   ]]
-  ; last_expr_result = Some (VBool (false)); runtime_signal = NoSignal;
+  ; last_expr_result = VBool (false); runtime_signal = NoSignal;
   curr_method_type = Void; is_main_scope = true; nested_loops_cnt = 0;
   scope_level = 0; cur_constr_key = None; prev_context = None;
   obj_created_cnt = 2; is_creation = false; constr_affilation = None
@@ -2023,12 +2021,12 @@
   ]]
   ;
   last_expr_result =
-  Some (VObjectRef (RObj ({ class_key = "Cat";
-                            field_ref_table =
-                            [["age" ->
-                               { key = "age"; f_type = Int; f_value = VInt (2);
-                                 is_not_mutable = false; assignment_count = 0 }
-                            
+  VObjectRef (RObj ({ class_key = "Cat";
+                      field_ref_table =
+                      [["age" ->
+                         { key = "age"; f_type = Int; f_value = VInt (2);
+                           is_not_mutable = false; assignment_count = 0 }
+                      
   "hairLevel" ->
    { key = "hairLevel"; f_type = Int; f_value = VInt (30);
      is_not_mutable = false; assignment_count = 0 }
@@ -2038,7 +2036,7 @@
      is_not_mutable = false; assignment_count = 0 }
   
   ]]
-  ; number = 1 }))); runtime_signal = NoSignal; curr_method_type = Void;
+  ; number = 1 })); runtime_signal = NoSignal; curr_method_type = Void;
   is_main_scope = true; nested_loops_cnt = 0; scope_level = 0;
   cur_constr_key = None; prev_context = None; obj_created_cnt = 1;
   is_creation = false; constr_affilation = None
