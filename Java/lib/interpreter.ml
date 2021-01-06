@@ -36,8 +36,10 @@ type constructor_r = { key : key_t; args : (type_t * name) list; body : stmt }
 [@@deriving show { with_path = false }]
 
 let startswith test_str sub_str =
-  let sub = String.sub test_str 0 (String.length sub_str) in
-  String.equal sub sub_str
+  if String.length sub_str > String.length test_str then false
+  else
+    let sub = String.sub test_str 0 (String.length sub_str) in
+    String.equal sub sub_str
 
 let convert_table_to_seq = Hashtbl.to_seq_values
 
@@ -902,26 +904,19 @@ module Main (M : MONADERROR) = struct
               match other with
               (* 1 - берем единственный подходящий *)
               | 1 -> return (seq_hd_exn (convert_table_to_seq curr_ht))
-              (* Методов с точно такими или полиморфными типами больше одного. Значит надо смотреть по имени *)
-              | _ -> (
-                  Hashtbl_p.filter curr_ht (fun _ m_v ->
-                      startswith m_v.key m_name)
-                  |> fun filtered_by_name_table ->
-                  match Hashtbl.length filtered_by_name_table with
-                  | 1 ->
-                      return
-                        (seq_hd_exn
-                           (convert_table_to_seq filtered_by_name_table))
-                  | _ -> error "Cannot resolve method" ) )
+              (* Методов с точно такими или полиморфными типами больше одного. Значит cannot resolve *)
+              | _ -> error "Cannot resolve method" )
           | e :: es ->
               expr_type_check e ctx class_table >>= fun e_type ->
               helper_checker
                 (Hashtbl_p.filter curr_ht (check_type_m pos e_type))
                 (pos + 1) es ctx )
     in
-    (* Вначале фильтруем по количеству аргументов *)
+    (* Вначале фильтруем по имени, а потом по количеству аргументов *)
+    Hashtbl_p.filter cl_r.method_table (fun _ mr -> startswith mr.key m_name)
+    |> fun filtered_by_name ->
     helper_checker
-      (Hashtbl_p.filter cl_r.method_table (fun _ mr ->
+      (Hashtbl_p.filter filtered_by_name (fun _ mr ->
            List.length mr.args = List.length expr_list))
       0 expr_list check_ctx
 
@@ -2065,7 +2060,7 @@ module Main (M : MONADERROR) = struct
               {
                 v_type = head_type;
                 v_key = head_name;
-                is_not_mutable = true;
+                is_not_mutable = false;
                 assignment_count = 1;
                 v_value = he_ctx.last_expr_result;
                 scope_level = 0;
