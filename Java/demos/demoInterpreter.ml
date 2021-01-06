@@ -895,6 +895,9 @@ public class Main {
 
 let () = test_interp test_val (Hashtbl.create 100)
 
+let () =
+  print_string "------------------- OVERLOADING TEST ------------------\n"
+
 let test_val =
   Option.get
     (apply parser

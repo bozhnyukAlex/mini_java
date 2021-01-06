@@ -2071,6 +2071,7 @@
   Assignment to a constant field
   ------------------- FINAL VARIABLES TEST ------------------
   Assignment to a constant variable
+  ------------------- OVERLOADING TEST ------------------
   { cur_object =
     RObj ({ class_key = "Main"; field_ref_table = [[]]
                                 ; number = 0 });
