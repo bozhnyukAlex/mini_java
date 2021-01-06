@@ -422,12 +422,15 @@
   [["getWeight@@" ->
      { m_type = Int; is_abstract = false; is_overridable = true;
        has_override_annotation = false; args = []; key = "getWeight@@";
-       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))]));
+       is_overriden = false }
   
   "getAge@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
-     has_override_annotation = false; args = []; key = "getAge@@";
-     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
+     has_override_annotation = true; args = []; key = "getAge@@";
+     body =
+     Some (StmtBlock ([Return (Some (Add (Identifier ("age"), Const (VInt (1)))))]));
+     is_overriden = true }
   
   "setAgeInt@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -436,13 +439,14 @@
      body =
      Some (StmtBlock ([Expression (Assign
                                    (FieldAccess (This, Identifier ("age")),
-                                    Identifier ("a")))]))
-     }
+                                    Identifier ("a")))]));
+     is_overriden = false }
   
   "getCash@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "getCash@@";
-     body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
+     body = Some (StmtBlock ([Return (Some (Identifier ("cash")))]));
+     is_overriden = false }
   
   "equalsClassName (\"Object\")@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
@@ -453,8 +457,8 @@
      Some (StmtBlock ([If
                        (Equal (This, Identifier ("obj")),
                         Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
+                        Some (Return (Some (Const (VInt (0))))))]));
+     is_overriden = false }
   
   "setCashInt@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -463,13 +467,14 @@
      body =
      Some (StmtBlock ([Expression (Assign
                                    (FieldAccess (This, Identifier ("cash")),
-                                    Identifier ("c")))]))
-     }
+                                    Identifier ("c")))]));
+     is_overriden = false }
   
   "toString@@" ->
    { m_type = String; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+     is_overriden = false }
   
   "setWeightInt@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -478,8 +483,8 @@
      body =
      Some (StmtBlock ([Expression (Assign
                                    (FieldAccess (This, Identifier ("weight")),
-                                    Identifier ("w")))]))
-     }
+                                    Identifier ("w")))]));
+     is_overriden = false }
   
   "giveEvenNumbers100@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -508,8 +513,8 @@
                                                               CallMethod
                                                               (Identifier ("println"),
                                                                [Identifier ("i")])))]),
-                                     Some (StmtBlock ([Continue])))]))]))
-     }
+                                     Some (StmtBlock ([Continue])))]))]));
+     is_overriden = false }
   
   ]]
   ;
@@ -544,6 +549,11 @@
       StmtBlock ([Expression (CallMethod
                               (Super, [Identifier ("w"); Identifier ("a")]));
                   Expression (Assign (Identifier ("cash"), Const (VInt (0))))])));
+    ([Override; Public],
+     Method
+     (Int, Name ("getAge"), [],
+      Some (StmtBlock ([Return (Some (Add
+                                      (Identifier ("age"), Const (VInt (1)))))]))));
     ([Public],
      Method
      (Int, Name ("getCash"), [],
@@ -604,13 +614,14 @@
           Some (StmtBlock ([If
                             (Equal (This, Identifier ("obj")),
                              Return (Some (Const (VInt (1)))),
-                             Some (Return (Some (Const (VInt (0))))))]))
-          }
+                             Some (Return (Some (Const (VInt (0))))))]));
+          is_overriden = false }
      
   "toString@@" ->
    { m_type = String; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+     is_overriden = false }
   
   "main@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -621,8 +632,8 @@
                         [(Name ("p"),
                           Some (ClassCreate
                                 (Name ("Person"),
-                                 [Const (VInt (80)); Const (VInt (45))])))])]))
-     }
+                                 [Const (VInt (80)); Const (VInt (45))])))])]));
+     is_overriden = false }
   
   ]]
   ;
@@ -654,7 +665,8 @@
         { m_type = String; is_abstract = false; is_overridable = true;
           has_override_annotation = false; args = []; key = "toString@@";
           body =
-          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+          is_overriden = false }
      
   "equalsClassName (\"Object\")@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
@@ -665,8 +677,8 @@
      Some (StmtBlock ([If
                        (Equal (This, Identifier ("obj")),
                         Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
+                        Some (Return (Some (Const (VInt (0))))))]));
+     is_overriden = false }
   
   ]]
   ;
@@ -708,12 +720,14 @@
   [["getWeight@@" ->
      { m_type = Int; is_abstract = false; is_overridable = true;
        has_override_annotation = false; args = []; key = "getWeight@@";
-       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))]));
+       is_overriden = false }
   
   "getAge@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "getAge@@";
-     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
+     body = Some (StmtBlock ([Return (Some (Identifier ("age")))]));
+     is_overriden = false }
   
   "setAgeInt@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -722,8 +736,8 @@
      body =
      Some (StmtBlock ([Expression (Assign
                                    (FieldAccess (This, Identifier ("age")),
-                                    Identifier ("a")))]))
-     }
+                                    Identifier ("a")))]));
+     is_overriden = false }
   
   "equalsClassName (\"Object\")@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
@@ -734,13 +748,14 @@
      Some (StmtBlock ([If
                        (Equal (This, Identifier ("obj")),
                         Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
+                        Some (Return (Some (Const (VInt (0))))))]));
+     is_overriden = false }
   
   "toString@@" ->
    { m_type = String; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+     is_overriden = false }
   
   "setWeightInt@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -749,8 +764,8 @@
      body =
      Some (StmtBlock ([Expression (Assign
                                    (FieldAccess (This, Identifier ("weight")),
-                                    Identifier ("w")))]))
-     }
+                                    Identifier ("w")))]));
+     is_overriden = false }
   
   ]]
   ;
@@ -843,12 +858,14 @@
   [["getWeight@@" ->
      { m_type = Int; is_abstract = false; is_overridable = true;
        has_override_annotation = false; args = []; key = "getWeight@@";
-       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))]));
+       is_overriden = false }
   
   "getCash@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "getCash@@";
-     body = Some (StmtBlock ([Return (Some (Identifier ("cash")))])) }
+     body = Some (StmtBlock ([Return (Some (Identifier ("cash")))]));
+     is_overriden = false }
   
   "equalsClassName (\"Object\")@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
@@ -859,8 +876,8 @@
      Some (StmtBlock ([If
                        (Equal (This, Identifier ("obj")),
                         Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
+                        Some (Return (Some (Const (VInt (0))))))]));
+     is_overriden = false }
   
   "setCashInt@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -869,13 +886,14 @@
      body =
      Some (StmtBlock ([Expression (Assign
                                    (FieldAccess (This, Identifier ("cash")),
-                                    Identifier ("c")))]))
-     }
+                                    Identifier ("c")))]));
+     is_overriden = false }
   
   "toString@@" ->
    { m_type = String; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+     is_overriden = false }
   
   ]]
   ;
@@ -942,13 +960,14 @@
           Some (StmtBlock ([If
                             (Equal (This, Identifier ("obj")),
                              Return (Some (Const (VInt (1)))),
-                             Some (Return (Some (Const (VInt (0))))))]))
-          }
+                             Some (Return (Some (Const (VInt (0))))))]));
+          is_overriden = false }
      
   "toString@@" ->
    { m_type = String; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+     is_overriden = false }
   
   "main@@" ->
    { m_type = Void; is_abstract = false; is_overridable = true;
@@ -959,8 +978,8 @@
                         [(Name ("p"),
                           Some (ClassCreate
                                 (Name ("Person"),
-                                 [Const (VInt (80)); Const (VInt (45))])))])]))
-     }
+                                 [Const (VInt (80)); Const (VInt (45))])))])]));
+     is_overriden = false }
   
   ]]
   ;
@@ -992,7 +1011,8 @@
         { m_type = String; is_abstract = false; is_overridable = true;
           has_override_annotation = false; args = []; key = "toString@@";
           body =
-          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+          Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+          is_overriden = false }
      
   "equalsClassName (\"Object\")@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
@@ -1003,8 +1023,8 @@
      Some (StmtBlock ([If
                        (Equal (This, Identifier ("obj")),
                         Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
+                        Some (Return (Some (Const (VInt (0))))))]));
+     is_overriden = false }
   
   ]]
   ;
@@ -1046,12 +1066,14 @@
   [["getWeight@@" ->
      { m_type = Int; is_abstract = false; is_overridable = true;
        has_override_annotation = false; args = []; key = "getWeight@@";
-       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))])) }
+       body = Some (StmtBlock ([Return (Some (Identifier ("weight")))]));
+       is_overriden = false }
   
   "getAge@@" ->
    { m_type = Int; is_abstract = false; is_overridable = false;
      has_override_annotation = false; args = []; key = "getAge@@";
-     body = Some (StmtBlock ([Return (Some (Identifier ("age")))])) }
+     body = Some (StmtBlock ([Return (Some (Identifier ("age")))]));
+     is_overriden = false }
   
   "equalsClassName (\"Object\")@@" ->
    { m_type = Int; is_abstract = false; is_overridable = true;
@@ -1062,13 +1084,14 @@
      Some (StmtBlock ([If
                        (Equal (This, Identifier ("obj")),
                         Return (Some (Const (VInt (1)))),
-                        Some (Return (Some (Const (VInt (0))))))]))
-     }
+                        Some (Return (Some (Const (VInt (0))))))]));
+     is_overriden = false }
   
   "toString@@" ->
    { m_type = String; is_abstract = false; is_overridable = true;
      has_override_annotation = false; args = []; key = "toString@@";
-     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))])) }
+     body = Some (StmtBlock ([Return (Some (Const (VString ("Object"))))]));
+     is_overriden = false }
   
   ]]
   ;

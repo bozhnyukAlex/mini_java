@@ -68,6 +68,7 @@ type method_r = {
   args : (type_t * name) list;
   key : key_t;
   body : stmt option;
+  is_overriden : bool;
 }
 [@@deriving show { with_path = false }]
 
@@ -86,6 +87,18 @@ type class_r = {
 
 let convert_name_to_key = function Some (Name x) -> Some x | None -> None
 
+let get_type_list = List.map fst
+
+let make_method_key m_name args =
+  String.concat "" (m_name :: List.map show_type_t (get_type_list args)) ^ "@@"
+
+let make_constr_key c_name args =
+  String.concat "" (c_name :: List.map show_type_t (get_type_list args)) ^ "$$"
+
+let to_string_key = make_method_key "toString" []
+
+let equals_key = make_method_key "equals" [ (ClassName "Object", Name "obj") ]
+
 module ClassLoader (M : MONADERROR) = struct
   open M
 
@@ -98,6 +111,11 @@ module ClassLoader (M : MONADERROR) = struct
   let is_static = List.mem Static
 
   let is_public = List.mem Public
+
+  let get_elem_if_present_m ht key =
+    match Hashtbl_p.get_elem_if_present ht key with
+    | None -> error "No such element in table!"
+    | Some el -> return el
 
   let monadic_update_hash_table ht old_key new_val =
     Hashtbl.replace ht old_key new_val;
@@ -113,23 +131,11 @@ module ClassLoader (M : MONADERROR) = struct
     | Seq.Nil -> return base
     | Seq.Cons (x, next) -> action x >> monadic_seq_iter next action base
 
-  let get_type_list = List.map fst
-
-  let make_method_key m_name args =
-    String.concat "" (m_name :: List.map show_type_t (get_type_list args))
-    ^ "@@"
-
-  let make_constr_key c_name args =
-    String.concat "" (c_name :: List.map show_type_t (get_type_list args))
-    ^ "$$"
-
   let prepare_object ht =
     let constructor_table = Hashtbl.create 20 in
     let field_table = Hashtbl.create 20 in
     let method_table = Hashtbl.create 20 in
-    let equals_key =
-      make_method_key "equals" [ (ClassName "Object", Name "obj") ]
-    in
+
     let equals : method_r =
       {
         m_type = Int;
@@ -138,6 +144,7 @@ module ClassLoader (M : MONADERROR) = struct
         has_override_annotation = false;
         args = [ (ClassName "Object", Name "obj") ];
         key = equals_key;
+        is_overriden = false;
         body =
           apply Stmt.stat_block
             {| 
@@ -148,13 +155,14 @@ module ClassLoader (M : MONADERROR) = struct
     |};
       }
     in
-    let to_string_key = make_method_key "toString" [] in
+
     let to_string : method_r =
       {
         m_type = String;
         is_abstract = false;
         is_overridable = true;
         has_override_annotation = false;
+        is_overriden = false;
         args = [];
         key = to_string_key;
         body =
@@ -302,6 +310,7 @@ module ClassLoader (M : MONADERROR) = struct
                      m_type;
                      is_abstract;
                      is_overridable;
+                     is_overriden = false;
                      has_override_annotation;
                      args;
                      key;
@@ -429,7 +438,7 @@ module ClassLoader (M : MONADERROR) = struct
    fun ch cur_method ->
     match get_elem_if_present ch.method_table cur_method.key with
     | None when cur_method.is_abstract ->
-        (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод, иначе бросаем исключение *)
+        (* Наш абстрактный. Если ребенок абстрактный, то просто переносим метод, иначе бросаем ошибку *)
         if ch.is_abstract then
           return (Hashtbl.add ch.method_table cur_method.key cur_method)
         else error "Abstract method must be overriden"
@@ -438,6 +447,10 @@ module ClassLoader (M : MONADERROR) = struct
         if cur_method.is_overridable then
           return (Hashtbl.add ch.method_table cur_method.key cur_method)
         else return ()
+    | Some child_overriden_method ->
+        Hashtbl.replace ch.method_table cur_method.key
+          { child_overriden_method with is_overriden = true };
+        return ()
     | _ -> return ()
 
   let process_methods par ch =
@@ -476,18 +489,18 @@ module ClassLoader (M : MONADERROR) = struct
     let childs_of_child = ch.children_keys in
     monadic_list_iter childs_of_child
       (fun ch_ch_key ->
-        transfert ch (Option.get (get_elem_if_present ht ch_ch_key)) ht)
+        get_elem_if_present_m ht ch_ch_key >>= fun child_of_child ->
+        transfert ch child_of_child ht)
       ()
 
   let do_inheritance ht =
-    let obj_r = Option.get (get_elem_if_present ht "Object") in
+    get_elem_if_present_m ht "Object" >>= fun obj_r ->
     let processing ch_key =
-      transfert obj_r (Option.get (get_elem_if_present ht ch_key)) ht
+      get_elem_if_present_m ht ch_key >>= fun ch -> transfert obj_r ch ht
     in
     monadic_list_iter obj_r.children_keys processing ht
 
   let load cd_list class_table =
-    (* let class_table = Hashtbl.create 1024 in *)
     match cd_list with
     | [] -> error "Syntax error or empty file"
     | _ ->
@@ -552,6 +565,27 @@ module Main (M : MONADERROR) = struct
         is_creation = false;
         constr_affilation = None;
       }
+
+  let rec mfold_left2 f acc l1 l2 =
+    match (l1, l2) with
+    | [], [] -> return acc
+    | x :: xs, y :: ys -> f acc x y >>= fun res -> mfold_left2 f res xs ys
+    | _, _ -> error "Wrong lists for fold_left2"
+
+  let rec mfold_right f l acc =
+    match l with
+    | [] -> return acc
+    | x :: xs -> mfold_right f xs acc >>= fun r -> f x r
+
+  let rec mfold_left f acc l =
+    match l with
+    | [] -> return acc
+    | x :: xs -> f acc x >>= fun r -> mfold_left f r xs
+
+  let get_elem_if_present_m ht key =
+    match Hashtbl_p.get_elem_if_present ht key with
+    | None -> error "No such element in table!"
+    | Some el -> return el
 
   let obj_num obj =
     try get_obj_number_exn obj |> fun n -> return n
@@ -661,10 +695,9 @@ module Main (M : MONADERROR) = struct
     | Super -> (
         match ctx.cur_object with
         | RObj { class_key = k; _ } ->
-            let par_k =
-              Option.get
-                (Option.get (get_elem_if_present class_table k)).parent_key
-            in
+            get_elem_if_present_m class_table k >>= fun k_clr ->
+            (* Гарантия, что такой элемент будет: при подготовке конструктора идет проверка на наличие родителя *)
+            let par_k = Option.get k_clr.parent_key in
             return (ClassName par_k)
         | RNull -> error "Null object in context!" )
     | CallMethod (Super, _) -> return Void
@@ -676,9 +709,7 @@ module Main (M : MONADERROR) = struct
           | RNull -> "null"
           | RObj { class_key = key; _ } -> key
         in
-        let curr_class =
-          Option.get (get_elem_if_present class_table curr_obj_key)
-        in
+        get_elem_if_present_m class_table curr_obj_key >>= fun curr_class ->
         check_method curr_class m_ident args ctx class_table >>= fun mr ->
         return mr.m_type
     | FieldAccess (obj_expr, Identifier f_key) -> (
@@ -686,9 +717,7 @@ module Main (M : MONADERROR) = struct
         match obj_c with
         | ClassName "null" -> error "NullPointerException"
         | ClassName obj_key -> (
-            let obj_class =
-              Option.get (get_elem_if_present class_table obj_key)
-            in
+            get_elem_if_present_m class_table obj_key >>= fun obj_class ->
             let var_field_o = get_elem_if_present obj_class.field_table f_key in
             match var_field_o with
             | None -> error "No such field in class!"
@@ -701,9 +730,7 @@ module Main (M : MONADERROR) = struct
         match obj_c with
         | ClassName "null" -> error "NullPointerException"
         | ClassName obj_key ->
-            let obj_class =
-              Option.get (get_elem_if_present class_table obj_key)
-            in
+            get_elem_if_present_m class_table obj_key >>= fun obj_class ->
             check_method obj_class m_ident args ctx class_table >>= fun m_r ->
             return m_r.m_type
         | _ -> error "Wrong type: must be object reference" )
@@ -808,7 +835,7 @@ module Main (M : MONADERROR) = struct
   and check_classname_assign cleft_key cright_key class_table =
     (* Среди родителей правого надо найти левый. key - текущий ключ правого *)
     let rec check_parent_tree key =
-      let clr_by_key = Option.get (get_elem_if_present class_table key) in
+      get_elem_if_present_m class_table key >>= fun clr_by_key ->
       (* Смотрим, чтобы было совпадение: смотрим текущий ключ с левым *)
       if clr_by_key.this_key = cleft_key then return (ClassName cright_key)
       else
@@ -822,7 +849,7 @@ module Main (M : MONADERROR) = struct
   and check_classname_bool cleft_key cright_key class_table =
     (* Среди родителей правого надо найти левый. key - текущий ключ правого *)
     let rec check_parent_tree key =
-      let clr_by_key = Option.get (get_elem_if_present class_table key) in
+      let clr_by_key = get_ok (get_elem_if_present_m class_table key) in
       (* Смотрим, чтобы было совпадение: смотрим текущий ключ с левым *)
       if clr_by_key.this_key = cleft_key then true
       else
@@ -964,6 +991,14 @@ module Main (M : MONADERROR) = struct
     Hashtbl.iter delete ctx.var_table;
     return ctx
 
+  let is_good_for_stmt = function
+    | PostDec _ | PostInc _ | PrefDec _ | PrefInc _
+    | CallMethod (_, _)
+    | FieldAccess (_, CallMethod (_, _))
+    | Assign (_, _) ->
+        true
+    | _ -> false
+
   let rec eval_stmt stmt sctx class_table =
     match stmt with
     | StmtBlock st_list ->
@@ -1031,14 +1066,14 @@ module Main (M : MONADERROR) = struct
                     return
                       { bectx with nested_loops_cnt = ctx.nested_loops_cnt - 1 }
                 )
-            | VBool true ->
+            | VBool true -> (
                 eval_stmt s bectx class_table >>= fun lctx ->
+                match lctx.runtime_signal with
                 (* Вылетел return - все прерываем, возвращаем контекст *)
-                if lctx.runtime_signal = WasReturn then return lctx
-                  (*Может вылететь continue - значит циклимся заново*)
-                else if lctx.runtime_signal = WasContinue then
-                  loop s { lctx with runtime_signal = NoSignal }
-                else loop s lctx
+                | WasReturn -> return lctx
+                (*Может вылететь continue - значит циклимся заново*)
+                | WasContinue -> loop s { lctx with runtime_signal = NoSignal }
+                | _ -> loop s lctx )
             | _ -> error "Wrong expression type for while stametent"
         in
         match lstmt with
@@ -1122,66 +1157,52 @@ module Main (M : MONADERROR) = struct
                     scope_level = bectx.scope_level - 1;
                     is_main_scope = was_main;
                   }
-            | VBool true ->
+            | VBool true -> (
                 let rec eval_inc_expr_list e_list c =
                   match e_list with
                   | [] -> return c
-                  | e :: es -> (
-                      (* Только таких типов могут быть выражения в части, выполняющейся после тела *)
-                      match e with
-                      | PostDec _ | PostInc _ | PrefDec _ | PrefInc _
-                      | Assign (_, _)
-                      | CallMethod (_, _)
-                      | FieldAccess (_, CallMethod (_, _)) ->
-                          eval_expr e c class_table >>= fun ehctx ->
-                          eval_inc_expr_list es ehctx
-                      | _ -> error "Wrong expression for after body list" )
+                  | e :: es ->
+                      if is_good_for_stmt e then
+                        eval_expr e c class_table >>= fun ehctx ->
+                        eval_inc_expr_list es ehctx
+                      else error "Wrong expression for after body list"
                 in
                 (* Переменные внутри самого блока будут находиться в большем scope level, чем из инициализатора *)
                 eval_stmt bs
                   { bectx with scope_level = dec_ctx.scope_level + 1 }
                   class_table
                 >>= fun bdctx ->
-                (* Вылетел return - все прерываем, возвращаем контекст *)
-                if bdctx.runtime_signal = WasReturn then
-                  return { bdctx with is_main_scope = was_main }
-                  (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
-                else if bdctx.runtime_signal = WasContinue then
-                  eval_inc_expr_list afs bdctx >>= fun after_ctx ->
-                  loop bs afs { after_ctx with runtime_signal = NoSignal }
-                else
-                  (* Иначе можем просто вычислить инкременты после и сделать цикл *)
-                  eval_inc_expr_list afs bdctx >>= fun after_ctx ->
-                  loop bs afs after_ctx
+                match bdctx.runtime_signal with
+                (*Может вылететь continue - значит циклимся заново, инкременты не вычисляем*)
+                | WasReturn -> return { bdctx with is_main_scope = was_main }
+                (*Может вылететь continue - значит циклимся заново, но инкременты вычисляем*)
+                | WasContinue ->
+                    eval_inc_expr_list afs bdctx >>= fun after_ctx ->
+                    loop bs afs { after_ctx with runtime_signal = NoSignal }
+                | _ ->
+                    eval_inc_expr_list afs bdctx >>= fun after_ctx ->
+                    loop bs afs after_ctx )
             | _ -> error "Wrong condition type in for statement"
         in
         loop body_stmt after_expr_list
           { dec_ctx with nested_loops_cnt = sctx.nested_loops_cnt + 1 }
-    | Return rexpr_o -> (
-        match rexpr_o with
-        (* Если нет никакого выражения - метод, в котором мы исполняемся, должен иметь тип Void *)
-        | None when sctx.curr_method_type = Void ->
-            (* Если тип Void - выходим со значением VVoid поставленным флагом, что был return *)
-            return
-              { sctx with last_expr_result = VVoid; runtime_signal = WasReturn }
-        | None -> error "Return value type mismatch"
-        (* Если есть выражение - смотрим, чтобы тип совпадал с типом, возвращаемым методом *)
-        | Some rexpr ->
-            expr_type_check rexpr sctx class_table >>= fun rexpr_type ->
-            if rexpr_type <> sctx.curr_method_type then
-              error "Return value type mismatch"
-            else
-              (* Возвращаем контекст, в котором есть результат выражения, но не забываем поставить флаг, что был return *)
-              eval_expr rexpr sctx class_table >>= fun rectx ->
-              return { rectx with runtime_signal = WasReturn } )
-    | Expression sexpr -> (
-        match sexpr with
-        | PostDec _ | PostInc _ | PrefDec _ | PrefInc _
-        | CallMethod (_, _)
-        | FieldAccess (_, CallMethod (_, _))
-        | Assign (_, _) ->
-            eval_expr sexpr sctx class_table >>= fun ectx -> return ectx
-        | _ -> error "Wrong expression for statement" )
+    | Return None when sctx.curr_method_type = Void ->
+        (* Если тип Void - выходим со значением VVoid поставленным флагом, что был return *)
+        return
+          { sctx with last_expr_result = VVoid; runtime_signal = WasReturn }
+    | Return None -> error "Return value type mismatch"
+    | Return (Some rexpr) ->
+        expr_type_check rexpr sctx class_table >>= fun rexpr_type ->
+        if rexpr_type <> sctx.curr_method_type then
+          error "Return value type mismatch"
+        else
+          (* Возвращаем контекст, в котором есть результат выражения, но не забываем поставить флаг, что был return *)
+          eval_expr rexpr sctx class_table >>= fun rectx ->
+          return { rectx with runtime_signal = WasReturn }
+    | Expression sexpr ->
+        if is_good_for_stmt sexpr then
+          eval_expr sexpr sctx class_table >>= fun ectx -> return ectx
+        else error "Wrong expression for statement"
     | VarDec (final_mod_o, vars_type, var_list) ->
         let is_final : modifier option -> bool = function
           | Some Final -> true
@@ -1293,13 +1314,29 @@ module Main (M : MONADERROR) = struct
       | More (left, right) -> eval_op left right ( >>> )
       | LessOrEqual (left, right) -> eval_op left right ( <<== )
       | MoreOrEqual (left, right) -> eval_op left right ( >>== )
-      | Equal (left, right) -> eval_op left right ( === )
+      | Equal (left, right) -> (
+          expr_type_check left ctx class_table >>= fun l_type ->
+          match l_type with
+          (* Если тип - объект, то если метод equals переопределен, надо вызвать его *)
+          | ClassName l_key ->
+              get_elem_if_present_m class_table l_key >>= fun left_clr ->
+              get_elem_if_present_m left_clr.method_table equals_key
+              >>= fun left_eqr ->
+              if left_eqr.is_overriden then
+                eval_expr
+                  (FieldAccess
+                     (left, CallMethod (Identifier "equals", [ right ])))
+                  ctx class_table
+              else eval_op left right ( === )
+          | _ -> eval_op left right ( === ) )
       | NotEqual (left, right) -> eval_op left right ( !=! )
       | Const v -> return { ctx with last_expr_result = v }
       | Identifier id -> (
+          (* Пытаемся найти среди переменных в таблице контекста *)
           match get_elem_if_present ctx.var_table id with
           | Some var_by_id ->
               return { ctx with last_expr_result = var_by_id.v_value }
+              (* Не нашли - ищем среди полей текущего класса *)
           | None -> (
               try
                 get_obj_info_exn ctx.cur_object |> fun (_, frt, _) ->
@@ -1312,7 +1349,7 @@ module Main (M : MONADERROR) = struct
       | CallMethod (This, args) ->
           (* Должна быть проверка на то, что мы в конструкторе!*)
           ( match ctx.cur_constr_key with
-          | None -> error "super(...) call must be in constructor!"
+          | None -> error "this(...) call must be in constructor!"
           | Some k -> return k )
           >>= fun external_constr_key ->
           let get_cur_class_key =
@@ -1321,9 +1358,8 @@ module Main (M : MONADERROR) = struct
             | RObj { class_key = key; _ } -> return key
           in
           get_cur_class_key >>= fun curr_class_key ->
-          let cur_class_r =
-            Option.get (get_elem_if_present class_table curr_class_key)
-          in
+          get_elem_if_present_m class_table curr_class_key
+          >>= fun cur_class_r ->
           check_constructor cur_class_r args ctx class_table >>= fun constr_r ->
           if constr_r.key = external_constr_key then
             error "Constructor recursion!"
@@ -1355,16 +1391,13 @@ module Main (M : MONADERROR) = struct
           | Some k -> return k )
           >>= fun _ ->
           let curr_class_key = Option.get ctx.constr_affilation in
-          let cur_class_r =
-            Option.get (get_elem_if_present class_table curr_class_key)
-          in
+          get_elem_if_present_m class_table curr_class_key
+          >>= fun cur_class_r ->
           match cur_class_r.parent_key with
           | None ->
               error "Bad super(...) call usage : this class has no parent!"
           | Some par_key ->
-              let par_r =
-                Option.get (get_elem_if_present class_table par_key)
-              in
+              get_elem_if_present_m class_table par_key >>= fun par_r ->
               check_constructor par_r args ctx class_table >>= fun constr_r ->
               prepare_constructor_block constr_r.body par_r
               >>= fun par_constr_body ->
@@ -1401,67 +1434,72 @@ module Main (M : MONADERROR) = struct
           let obj = octx.last_expr_result in
           match obj with
           | VObjectRef (RObj { field_ref_table = frt; _ }) ->
-              (* Смело пользуемся Option.get, потому что перед этим была проверка типов, в ней проверяется наличие этого поля у класса*)
-              let fld = Option.get (Hashtbl.find_opt frt f_key) in
+              get_elem_if_present_m frt f_key >>= fun fld ->
               return { octx with last_expr_result = fld.f_value }
           | _ -> error "Must be non-null object!" )
       | FieldAccess (obj_expr, CallMethod (Identifier m_name, args)) -> (
           eval_expr obj_expr ctx class_table >>= fun octx ->
           let obj = octx.last_expr_result in
           match obj with
-          | VObjectRef obj_ref -> (
-              match obj_ref with
-              | RNull -> error "NullPointerException"
-              | RObj { class_key = cl_k; _ } -> (
-                  (* Смотрим класс, к которому принадлежит объект, с проверкой на существование *)
-                  match get_elem_if_present class_table cl_k with
-                  | None -> error "No such object in class!"
-                  | Some obj_class ->
-                      (* Смотрим метод у этого класса, опять с проверкой на существование *)
-                      check_method obj_class m_name args octx class_table
-                      >>= fun mr ->
-                      (* Смотреть тело на None не нужно, это только если метод абстрактный,
-                         а проверка на то, чтобы нельзя было создать абстрактный класс - в вычислении ClassCreate *)
-                      let m_body = Option.get mr.body in
-                      let new_var_table : (key_t, variable) Hashtbl_p.t =
-                        Hashtbl.create 100
-                      in
-                      ( try
-                          prepare_table_with_args_exn new_var_table args mr.args
-                            octx class_table
-                        with Invalid_argument m -> error m )
-                      >>= fun (new_vt, new_ctx) ->
-                      (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
-                      eval_stmt m_body
-                        {
-                          cur_object = obj_ref;
-                          var_table = new_vt;
-                          last_expr_result = VVoid;
-                          runtime_signal = NoSignal;
-                          curr_method_type = mr.m_type;
-                          is_main_scope = false;
-                          nested_loops_cnt = 0;
-                          scope_level = 0;
-                          cur_constr_key = None;
-                          prev_context = Some ctx;
-                          obj_created_cnt = ctx.obj_created_cnt;
-                          is_creation = false;
-                          constr_affilation = None;
-                        }
-                        class_table
-                      (* От контекста нас интересует только результат работы метода *)
-                      >>=
-                      fun m_res_ctx ->
-                      (* После отработки метода возвращаем контекст с результатом работы метода
-                         Если внутри метода менялись какие-то состояния объектов -
-                         они должны поменяться исходя из мутабельности хеш-таблиц в результате присваиваний *)
-                      return
-                        {
-                          new_ctx with
-                          last_expr_result = m_res_ctx.last_expr_result;
-                          obj_created_cnt = m_res_ctx.obj_created_cnt;
-                          is_creation = false;
-                        } ) )
+          | VObjectRef RNull -> error "NullPointerException"
+          | VObjectRef
+              (RObj { class_key = cl_k; field_ref_table = c_frt; number = c_n })
+            -> (
+              (* Смотрим класс, к которому принадлежит объект, с проверкой на существование *)
+              match get_elem_if_present class_table cl_k with
+              | None -> error "No such object in class!"
+              | Some obj_class ->
+                  (* Смотрим метод у этого класса, опять с проверкой на существование *)
+                  check_method obj_class m_name args octx class_table
+                  >>= fun mr ->
+                  (* Смотреть тело на None не нужно, это только если метод абстрактный,
+                     а проверка на то, чтобы нельзя было создать абстрактный класс - в вычислении ClassCreate *)
+                  let m_body = Option.get mr.body in
+                  let new_var_table : (key_t, variable) Hashtbl_p.t =
+                    Hashtbl.create 100
+                  in
+                  ( try
+                      prepare_table_with_args_exn new_var_table args mr.args
+                        octx class_table
+                    with Invalid_argument m -> error m )
+                  >>= fun (new_vt, new_ctx) ->
+                  (* Тело метода исполняется в новом контексте с переменными из переданных аргументов *)
+                  eval_stmt m_body
+                    {
+                      cur_object =
+                        RObj
+                          {
+                            class_key = cl_k;
+                            field_ref_table = c_frt;
+                            number = c_n;
+                          };
+                      var_table = new_vt;
+                      last_expr_result = VVoid;
+                      runtime_signal = NoSignal;
+                      curr_method_type = mr.m_type;
+                      is_main_scope = false;
+                      nested_loops_cnt = 0;
+                      scope_level = 0;
+                      cur_constr_key = None;
+                      prev_context = Some ctx;
+                      obj_created_cnt = ctx.obj_created_cnt;
+                      is_creation = false;
+                      constr_affilation = None;
+                    }
+                    class_table
+                  (* От контекста нас интересует только результат работы метода *)
+                  >>=
+                  fun m_res_ctx ->
+                  (* После отработки метода возвращаем контекст с результатом работы метода
+                     Если внутри метода менялись какие-то состояния объектов -
+                     они должны поменяться исходя из мутабельности хеш-таблиц в результате присваиваний *)
+                  return
+                    {
+                      new_ctx with
+                      last_expr_result = m_res_ctx.last_expr_result;
+                      obj_created_cnt = m_res_ctx.obj_created_cnt;
+                      is_creation = false;
+                    } )
           | _ -> error "Must be non-null object!" )
       (* Это в случае, если вызываем внутри какого-то объекта. This нам вернет этот объект при вычислении *)
       | CallMethod (Identifier m, args) ->
@@ -1505,18 +1543,15 @@ module Main (M : MONADERROR) = struct
           | _ -> error "Size must be int!" )
       | ArrayCreateElements (a_type, expr_list) ->
           let make_val_list ex_list fctx =
-            let rec helper acc e_lst hctx =
-              match e_lst with
-              | [] -> return (acc, hctx)
-              | e :: es ->
-                  eval_expr e hctx class_table >>= fun ectx ->
-                  let head_val = ectx.last_expr_result in
-                  helper (acc @ [ head_val ]) es ectx
-            in
-            helper [] ex_list fctx
+            mfold_left
+              (fun (a_lst, hctx) e ->
+                eval_expr e hctx class_table >>= fun ectx ->
+                let head_val = ectx.last_expr_result in
+                return (a_lst @ [ head_val ], ectx))
+              ([], fctx) ex_list
           in
+
           make_val_list expr_list ctx >>= fun (values, r_ctx) ->
-          (* return { ctx with last_expr_result = Some (VArray new_v_list) } *)
           return
             {
               ctx with
@@ -1526,10 +1561,8 @@ module Main (M : MONADERROR) = struct
               obj_created_cnt = r_ctx.obj_created_cnt + 1;
             }
       | ClassCreate (Name class_name, c_args) ->
-          (* В проверке типов наличие уже проверялось, можем смело использовать Option.get *)
-          let obj_class =
-            Option.get (get_elem_if_present class_table class_name)
-          in
+          (* В проверке типов наличие уже проверялось наличие *)
+          get_elem_if_present_m class_table class_name >>= fun obj_class ->
           if obj_class.is_abstract then
             error "This class is abstract! No object creation allowed"
           else
@@ -1545,18 +1578,16 @@ module Main (M : MONADERROR) = struct
               let rec helper_init acc_ht help_ctx = function
                 | [] -> return help_ctx
                 | (curr_f_type, Name f_name, f_expr_o) :: tps ->
-                    let is_mutable_field f_key =
-                      let test_field =
-                        Option.get
-                          (get_elem_if_present obj_class.field_table f_key)
-                      in
-                      test_field.is_not_mutable
+                    let is_not_mutable_field f_key =
+                      get_elem_if_present_m obj_class.field_table f_key
+                      >>= fun test_field -> return test_field.is_not_mutable
                     in
                     ( match f_expr_o with
                     (* Сверяем, если есть выражение - сверяем типы, вычисляем, если нет, берем значение по умолчанию *)
                     | Some f_expr -> (
                         expr_type_check f_expr help_ctx class_table
                         >>= fun expr_type ->
+                        is_not_mutable_field f_name >>= fun is_not_mutable ->
                         let add_field fe =
                           eval_expr fe help_ctx class_table >>= fun fe_ctx ->
                           Hashtbl.add acc_ht f_name
@@ -1564,7 +1595,7 @@ module Main (M : MONADERROR) = struct
                               key = f_name;
                               f_type = curr_f_type;
                               f_value = fe_ctx.last_expr_result;
-                              is_not_mutable = is_mutable_field f_name;
+                              is_not_mutable;
                               assignment_count = 1;
                             };
                           return (fe_ctx, acc_ht)
@@ -1591,12 +1622,13 @@ module Main (M : MONADERROR) = struct
                         | _ when expr_type = curr_f_type -> add_field f_expr
                         | _ -> error "Wrong assign type in declaration" )
                     | None ->
+                        is_not_mutable_field f_name >>= fun is_not_mutable ->
                         Hashtbl.add acc_ht f_name
                           {
                             key = f_name;
                             f_type = curr_f_type;
                             f_value = get_init_value_of_type curr_f_type;
-                            is_not_mutable = is_mutable_field f_name;
+                            is_not_mutable;
                             assignment_count = 0;
                           };
                         return (help_ctx, acc_ht) )
@@ -1620,9 +1652,7 @@ module Main (M : MONADERROR) = struct
               match cl_r.parent_key with
               | None -> helper_init (Hashtbl.create 100) init_ctx field_tuples
               | Some par_key ->
-                  let parent_r =
-                    Option.get (get_elem_if_present class_table par_key)
-                  in
+                  get_elem_if_present_m class_table par_key >>= fun parent_r ->
                   init_object parent_r init_ctx >>= fun par_ctx ->
                   helper_init
                     (get_obj_fields_exn par_ctx.cur_object)
@@ -1768,15 +1798,12 @@ module Main (M : MONADERROR) = struct
 
   and update_identifier_v var_key new_val val_evaled_ctx =
     if Hashtbl.mem val_evaled_ctx.var_table var_key then (
-      let old_var =
-        Option.get (get_elem_if_present val_evaled_ctx.var_table var_key)
-      in
+      get_elem_if_present_m val_evaled_ctx.var_table var_key >>= fun old_var ->
       check_assign_cnt_v old_var >>= fun _ ->
       Hashtbl.replace val_evaled_ctx.var_table var_key
         {
           old_var with
           v_value = new_val;
-          (* Option.get val_evaled_ctx.last_expr_result; *)
           assignment_count = old_var.assignment_count + 1;
         };
       return val_evaled_ctx
@@ -1788,7 +1815,7 @@ module Main (M : MONADERROR) = struct
       | RObj { field_ref_table = cur_frt; _ } ->
           if Hashtbl.mem cur_frt var_key then
             (* Мы обновляем состояние объекта во всей системе + помним про final*)
-            let old_field = Option.get (get_elem_if_present cur_frt var_key) in
+            get_elem_if_present_m cur_frt var_key >>= fun old_field ->
             check_assign_cnt_f old_field >>= fun _ ->
             if val_evaled_ctx.is_creation then
               Hashtbl.replace cur_frt var_key
@@ -1809,7 +1836,7 @@ module Main (M : MONADERROR) = struct
     try
       get_obj_info_exn obj_r |> fun (_, frt, _) ->
       if Hashtbl.mem frt f_name then
-        let old_field = Option.get (get_elem_if_present frt f_name) in
+        get_elem_if_present_m frt f_name >>= fun old_field ->
         check_assign_cnt_f old_field >>= fun _ ->
         if obj_evaled_ctx.is_creation then
           Hashtbl.replace frt f_name
@@ -1924,8 +1951,8 @@ module Main (M : MONADERROR) = struct
               | VObjectRef (RObj { field_ref_table = frt; number = fnum; _ }) ->
                   (* Смотрим, если номера совпадают - обновляем поле. В любом случае делаем запуск по полям этого объекта *)
                   ( if fnum = o_num then
-                    Option.get (get_elem_if_present frt f_key)
-                    |> fun old_field ->
+                    (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
+                    get_ok (get_elem_if_present_m frt f_key) |> fun old_field ->
                     Hashtbl.replace frt f_key
                       {
                         old_field with
@@ -1941,7 +1968,8 @@ module Main (M : MONADERROR) = struct
                       | VObjectRef
                           (RObj { field_ref_table = frt; number = c_num; _ }) ->
                           ( if c_num = o_num then
-                            Option.get (get_elem_if_present frt f_key)
+                            (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
+                            get_ok (get_elem_if_present_m frt f_key)
                             |> fun old_field ->
                             Hashtbl.replace frt f_key
                               {
@@ -1964,7 +1992,9 @@ module Main (M : MONADERROR) = struct
           (*  Если значение - какой-то объект *)
           | VObjectRef (RObj { field_ref_table = frt; number = fnum; _ }) ->
               if o_num = fnum then (
-                Option.get (get_elem_if_present frt f_key) |> fun old_field ->
+                (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
+                get_ok (get_elem_if_present_m frt f_key)
+                |> fun old_field ->
                 Hashtbl.replace frt f_key
                   {
                     old_field with
@@ -1983,7 +2013,8 @@ module Main (M : MONADERROR) = struct
                   | VObjectRef
                       (RObj { field_ref_table = frt; number = c_num; _ }) ->
                       ( if c_num = o_num then
-                        Option.get (get_elem_if_present frt f_key)
+                        (* Гарантия - объекты с одинаковыми номерами имеют одинаковую таблицу полей, а значит поле мы найдем *)
+                        get_ok (get_elem_if_present_m frt f_key)
                         |> fun old_field ->
                         Hashtbl.replace frt f_key
                           {
@@ -2002,40 +2033,32 @@ module Main (M : MONADERROR) = struct
       | None -> ()
       | Some prev_ctx -> helper_update f_key n_val prev_ctx o_num assign_cnt
     in
-    try
-      get_obj_info_exn obj |> fun (_, object_frt, object_number) ->
-      let assign_cnt =
-        (Option.get (get_elem_if_present object_frt field_key)).assignment_count
-        + 1
-      in
-      helper_update field_key new_value update_ctx object_number assign_cnt
-    with Invalid_argument m -> raise (Invalid_argument m)
+    get_obj_info_exn obj |> fun (_, object_frt, object_number) ->
+    let assign_cnt =
+      (*Мы обновляем поле у уже созданного проверенного объекта, а значит поле мы найдем*)
+      (get_ok (get_elem_if_present_m object_frt field_key)).assignment_count + 1
+    in
+    helper_update field_key new_value update_ctx object_number assign_cnt
 
   and prepare_table_with_args_exn ht args_l m_arg_list pr_ctx class_table =
     (* Одновременно бежим по двум спискам: списку выражений, переданных в метод и списку параметров в записи метода у класса.
            Гарантируется из предыдущих проверок, что длина списков будет одинакова *)
-    return
-      (List.fold_left2
-         (fun (h_ht, hctx) arg tn_pair ->
-           match tn_pair with
-           | head_type, Name head_name ->
-               eval_expr arg hctx class_table |> fun he_ctx_t ->
-               let he_ctx =
-                 try get_ok he_ctx_t
-                 with Invalid_argument _ ->
-                   raise (Invalid_argument (get_error he_ctx_t))
-               in
-               Hashtbl.add h_ht head_name
-                 {
-                   v_type = head_type;
-                   v_key = head_name;
-                   is_not_mutable = true;
-                   assignment_count = 1;
-                   v_value = he_ctx.last_expr_result;
-                   scope_level = 0;
-                 };
-               (h_ht, he_ctx))
-         (ht, pr_ctx) args_l m_arg_list)
+    mfold_left2
+      (fun (h_ht, hctx) arg tn_pair ->
+        match tn_pair with
+        | head_type, Name head_name ->
+            eval_expr arg hctx class_table >>= fun he_ctx ->
+            Hashtbl.add h_ht head_name
+              {
+                v_type = head_type;
+                v_key = head_name;
+                is_not_mutable = true;
+                assignment_count = 1;
+                v_value = he_ctx.last_expr_result;
+                scope_level = 0;
+              };
+            return (h_ht, he_ctx))
+      (ht, pr_ctx) args_l m_arg_list
 
   and prepare_constructor_block curr_body curr_class_r =
     match (curr_body, curr_class_r.parent_key) with
@@ -2067,6 +2090,7 @@ module Main (M : MONADERROR) = struct
       (Hashtbl.create 10)
     >>= fun ctx ->
     let main = Hashtbl.find cl.method_table "main@@" in
-    let body_main = Option.get main.body in
-    eval_stmt body_main ctx ht
+    match main.body with
+    | None -> error "main() method cannot be abstract!"
+    | Some body_main -> eval_stmt body_main ctx ht
 end

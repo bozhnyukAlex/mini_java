@@ -66,6 +66,10 @@ class Child extends Person{
         super(w,a);
         cash = 0;
     }
+    @Override
+    public int getAge() {
+        return age + 1;
+    }
     
     public int getCash() {
         return cash;
