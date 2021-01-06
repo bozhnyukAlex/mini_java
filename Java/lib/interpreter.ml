@@ -1076,16 +1076,13 @@ module Main (M : MONADERROR) = struct
             | _ -> eval_stmt then_stmt bectx class_table )
         | VBool false -> (
             match else_stmt_o with
-            | Some else_stmt -> (
-                match else_stmt with
-                | StmtBlock _ ->
-                    eval_stmt else_stmt
-                      (inc_scope_level { bectx with is_main_scope = false })
-                      class_table
-                    >>= fun ectx ->
-                    return
-                      (dec_scope_level { ectx with is_main_scope = was_main })
-                | _ -> eval_stmt else_stmt bectx class_table )
+            | Some (StmtBlock _ as else_stmt) ->
+                eval_stmt else_stmt
+                  (inc_scope_level { bectx with is_main_scope = false })
+                  class_table
+                >>= fun ectx ->
+                return (dec_scope_level { ectx with is_main_scope = was_main })
+            | Some else_stmt -> eval_stmt else_stmt bectx class_table
             | None -> return sctx )
         | _ -> error "Wrong type for condition statement" )
     | For (dec_stmt_o, bexpr_o, after_expr_list, body_stmt) ->
