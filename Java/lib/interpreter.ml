@@ -27,10 +27,6 @@ module Result = struct
 
   let error = Result.error
 
-  let get_ok = Result.get_ok
-
-  let get_error = Result.get_error
-
   let ( >> ) x f = x >>= fun _ -> f
 end
 
