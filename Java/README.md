@@ -14,6 +14,25 @@ Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
     5) Многомерные массивы не поддерживаются
     6) Приведение типов через () не поддерживается. 
     7) Метод equals при сравнении объектов вызывается в случае, если он переопределен. В противном случае происходит непосредственное сравнение ссылок.
+    8) Работа с реплом: запуск факториала 
+    ```
+    > int fac1(int acc, int n) {if (n<=1) return acc}; else return fac1(acc*n, n-1); }@
+    > int fac(int n) {return fac(1, n)}@
+    > fac(5)@
+    > Result: VInt (120)
+    ```
+    9) Работа с реплом: ArrayTypeMismatchException: 
+    ```
+    > Object[] x = new Object[3];@    
+    Statement evaluated
+    > x[0] = new Circle(5);@
+    ArrayStoreException
+    > Object[] y = new Figure[3];@
+    Statement evaluated
+    > y[0] = new QuickSorter();@
+    Wrong assign type!
+
+    ```
 
 Features done:
 
