@@ -17,7 +17,6 @@ let show_hashtbl ht show_k show_v =
       Buffer.add_string buf "[[";
       Hashtbl.iter
         (fun k v ->
-          (* acc ^ k ^ " -> " ^ show v ^ "\n" *)
           Buffer.add_string buf (show_k k);
           Buffer.add_string buf " -> ";
           Buffer.add_string buf (show_v v);
@@ -25,6 +24,15 @@ let show_hashtbl ht show_k show_v =
         ht;
       Buffer.add_string buf "]]";
       Buffer.contents buf
+
+let show_hashtbl_values ht show_v =
+  let buf = Buffer.create 10000 in
+  Hashtbl.iter
+    (fun _ v ->
+      Buffer.add_string buf (show_v v);
+      Buffer.add_string buf "\n")
+    ht;
+  Buffer.contents buf
 
 let std_classes_key =
   {|
@@ -155,8 +163,7 @@ class Fibonacci {
 		} 
 }
 
-class Repl {
-
+class Repl {	
 }
   
   |}
@@ -178,13 +185,13 @@ exception Invalid_state of string
 
 exception Evaluation_error of string
 
-let rec repl buffer class_table ctx =
+let rec repl buffer class_table ctx m_key_table =
   print_string "> ";
   let new_str = read_line () in
   match is_end_of_input new_str with
   | false ->
       Buffer.add_string buffer new_str;
-      repl buffer class_table ctx
+      repl buffer class_table ctx m_key_table
   | true -> (
       Buffer.add_string buffer (str_before_delim new_str);
       let process_exn ts =
@@ -201,7 +208,7 @@ let rec repl buffer class_table ctx =
                   Buffer.clear buffer;
                   raise (Invalid_state "Repl class not found")
               | Some repl_r ->
-                  Hashtbl.add repl_r.method_table name
+                  let new_m =
                     {
                       m_type;
                       is_abstract = false;
@@ -211,12 +218,19 @@ let rec repl buffer class_table ctx =
                       args;
                       key;
                       body;
-                    };
+                    }
+                  in
+                  if not (Hashtbl.mem repl_r.method_table key) then (
+                    Hashtbl.add m_key_table key ts;
+                    Hashtbl.add repl_r.method_table key new_m )
+                  else (
+                    Hashtbl.replace m_key_table key ts;
+                    Hashtbl.replace repl_r.method_table key new_m );
                   Hashtbl.replace class_table "Repl"
                     { repl_r with method_table = repl_r.method_table };
                   print_endline "Method added";
                   Buffer.clear buffer;
-                  repl buffer class_table ctx )
+                  repl buffer class_table ctx m_key_table )
         | Some _ ->
             Buffer.clear buffer;
             raise (Invalid_state "Not method declaration after parsing")
@@ -229,7 +243,7 @@ let rec repl buffer class_table ctx =
                 | Ok stmt_evaled_ctx ->
                     print_endline "Statement evaluated";
                     Buffer.clear buffer;
-                    repl buffer class_table stmt_evaled_ctx )
+                    repl buffer class_table stmt_evaled_ctx m_key_table )
             (* Не попарсили statement - пытаемся попарсить выражение *)
             | None -> (
                 match apply Expr.expression ts with
@@ -243,7 +257,7 @@ let rec repl buffer class_table ctx =
                           ( "Result: "
                           ^ show_value expr_evaled_ctx.last_expr_result );
                         Buffer.clear buffer;
-                        repl buffer class_table expr_evaled_ctx )
+                        repl buffer class_table expr_evaled_ctx m_key_table )
                 | None ->
                     Buffer.clear buffer;
                     raise (Invalid_input "Wrong input, try again!") ) )
@@ -251,18 +265,30 @@ let rec repl buffer class_table ctx =
       match str_before_delim new_str with
       | "show_var_table" ->
           print_endline "Current table of variables:";
-          (* print_hashtbl ctx.var_table pp_key_t pp_variable; *)
           print_endline (show_hashtbl ctx.var_table show_key_t show_variable);
           Buffer.clear buffer;
-          repl buffer class_table ctx
+          repl buffer class_table ctx m_key_table
       | "exit" -> ()
+      | "show_curr_stdlib" ->
+          print_endline "Current classes in stdlib:";
+          print_endline std_classes_key;
+          Buffer.clear buffer;
+          repl buffer class_table ctx m_key_table
+      | "show_available_methods" -> (
+          match Hashtbl.find_opt class_table "Repl" with
+          | None -> print_endline "Repl class not found"
+          | Some _ ->
+              print_endline "Current available methods:";
+              print_endline (show_hashtbl_values m_key_table show_key_t);
+              Buffer.clear buffer;
+              repl buffer class_table ctx m_key_table )
       | _ -> (
           try process_exn (Buffer.contents buffer) with
           | Invalid_state m -> print_endline m
           | Invalid_input m | Evaluation_error m ->
               print_endline m;
               Buffer.clear buffer;
-              repl buffer class_table ctx ) )
+              repl buffer class_table ctx m_key_table ) )
 
 let () =
   print_endline
@@ -277,6 +303,9 @@ let () =
   print_endline
     "Special commands:\n\
     \ --- show_var_table@ for showing all information about local variables\n\
+    \ --- show_curr_stdlib@ for showing current available classes in standart \
+     library\n\
+    \ --- show_available_methods@ for showing current available methods\n\
     \ --- exit@ for exiting REPL"
 
 let start =
@@ -310,4 +339,5 @@ let start =
               constr_affilation = None;
             }
           in
-          repl new_buf load_table repl_ctx )
+          let mk_table = Hashtbl.create 1000 in
+          repl new_buf load_table repl_ctx mk_table )
