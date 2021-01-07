@@ -18,6 +18,7 @@ depends: [
   "opal"
   "ppx_deriving"
   "ppx_show"
+  "str"
 ]
 
 
