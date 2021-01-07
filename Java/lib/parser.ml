@@ -434,4 +434,4 @@ let class_declaration =
   token "{" >> sep_by class_elem spaces >>= fun class_elements ->
   token "}" >> return (Class (modifiers, class_name, extension, class_elements))
 
-let parser = many class_declaration
+let parser = sep_by class_declaration spaces
