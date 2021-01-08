@@ -9,20 +9,18 @@ open Java_lib.Hashtbl_p
 
 let print_hashtbl ht pp_k pp_el = pp pp_k pp_el Format.std_formatter ht
 
-let show_hashtbl ht show_k show_v =
+let ppb_key_t buf k = Buffer.add_string buf k
+
+let ppb_var buf v = Buffer.add_string buf (show_variable v)
+
+let show_hashtbl ht pp_k pp_v =
   match Hashtbl.length ht with
   | 0 -> "[[]]"
   | _ ->
       let buf = Buffer.create 10000 in
-      Buffer.add_string buf "[[";
-      Hashtbl.iter
-        (fun k v ->
-          Buffer.add_string buf (show_k k);
-          Buffer.add_string buf " -> ";
-          Buffer.add_string buf (show_v v);
-          Buffer.add_string buf "\n")
-        ht;
-      Buffer.add_string buf "]]";
+      Printf.bprintf buf "[[";
+      Hashtbl.iter (fun k v -> Printf.bprintf buf "%a -> %a\n" pp_k k pp_v v) ht;
+      Printf.bprintf buf "]]";
       Buffer.contents buf
 
 let show_hashtbl_values ht show_v =
@@ -265,7 +263,7 @@ let rec repl buffer class_table ctx m_key_table =
       match str_before_delim new_str with
       | "show_var_table" ->
           print_endline "Current table of variables:";
-          print_endline (show_hashtbl ctx.var_table show_key_t show_variable);
+          print_endline (show_hashtbl ctx.var_table ppb_key_t ppb_var);
           Buffer.clear buffer;
           repl buffer class_table ctx m_key_table
       | "exit" -> ()
