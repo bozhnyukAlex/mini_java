@@ -239,8 +239,8 @@ module Expr = struct
       | other -> FieldAccess (acc, other)
     in
     let f_parse =
-      this <|> parens create_obj <|> arr_access <|> method_call <|> constString
-      <|> identifier
+      this <|> null <|> parens create_obj <|> arr_access <|> method_call
+      <|> constString <|> identifier
     in
     let n_parse =
       parens create_obj <|> arr_access <|> method_call <|> identifier

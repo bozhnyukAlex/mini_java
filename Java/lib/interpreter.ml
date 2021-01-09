@@ -1292,7 +1292,7 @@ module Main (M : MONADERROR) = struct
           | [] -> return vctx
           | (Name name, var_expr_o) :: vs -> (
               match vctx.cur_object with
-              | RNull -> error "Must be non-null object!"
+              | RNull -> error "NullPointerException"
               | RObj { field_ref_table = frt; _ } ->
                   ( if
                     (* Смотрим, чтобы подобного имени не было ни среди локальных переменных, ни среди полей класса *)
@@ -1554,6 +1554,7 @@ module Main (M : MONADERROR) = struct
               return { octx with last_expr_result = fld.f_value }
           | VArray (Arr { length = alen; _ }) when f_key = "length" ->
               return { octx with last_expr_result = VInt alen }
+          | VObjectRef RNull | VArray ANull -> error "NullPointerException"
           | _ -> error "Must be non-null object or array with length call!" )
       | FieldAccess (obj_expr, CallMethod (Identifier m_name, args)) -> (
           eval_expr obj_expr ctx class_table >>= fun octx ->

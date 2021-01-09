@@ -33,6 +33,17 @@ Author: Bozhnyuk Alexander, bozhnyuks@mail.ru
     Wrong assign type!
 
     ```
+- 10) Работа с реплом: show_available_methods@
+    ```
+    > int id(int n) {return n;}@                    
+    Method added
+    > int square(int n) {return n*n;}@
+    Method added
+    > show_available_methods@
+    Current available methods:
+    "int square(int n) {return n*n;}"
+    "int id(int n) {return n;}"
+    ```
 
 Features done:
 
