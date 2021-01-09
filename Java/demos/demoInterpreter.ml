@@ -18,7 +18,6 @@ let test_interp test_val cl_t =
           print_endline (show_context res_context ^ "\n");
           Hashtbl.clear load_table )
 
-(* 
 let () = print_string "------------------- FIRST TEST ------------------\n"
 
 let test_val =
@@ -924,4 +923,4 @@ public class Summator {
 
         |})
 
-let () = test_interp test_val (Hashtbl.create 100) *)
+let () = test_interp test_val (Hashtbl.create 100)
