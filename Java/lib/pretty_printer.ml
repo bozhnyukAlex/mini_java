@@ -1,6 +1,20 @@
 open Format
 open Ast
 
+let pp_sep_space ppf () = fprintf ppf " "
+
+let pp_sep_comma ppf () = fprintf ppf ", "
+
+let pp_sep_endl ppf () = fprintf ppf "@;<0 0>"
+
+let pp_sep_double_endl ppf () = fprintf ppf "@;<0 0>@;<0 0>"
+
+let rec was_last_override = function
+  | [ Override ] -> true
+  | [ _ ] -> false
+  | _ :: xs when xs <> [] -> was_last_override xs
+  | _ -> false
+
 let pp_val ppf = function
   | VBool b -> fprintf ppf "%b" b
   | VChar c -> fprintf ppf "%c" c
@@ -21,7 +35,9 @@ let pp_modif ppf = function
   | Static -> fprintf ppf "%s" "static"
   | Final -> fprintf ppf "%s" "final"
   | Abstract -> fprintf ppf "%s" "abstract"
-  | Override -> fprintf ppf "%s" "@Override"
+  | Override -> fprintf ppf "%s@;<0 0>" "@Override"
+
+let pp_modif_list ppf = pp_print_list ~pp_sep:pp_sep_space pp_modif ppf
 
 let is_add_or_sub = function Add (_, _) | Sub (_, _) -> true | _ -> false
 
@@ -30,8 +46,6 @@ let is_or = function Or (_, _) -> true | _ -> false
 let is_const_or_id = function Const _ | Identifier _ -> true | _ -> false
 
 let is_create = function ClassCreate (_, _) -> true | _ -> false
-
-let pp_sep_comma ppf () = fprintf ppf ", "
 
 let pp_name ppf = function Name n -> fprintf ppf "%s" n
 
@@ -118,8 +132,6 @@ let pp_pairs_dec_l ppf =
   in
   pp_print_list ~pp_sep:pp_sep_comma pp_pair ppf
 
-let pp_sep_endl ppf () = fprintf ppf "@;<0 0>"
-
 let rec pp_st ppf = function
   | Expression expr -> fprintf ppf "%a;" pp_exp expr
   | If (be_expr, then_st, else_st_o) -> (
@@ -160,3 +172,56 @@ let rec pp_st ppf = function
       fprintf ppf "@;<0 0>@[<v 3>{@;<0 0>%a@;<0 -3>}@]" pp_st_list st_list
 
 and pp_st_list ppf = pp_print_list ~pp_sep:pp_sep_endl pp_st ppf
+
+let pp_tn_pairs_list ppf =
+  let pp_tn_pair ppf = function
+    | t, n -> fprintf ppf "%a %a" pp_type t pp_name n
+  in
+  pp_print_list ~pp_sep:pp_sep_comma pp_tn_pair ppf
+
+let pp_class_elem ppf = function
+  | ml, Method (m_type, m_name, args, body_o) -> (
+      match body_o with
+      | Some body ->
+          (* fprintf ppf "%a %a %a(%a) %a" pp_modif_list ml pp_type m_type pp_name
+             m_name pp_tn_pairs_list args pp_st body; *)
+          fprintf ppf "%a" pp_modif_list ml;
+          if was_last_override ml then fprintf ppf "" else fprintf ppf " ";
+          fprintf ppf "%a %a(%a) %a" pp_type m_type pp_name m_name
+            pp_tn_pairs_list args pp_st body
+      | None ->
+          (* fprintf ppf "%a %a %a(%a);" pp_modif_list ml pp_type m_type pp_name
+             m_name pp_tn_pairs_list args *)
+          fprintf ppf "%a" pp_modif_list ml;
+          if was_last_override ml then fprintf ppf "" else fprintf ppf " ";
+          fprintf ppf "%a %a(%a);" pp_type m_type pp_name m_name
+            pp_tn_pairs_list args )
+  | ml, Constructor (c_name, args, body) ->
+      fprintf ppf "%a %a(%a) %a" pp_modif_list ml pp_name c_name
+        pp_tn_pairs_list args pp_st body
+  | ml, VarField (v_type, vars) ->
+      fprintf ppf "%a %a %a;" pp_modif_list ml pp_type v_type pp_pairs_dec_l
+        vars
+
+let pp_class_elems ppf =
+  pp_print_list ~pp_sep:pp_sep_double_endl pp_class_elem ppf
+
+let pp_class_dec ppf = function
+  | Class (ml, cl_name, par_name_o, class_elems) -> (
+      match par_name_o with
+      | Some par_name ->
+          fprintf ppf "%a" pp_modif_list ml;
+          (match ml with [] -> fprintf ppf "" | _ -> fprintf ppf " ");
+          fprintf ppf "class %a extends %a @;<0 0>@[<v 3>{@;<0 0>%a@;<0 -3>}@]"
+            pp_name cl_name pp_name par_name pp_class_elems class_elems
+      | None ->
+          fprintf ppf "%a" pp_modif_list ml;
+          (match ml with [] -> fprintf ppf "" | _ -> fprintf ppf " ");
+          fprintf ppf "class %a @;<0 0>@[<v 3>{@;<0 0>%a@;<0 -3>}@]" pp_name
+            cl_name pp_class_elems class_elems )
+
+let pp_class_dec_list ppf =
+  let pp_cdl ppf = pp_print_list ~pp_sep:pp_sep_double_endl pp_class_dec ppf in
+  fprintf ppf "@[<v 0>%a@]@;<0 0>@;<0 0>" pp_cdl
+
+let print_class_dec_list = pp_class_dec_list std_formatter
