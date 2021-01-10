@@ -16,12 +16,12 @@ let rec pp_type ppf = function
   | ClassName s -> fprintf ppf "%s" s
   | Array t -> fprintf ppf "%a[]" pp_type t
 
-let rec pp_atomic ppf = function
-  | Null -> fprintf ppf "null"
-  | This -> fprintf ppf "this"
-  | Super -> fprintf ppf "super"
-  | Const v -> fprintf ppf "%a" pp_val v
-  | _ -> ()
+let pp_modif ppf = function
+  | Public -> fprintf ppf "%s" "public"
+  | Static -> fprintf ppf "%s" "static"
+  | Final -> fprintf ppf "%s" "final"
+  | Abstract -> fprintf ppf "%s" "abstract"
+  | Override -> fprintf ppf "%s" "@Override"
 
 let is_add_or_sub = function Add (_, _) | Sub (_, _) -> true | _ -> false
 
@@ -110,3 +110,53 @@ let rec pp_exp ppf = function
 and pp_exp_par ppf = fprintf ppf "(%a)" pp_exp
 
 and pp_exp_list ppf = pp_print_list ~pp_sep:pp_sep_comma pp_exp ppf
+
+let pp_pairs_dec_l ppf =
+  let pp_pair ppf = function
+    | Name name, None -> fprintf ppf "%s" name
+    | Name name, Some expr -> fprintf ppf "%s = %a" name pp_exp expr
+  in
+  pp_print_list ~pp_sep:pp_sep_comma pp_pair ppf
+
+let pp_sep_endl ppf () = fprintf ppf "@;<0 0>"
+
+let rec pp_st ppf = function
+  | Expression expr -> fprintf ppf "%a;" pp_exp expr
+  | If (be_expr, then_st, else_st_o) -> (
+      match else_st_o with
+      | Some else_st -> (
+          match then_st with
+          | StmtBlock _ ->
+              fprintf ppf "if (%a) %a@;<0 0>else %a" pp_exp be_expr pp_st
+                then_st pp_st else_st
+          | _ ->
+              fprintf ppf "if (%a) %a else %a" pp_exp be_expr pp_st then_st
+                pp_st else_st )
+      | None -> fprintf ppf "if (%a) %a" pp_exp be_expr pp_st then_st )
+  | While (be_expr, body) ->
+      fprintf ppf "while (%a) %a" pp_exp be_expr pp_st body
+  | For (dec_st_o, be_exp_o, after_el, body) ->
+      ( match dec_st_o with
+      | Some dec_st -> fprintf ppf "for (%a" pp_st dec_st
+      | None -> fprintf ppf "for (;" );
+      ( match be_exp_o with
+      | Some be_exp -> fprintf ppf " %a;" pp_exp be_exp
+      | None -> fprintf ppf ";" );
+      fprintf ppf " %a) " pp_exp_list after_el;
+      fprintf ppf "%a" pp_st body
+  | Break -> fprintf ppf "break;"
+  | Continue -> fprintf ppf "continue;"
+  | Return expr_o -> (
+      match expr_o with
+      | Some expr -> fprintf ppf "return %a;" pp_exp expr
+      | None -> fprintf ppf "return;" )
+  | VarDec (mod_o, var_type, pairs_list) ->
+      ( match mod_o with
+      | Some modif -> fprintf ppf "%a " pp_modif modif
+      | None -> () );
+      fprintf ppf "%a " pp_type var_type;
+      fprintf ppf "%a;" pp_pairs_dec_l pairs_list
+  | StmtBlock st_list ->
+      fprintf ppf "@;<0 0>@[<v 3>{@;<0 0>%a@;<0 -3>}@]" pp_st_list st_list
+
+and pp_st_list ppf = pp_print_list ~pp_sep:pp_sep_endl pp_st ppf
