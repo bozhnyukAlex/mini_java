@@ -9,4 +9,4 @@
 (cram
  (deps demos/demoParserFirst.exe demos/demoParserSecond.exe
    demos/demoClassLoader.exe demos/demoInterpreter.exe
-   demos/demoPrettyPrinter.exe))
+   demos/demoPrettyPrinter.exe demos/demoTransformation.exe))

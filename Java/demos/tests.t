@@ -3363,3 +3363,51 @@
         if (high > i) quickSort(array, n, i, high);
      }
   }
+
+
+  $ (cd ../../../../default && demos/demoTransformation.exe)
+  -- int i = 0;
+  ++ int k = 0;
+  
+  -- quickSorter.quickSort(arr, n, i, j);
+  ++ quickSorter.quickSort(arr, n, k, j);
+  
+  -- int i = low, j = high;
+  ++ int k = low, j = high;
+  
+  -- while (i <= j)
+  ++ while (k <= j)
+  
+  -- while (array[i] < pivot)
+  ++ while (array[k] < pivot)
+  
+  -- i++;
+  ++ k++;
+  
+  -- if (i <= j)
+  ++ if (k <= j)
+  
+  -- int temp = array[i];
+  ++ int temp = array[k];
+  
+  -- array[i] = array[j];
+  ++ array[k] = array[j];
+  
+  -- i++;
+  ++ k++;
+  
+  -- if (high > i)
+  ++ if (high > k)
+  
+  -- quickSort(array, n, i, high);
+  ++ quickSort(array, n, k, high);
+  
+  -- for (int i = 0; i < 10; i++)
+  ++ for (int k = 0; k < 10; k++)
+  
+  -- if (i % 2 == 0)
+  ++ if (k % 2 == 0)
+  
+  -- arr[i] = 1;
+  ++ arr[k] = 1;
+  

@@ -43,3 +43,11 @@
  (modes byte exe)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))
+
+(executable
+ (name demoTransformation)
+ (modules demoTransformation)
+ (libraries Java.Lib)
+ (modes byte exe)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))
