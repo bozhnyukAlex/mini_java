@@ -134,11 +134,4 @@ final class String {
 }
 ```
 
-Features in progress:
-
-- 1 Правки
-- 2 Pretty-printer
-- 3 Трансформации
-
-
 
